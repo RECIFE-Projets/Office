@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ma Plateforme Bureautique — Apprenez le Pack Office en français, du niveau A1 à C2">
+  <title>Ma Plateforme Bureautique</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231a5ec8'/><text y='24' x='5' font-size='22' font-family='Arial' font-weight='900' fill='white'>B</text></svg>">
+</head>
+<body>
+
+<!-- ===========================
+     ÉCRAN D'AUTHENTIFICATION
+     =========================== -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">B</div>
+      <div class="auth-logo-title">Ma Plateforme Bureautique</div>
+      <div class="auth-logo-sub">Pack Office · Niveaux A1 → C2 · Formations qualifiantes</div>
+    </div>
+
+    <!-- TABS -->
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login">Connexion</div>
+      <div class="auth-tab" data-tab="register">Inscription</div>
+    </div>
+
+    <!-- CONNEXION -->
+    <div class="auth-panel active" data-panel="login">
+      <div class="form-group">
+        <label class="form-label">Adresse e-mail</label>
+        <input id="loginEmail" class="form-input" type="email" placeholder="votre@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <div class="input-with-icon">
+          <input id="loginMdp" class="form-input" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
+          <button class="input-icon-btn" type="button">👁</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;">
+        <button id="btnLoginStagiaire" class="btn btn-primary btn-full" style="padding:13px;">
+          🎓 Connexion Stagiaire
+        </button>
+        <button id="btnLoginFormateur" class="btn btn-outline btn-full" style="padding:13px;">
+          👨‍🏫 Formateur
+        </button>
+      </div>
+      <div style="margin-top:16px;text-align:center;">
+        <span class="text-muted">Démo : cliquez directement sur un bouton ci-dessus</span>
+      </div>
+    </div>
+
+    <!-- INSCRIPTION -->
+    <div class="auth-panel" data-panel="register" style="display:none;">
+      <div id="registerPanel">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prénom *</label>
+            <input id="regPrenom" class="form-input" type="text" placeholder="Votre prénom">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nom *</label>
+            <input id="regNom" class="form-input" type="text" placeholder="Votre nom">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Adresse e-mail *</label>
+          <input id="regEmail" class="form-input" type="email" placeholder="votre@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe * (min. 6 caractères)</label>
+          <div class="input-with-icon">
+            <input id="regMdp" class="form-input" type="password" placeholder="Choisissez un mot de passe">
+            <button class="input-icon-btn" type="button">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vous êtes :</label>
+          <div class="role-grid">
+            <div class="role-card selected" data-role="stagiaire">
+              <div class="role-card-icon">🎓</div>
+              <div class="role-card-name">Stagiaire</div>
+              <div class="role-card-desc">Je suis en formation</div>
+            </div>
+            <div class="role-card" data-role="formateur">
+              <div class="role-card-icon">👨‍🏫</div>
+              <div class="role-card-name">Formateur</div>
+              <div class="role-card-desc">J'encadre des stagiaires</div>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-warn">
+          <span class="alert-icon">⚠️</span>
+          <div><strong>Important :</strong> Aucun e-mail de confirmation ne sera envoyé. <strong>Notez bien vos identifiants.</strong></div>
+        </div>
+        <button id="btnRegister" class="btn btn-primary btn-full btn-lg">
+          ✅ Créer mon compte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===========================
+     APPLICATION PRINCIPALE
+     =========================== -->
+<div id="mainApp" class="hidden">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+    <a class="navbar-brand" href="#" onclick="return false;">
+      <div class="navbar-logo">B</div>
+      <span>Ma Plateforme Bureautique</span>
+    </a>
+    <div class="navbar-spacer"></div>
+    <div class="navbar-actions">
+      <span id="userLevelBadge" class="lvl lvl-b1">B1</span>
+      <div class="user-pill" onclick="logout()">
+        <div class="user-avatar" id="userInitials">JD</div>
+        <span id="userName">Jean Dupont</span>
+        <span style="color:var(--text3);font-size:11px;">↩</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <!-- SECTION STAGIAIRE -->
+      <div id="navSectionStagiaire">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Mon espace</div>
+          <a class="nav-link active" data-page="dashboard">
+            <span class="nav-icon">🏠</span> Tableau de bord
+          </a>
+          <a class="nav-link" data-page="parcours">
+            <span class="nav-icon">🗺️</span> Mon parcours
+          </a>
+          <a class="nav-link" data-page="modules">
+            <span class="nav-icon">📚</span> Modules
+          </a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Exercices</div>
+          <a class="nav-link" data-page="cas-pratiques">
+            <span class="nav-icon">🧩</span> Cas pratiques
+          </a>
+          <a class="nav-link" data-page="metiers">
+            <span class="nav-icon">💼</span> Entraînement métier
+          </a>
+          <a class="nav-link" data-page="tests">
+            <span class="nav-icon">📝</span> Tests d'entrée
+          </a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Suivi</div>
+          <a class="nav-link" data-page="envoi">
+            <span class="nav-icon">📤</span> Envoyer mes travaux
+          </a>
+          <a class="nav-link" data-page="progression">
+            <span class="nav-icon">📊</span> Progression & Badges
+            <span class="nav-badge">3</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SECTION FORMATEUR -->
+      <div id="navSectionFormateur" class="hidden">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Formateur</div>
+          <a class="nav-link" data-page="formateur">
+            <span class="nav-icon">👨‍🏫</span> Dashboard formateur
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="main-content">
+
+      <!-- ================================
+           PAGE : TABLEAU DE BORD STAGIAIRE
+           ================================ -->
+      <div class="page active" id="page-dashboard">
+        <div class="hero-banner">
+          <h1>Bonjour <span id="dashPrenom">Jean</span> 👋</h1>
+          <p>Continuez votre apprentissage du Pack Office. Chaque exercice vous rapproche de votre objectif !</p>
+          <div class="hero-actions">
+            <button class="btn-hero-white" onclick="showPage('modules')">▶ Reprendre les modules</button>
+            <button class="btn-hero-outline" onclick="showPage('cas-pratiques')">🧩 Cas pratiques</button>
+            <button class="btn-hero-outline" onclick="showPage('tests')">📝 Tester mes connaissances</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--primary);">47%</div>
+            <div class="stat-label">Progression globale</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent);">12</div>
+            <div class="stat-label">Exercices réalisés</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--warn);">3</div>
+            <div class="stat-label">Badges obtenus</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--purple);">B1</div>
+            <div class="stat-label">Niveau actuel</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📈</span> Progression par module</div>
+            <div class="progress-row">
+              <div class="progress-top">
+                <span class="progress-name">📄 Word 2019</span>
+                <span class="progress-pct" id="pb-word-lbl">65%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-word" id="pb-word" style="width:65%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top">
+                <span class="progress-name">📊 Excel 2019</span>
+                <span class="progress-pct" id="pb-excel-lbl">30%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-excel" id="pb-excel" style="width:30%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top">
+                <span class="progress-name">📽️ PowerPoint 2019</span>
+                <span class="progress-pct" id="pb-ppt-lbl">20%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-ppt" id="pb-ppt" style="width:20%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top">
+                <span class="progress-name">🖨️ Publisher 2019</span>
+                <span class="progress-pct" id="pb-pub-lbl">5%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill fill-pub" id="pb-pub" style="width:5%"></div></div>
+            </div>
+            <div class="mt-4">
+              <button class="btn btn-outline btn-sm" onclick="showPage('progression')">Voir ma progression complète →</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="card-icon">🏅</span> Mes derniers badges</div>
+            <div class="badges-render" data-limit="6"></div>
+            <div class="mt-4">
+              <button class="btn btn-outline btn-sm" onclick="showPage('progression')">Voir tous mes badges →</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-icon">🔔</span> Prochaines étapes</div>
+          <div id="steps-render" class="steps-list"></div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : MON PARCOURS
+           ================================ -->
+      <div class="page" id="page-parcours">
+        <div class="page-header">
+          <div class="page-title">🗺️ Mon parcours</div>
+          <div class="page-subtitle">Configurez votre parcours d'apprentissage personnalisé</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">🎓</span> Formation</div>
+            <label class="radio-option selected" onclick="selectRadio(this)">
+              <input type="radio" name="formation" value="savoirs" checked>
+              <div>
+                <div class="radio-opt-title">Savoirs Essentiels</div>
+                <div class="radio-opt-desc">Compétences de base pour l'insertion professionnelle</div>
+              </div>
+            </label>
+            <label class="radio-option" onclick="selectRadio(this)">
+              <input type="radio" name="formation" value="avenir">
+              <div>
+                <div class="radio-opt-title">#AVENIR</div>
+                <div class="radio-opt-desc">Parcours vers l'emploi et la qualification professionnelle</div>
+              </div>
+            </label>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="card-icon">💻</span> Niveau numérique</div>
+            <label class="radio-option" onclick="selectRadio(this)">
+              <input type="radio" name="numerique" value="debutant">
+              <div>
+                <div class="radio-opt-title">🌱 Débutant</div>
+                <div class="radio-opt-desc">Je découvre l'ordinateur et les logiciels</div>
+              </div>
+            </label>
+            <label class="radio-option selected" onclick="selectRadio(this)">
+              <input type="radio" name="numerique" value="intermediaire" checked>
+              <div>
+                <div class="radio-opt-title">📈 Intermédiaire</div>
+                <div class="radio-opt-desc">J'utilise l'ordinateur mais j'ai des lacunes</div>
+              </div>
+            </label>
+            <label class="radio-option" onclick="selectRadio(this)">
+              <input type="radio" name="numerique" value="avance">
+              <div>
+                <div class="radio-opt-title">🚀 Avancé</div>
+                <div class="radio-opt-desc">Je maîtrise bien l'outil informatique</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-icon">💼</span> Métier(s) ciblé(s)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+            <div class="metier-tag selected" onclick="this.classList.toggle('selected')">📋 Sans Projet Professionnel</div>
+            <div class="metier-tag" onclick="this.classList.toggle('selected')">🖊️ Secrétariat</div>
+            <div class="metier-tag" onclick="this.classList.toggle('selected')">🙋 Accueil</div>
+            <div class="metier-tag" onclick="this.classList.toggle('selected')">🏠 Aide à domicile (ADVF)</div>
+            <div class="metier-tag" onclick="this.classList.toggle('selected')">🧹 Entretien</div>
+            <div class="metier-tag" onclick="this.classList.toggle('selected')">🛒 Vente</div>
+          </div>
+          <div class="alert alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <div>Sélectionnez un ou plusieurs métiers pour adapter vos exercices à votre projet professionnel. <strong>Sans Projet Professionnel</strong> : parcours généraliste avec découverte de tous les métiers.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-icon">🌍</span> Niveau de français (CECRL)</div>
+          <div class="alert alert-warn mb-3">
+            <span class="alert-icon">📘</span>
+            <div>Votre niveau de français adapte le vocabulaire et les consignes : pictogrammes (A1), phrases courtes (A2), textes courants (B1+).</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+            <div class="lvl lvl-a1" style="padding:9px 18px;cursor:pointer;font-size:14px;" onclick="setNiveauFr('A1')">A1</div>
+            <div class="lvl lvl-a2" style="padding:9px 18px;cursor:pointer;font-size:14px;" onclick="setNiveauFr('A2')">A2</div>
+            <div class="lvl lvl-b1" style="padding:9px 18px;cursor:pointer;font-size:14px;outline:2px solid #166534;outline-offset:2px;" onclick="setNiveauFr('B1')">B1 ✓</div>
+            <div class="lvl lvl-b2" style="padding:9px 18px;cursor:pointer;font-size:14px;" onclick="setNiveauFr('B2')">B2</div>
+            <div class="lvl lvl-c1" style="padding:9px 18px;cursor:pointer;font-size:14px;" onclick="setNiveauFr('C1')">C1</div>
+            <div class="lvl lvl-c2" style="padding:9px 18px;cursor:pointer;font-size:14px;" onclick="setNiveauFr('C2')">C2</div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="lancerTest()">📝 Passer le test de positionnement (TCF/CECRL)</button>
+            <span class="text-muted" style="align-self:center;">ou choisissez votre niveau manuellement ci-dessus</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-lg" onclick="saveParc()">💾 Enregistrer mon parcours</button>
+          <button class="btn btn-ghost btn-lg" onclick="showPage('dashboard')">← Retour</button>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : MODULES
+           ================================ -->
+      <div class="page" id="page-modules">
+        <div class="page-header">
+          <div class="page-title">📚 Modules bureautiques</div>
+          <div class="page-subtitle">Cliquez sur un logiciel pour accéder aux exercices</div>
+        </div>
+
+        <div class="grid-2" id="modulesList"></div>
+
+        <!-- DÉTAIL MODULE -->
+        <div id="moduleDetail" class="hidden" style="margin-top:8px;">
+          <div class="card">
+            <div class="flex-between mb-4">
+              <div class="card-title" id="moduleDetailTitle">Exercices</div>
+              <button class="btn btn-ghost btn-sm" onclick="closeModule()">✕ Fermer</button>
+            </div>
+            <div class="tabs-bar" id="exFilterTabs">
+              <button class="tab-btn active" data-level="all" onclick="filterExercises('all')">Tous les niveaux</button>
+              <button class="tab-btn" data-level="a1" onclick="filterExercises('a1')">A1 — Débutant</button>
+              <button class="tab-btn" data-level="a2" onclick="filterExercises('a2')">A2 — Élémentaire</button>
+              <button class="tab-btn" data-level="b1" onclick="filterExercises('b1')">B1 — Intermédiaire</button>
+              <button class="tab-btn" data-level="b2" onclick="filterExercises('b2')">B2 — Avancé</button>
+              <button class="tab-btn" data-level="c1" onclick="filterExercises('c1')">C1</button>
+            </div>
+            <div id="exercisesList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : CAS PRATIQUES
+           ================================ -->
+      <div class="page" id="page-cas-pratiques">
+        <div class="page-header">
+          <div class="page-title">🧩 Cas pratiques</div>
+          <div class="page-subtitle">Exercices ultra-guidés étape par étape, illustrés avec des captures d'écran en français</div>
+        </div>
+
+        <div class="alert alert-info">
+          <span class="alert-icon">📸</span>
+          <div>
+            <strong>Comment ça marche ?</strong> Chaque cas pratique est guidé étape par étape avec des instructions claires. 
+            <strong>Images :</strong> insérez toujours depuis votre ordinateur (pas d'images en ligne). 
+            <strong>Enregistrement :</strong> Dossier Documents → <em>NomRéférente_NuméroGroupe_Exercice</em>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- CAS 1 -->
+          <div class="card" style="cursor:pointer;" onclick="ouvrirCasPratique('lettre')">
+            <div style="background:var(--primary-xlight);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-bottom:16px;font-size:44px;">📄</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Lettre de candidature</div>
+            <div class="text-muted mb-3">Créer une lettre professionnelle avec Word. Guidage complet avec pictogrammes.</div>
+            <div class="flex flex-gap-2 flex-wrap mb-3"><span class="lvl lvl-a2">A2</span><span class="tag tag-blue">Word</span><span class="tag tag-purple">Secrétariat</span></div>
+            <div class="progress-bar"><div class="progress-fill fill-word" style="width:0%"></div></div>
+            <div class="text-muted mt-2" style="font-size:11px;">Non commencé · 8 étapes</div>
+          </div>
+
+          <!-- CAS 2 -->
+          <div class="card" style="cursor:pointer;" onclick="ouvrirCasPratique('planning')">
+            <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-bottom:16px;font-size:44px;">📊</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Planning hebdomadaire</div>
+            <div class="text-muted mb-3">Créer un tableau Excel simple avec les jours et les tâches de la semaine.</div>
+            <div class="flex flex-gap-2 flex-wrap mb-3"><span class="lvl lvl-a1">A1</span><span class="tag tag-green">Excel</span><span class="tag tag-gray">Tous métiers</span></div>
+            <div class="progress-bar"><div class="progress-fill fill-excel" style="width:0%"></div></div>
+            <div class="text-muted mt-2" style="font-size:11px;">Non commencé · 6 étapes</div>
+          </div>
+
+          <!-- CAS 3 : EN COURS -->
+          <div class="card" style="cursor:pointer;border:2px solid var(--primary);" onclick="ouvrirCasPratique('presentation')">
+            <div style="background:var(--warn-light);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-bottom:16px;font-size:44px;">📽️</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Présentation de mon métier</div>
+            <div class="text-muted mb-3">Créer un diaporama PowerPoint pour se présenter à un employeur.</div>
+            <div class="flex flex-gap-2 flex-wrap mb-3"><span class="lvl lvl-b1">B1</span><span class="tag tag-orange">PowerPoint</span><span class="tag tag-blue">Recommandé</span></div>
+            <div class="progress-bar"><div class="progress-fill fill-ppt" style="width:40%"></div></div>
+            <div class="text-muted mt-2" style="font-size:11px;">En cours · 4/10 étapes · <strong>Reprendre</strong></div>
+          </div>
+
+          <!-- CAS 4 -->
+          <div class="card" style="cursor:pointer;" onclick="ouvrirCasPratique('flyer')">
+            <div style="background:var(--purple-light);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-bottom:16px;font-size:44px;">🖨️</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Flyer — Aide à domicile</div>
+            <div class="text-muted mb-3">Créer un flyer illustré avec Publisher pour un service ADVF.</div>
+            <div class="flex flex-gap-2 flex-wrap mb-3"><span class="lvl lvl-b2">B2</span><span class="tag tag-purple">Publisher</span><span class="tag" style="background:#fce7f3;color:#9d174d;">ADVF</span></div>
+            <div class="progress-bar"><div class="progress-fill fill-pub" style="width:0%"></div></div>
+            <div class="text-muted mt-2" style="font-size:11px;">Non commencé · 12 étapes</div>
+          </div>
+        </div>
+
+        <!-- DÉTAIL CAS PRATIQUE : PRÉSENTATION -->
+        <div id="cp-presentation" class="cp-detail hidden" style="margin-top:8px;">
+          <div class="card">
+            <div class="flex-between mb-4">
+              <div class="card-title">📽️ Cas pratique : Présentation de mon métier</div>
+              <button class="btn btn-ghost btn-sm" onclick="fermerCasPratique('presentation')">✕ Fermer</button>
+            </div>
+            <div class="alert alert-success">
+              <span class="alert-icon">🎯</span>
+              <div><strong>Objectif :</strong> Créer une présentation PowerPoint de 5 diapositives pour présenter votre métier à un employeur ou jury.</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+              <span class="lvl lvl-b1">B1</span>
+              <span class="tag tag-orange">PowerPoint 2019</span>
+              <span class="tag tag-gray">⏱ 45 minutes</span>
+              <span class="tag tag-blue">10 étapes</span>
+            </div>
+
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-circle done">✓</div>
+                <div class="step-content">
+                  <div class="step-title">Ouvrir PowerPoint 2019</div>
+                  <div class="step-desc">🖱️ Double-cliquez sur l'icône PowerPoint sur le bureau (ou cherchez "PowerPoint" dans le menu Démarrer) → Cliquez sur <strong>"Nouvelle présentation vierge"</strong></div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle done">✓</div>
+                <div class="step-content">
+                  <div class="step-title">Choisir un thème professionnel</div>
+                  <div class="step-desc">🎨 Onglet <strong>Conception</strong> → Choisissez un thème sobre et professionnel → Cliquez dessus pour l'appliquer</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle done">✓</div>
+                <div class="step-content">
+                  <div class="step-title">Diapositive de titre</div>
+                  <div class="step-desc">📝 Cliquez dans la zone <strong>"Titre"</strong> → Tapez votre prénom, nom et votre métier. Zone sous-titre : tapez la date et votre formation.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle done">✓</div>
+                <div class="step-content">
+                  <div class="step-title">Ajouter une 2e diapositive</div>
+                  <div class="step-desc">➕ Onglet <strong>Accueil</strong> → bouton <strong>"Nouvelle diapositive"</strong> → Choisissez "Titre et contenu" → Titre : "Mon métier" → Listez 3 à 5 tâches principales</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle" style="background:var(--primary);">5</div>
+                <div class="step-content">
+                  <div class="step-title">⚠️ Insérer une image depuis VOTRE ordinateur</div>
+                  <div class="step-desc">
+                    <span style="background:var(--warn-light);color:#92400e;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;">IMPORTANT</span>
+                    Onglet <strong>Insertion</strong> → <strong>"Images"</strong> → <strong>"Cet appareil"</strong> (PAS d'images en ligne !) → Naviguez vers votre image → Cliquez sur <strong>"Insérer"</strong>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm" data-etape="5" onclick="validerEtape('presentation', 5)">Commencer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">6</div>
+                <div class="step-content">
+                  <div class="step-title">Ajouter les diapositives 3, 4, 5</div>
+                  <div class="step-desc">Répétez la démarche : "Ma formation", "Mes compétences", "Conclusion / Contact"</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">7</div>
+                <div class="step-content">
+                  <div class="step-title">💾 Enregistrer (OBLIGATOIRE)</div>
+                  <div class="step-desc"><strong>Fichier</strong> → <strong>Enregistrer sous</strong> → Dossier <strong>Documents</strong> → Nom du fichier : <strong>NomRéférente_Groupe3_PPT_Metier</strong> → Cliquez sur <strong>"Enregistrer"</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-warn mt-4">
+              <span class="alert-icon">💾</span>
+              <div><strong>Rappel enregistrement :</strong> Fichier → Enregistrer sous → Documents → <strong>NomRéférente_Groupe3_PPT_Metier.pptx</strong></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="showPage('envoi')">📤 Envoyer ce travail</button>
+              <button class="btn btn-ghost" onclick="fermerCasPratique('presentation')">← Retour aux cas pratiques</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DÉTAIL CAS : LETTRE -->
+        <div id="cp-lettre" class="cp-detail hidden" style="margin-top:8px;">
+          <div class="card">
+            <div class="flex-between mb-4">
+              <div class="card-title">📄 Cas pratique : Lettre de candidature</div>
+              <button class="btn btn-ghost btn-sm" onclick="fermerCasPratique('lettre')">✕ Fermer</button>
+            </div>
+            <div class="alert alert-success">
+              <span class="alert-icon">🎯</span>
+              <div><strong>Objectif :</strong> Rédiger une lettre de candidature professionnelle avec Word 2019.</div>
+            </div>
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-circle pending">1</div>
+                <div class="step-content">
+                  <div class="step-title">Ouvrir Word 2019 — Nouveau document vierge</div>
+                  <div class="step-desc">🖱️ Menu Démarrer → "Word 2019" → Cliquez sur <strong>"Document vierge"</strong></div>
+                </div>
+                <button class="btn btn-primary btn-sm" data-etape="1" onclick="validerEtape('lettre', 1)">Commencer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">2</div>
+                <div class="step-content">
+                  <div class="step-title">Configurer la mise en page</div>
+                  <div class="step-desc">Onglet <strong>Mise en page</strong> → Marges → <strong>Normales</strong> (2,5 cm). Police : <strong>Calibri 12pt</strong>. Interligne : <strong>1,5</strong></div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">3</div>
+                <div class="step-content">
+                  <div class="step-title">Saisir vos coordonnées en haut à droite</div>
+                  <div class="step-desc">Prénom Nom → Adresse → Téléphone → E-mail. Alignez à droite (Ctrl+R)</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">4</div>
+                <div class="step-content">
+                  <div class="step-title">⚠️ Enregistrer le document</div>
+                  <div class="step-desc"><strong>Ctrl+S</strong> → Documents → <strong>NomRéférente_Groupe_Lettre.docx</strong></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost mt-4" onclick="fermerCasPratique('lettre')">← Retour</button>
+          </div>
+        </div>
+
+        <!-- DÉTAIL CAS : PLANNING -->
+        <div id="cp-planning" class="cp-detail hidden" style="margin-top:8px;">
+          <div class="card">
+            <div class="flex-between mb-4">
+              <div class="card-title">📊 Cas pratique : Planning hebdomadaire</div>
+              <button class="btn btn-ghost btn-sm" onclick="fermerCasPratique('planning')">✕ Fermer</button>
+            </div>
+            <div class="alert alert-success">
+              <span class="alert-icon">🎯</span>
+              <div><strong>Objectif :</strong> Créer un tableau de planning sur Excel 2019 avec les jours de la semaine et vos tâches.</div>
+            </div>
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-circle pending">1</div>
+                <div class="step-content">
+                  <div class="step-title">Ouvrir Excel 2019</div>
+                  <div class="step-desc">Menu Démarrer → "Excel 2019" → Cliquez sur <strong>"Classeur vierge"</strong></div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="validerEtape('planning', 1)">Commencer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">2</div>
+                <div class="step-content">
+                  <div class="step-title">Saisir les jours de la semaine</div>
+                  <div class="step-desc">Cellule B1 : tapez "Lundi" → C1 : "Mardi" → D1 : "Mercredi" → E1 : "Jeudi" → F1 : "Vendredi"</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">3</div>
+                <div class="step-content">
+                  <div class="step-title">⚠️ Enregistrer</div>
+                  <div class="step-desc"><strong>Ctrl+S</strong> → Documents → <strong>NomRéférente_Groupe_Planning.xlsx</strong></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost mt-4" onclick="fermerCasPratique('planning')">← Retour</button>
+          </div>
+        </div>
+
+        <!-- DÉTAIL CAS : FLYER -->
+        <div id="cp-flyer" class="cp-detail hidden" style="margin-top:8px;">
+          <div class="card">
+            <div class="flex-between mb-4">
+              <div class="card-title">🖨️ Cas pratique : Flyer Aide à domicile</div>
+              <button class="btn btn-ghost btn-sm" onclick="fermerCasPratique('flyer')">✕ Fermer</button>
+            </div>
+            <div class="alert alert-success">
+              <span class="alert-icon">🎯</span>
+              <div><strong>Objectif :</strong> Créer un flyer A5 illustré avec Publisher 2019 pour présenter un service d'aide à domicile.</div>
+            </div>
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-circle pending">1</div>
+                <div class="step-content">
+                  <div class="step-title">Ouvrir Publisher 2019</div>
+                  <div class="step-desc">Menu Démarrer → "Publisher" → <strong>"Flyers"</strong> → choisissez un modèle coloré</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="validerEtape('flyer', 1)">Commencer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">2</div>
+                <div class="step-content">
+                  <div class="step-title">Modifier le titre</div>
+                  <div class="step-desc">Double-cliquez sur le titre → Tapez : <strong>"Aide à Domicile — ADVF"</strong> → Police 24pt, Gras</div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost mt-4" onclick="fermerCasPratique('flyer')">← Retour</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : MÉTIERS
+           ================================ -->
+      <div class="page" id="page-metiers">
+        <div class="page-header">
+          <div class="page-title">💼 Entraînement métier</div>
+          <div class="page-subtitle">Exercices adaptés à votre projet professionnel</div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card" style="cursor:pointer;text-align:center;" onclick="toast('🖊️ Exercices Secrétariat chargés — 12 exercices disponibles !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🖊️</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Secrétariat</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Courriers, classement, comptes-rendus, publipostage</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-blue">Word</span><span class="tag tag-green">Excel</span></div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center;" onclick="toast('🙋 Exercices Accueil chargés — 9 exercices disponibles !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🙋</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Accueil</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Planning, fiches de contact, communication visuelle</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-blue">Word</span><span class="tag tag-orange">PowerPoint</span></div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center;" onclick="toast('🏠 Exercices ADVF chargés — 8 exercices disponibles !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🏠</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Aide à domicile (ADVF)</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Fiches de soins, planning, transmissions, flyers</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-blue">Word</span><span class="tag tag-purple">Publisher</span></div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center;" onclick="toast('🧹 Exercices Entretien chargés — 7 exercices disponibles !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🧹</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Entretien</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Bons de commande, fiches de suivi, planning</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-blue">Word</span><span class="tag tag-green">Excel</span></div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center;" onclick="toast('🛒 Exercices Vente chargés — 11 exercices disponibles !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🛒</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Vente</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Catalogues, fiches produit, statistiques de vente</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-green">Excel</span><span class="tag tag-orange">PowerPoint</span></div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center;border:2px dashed var(--border2);" onclick="toast('🌐 Parcours transversal : découverte de tous les métiers !', 3000)">
+            <div style="font-size:44px;margin-bottom:12px;">🌐</div>
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:800;margin-bottom:6px;">Sans Projet Pro</div>
+            <div class="text-muted mb-3" style="font-size:13px;">Compétences transversales — découverte de tous les métiers</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="tag tag-blue">Tous modules</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : TESTS
+           ================================ -->
+      <div class="page" id="page-tests">
+        <div class="page-header">
+          <div class="page-title">📝 Préparation aux tests d'entrée</div>
+          <div class="page-subtitle">Exercices de préparation pour intégrer une formation qualifiante</div>
+        </div>
+
+        <div class="alert alert-info">
+          <span class="alert-icon">🎯</span>
+          <div>Ces exercices vous préparent aux <strong>tests d'entrée en formation qualifiante</strong> (CAP, Titre Pro, etc.). Entraînez-vous régulièrement pour maximiser vos chances de réussite.</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">⏱️</span> Tests par niveau</div>
+            <div class="steps-list">
+              <div class="step-item">
+                <div class="step-circle done">✓</div>
+                <div class="step-content">
+                  <div class="step-title">Test Word débutant (A1–A2)</div>
+                  <div class="step-desc" style="color:var(--accent);font-weight:700;">Score : 18/20 — Réussi ✅ · 22/04/2026</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">2</div>
+                <div class="step-content">
+                  <div class="step-title">Test Word intermédiaire (B1–B2)</div>
+                  <div class="step-desc">30 minutes · 15 questions · Mise en forme avancée</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="demarrerTest('word_b1', 30)">▶ Démarrer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">3</div>
+                <div class="step-content">
+                  <div class="step-title">Test Excel débutant (A1–A2)</div>
+                  <div class="step-desc">25 minutes · 12 questions · Saisie et calculs simples</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="demarrerTest('excel_a1', 25)">▶ Démarrer</button>
+              </div>
+              <div class="step-item">
+                <div class="step-circle pending">4</div>
+                <div class="step-content">
+                  <div class="step-title">Test PowerPoint (A2–B1)</div>
+                  <div class="step-desc">20 minutes · 10 questions · Créer une présentation</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="demarrerTest('ppt_a2', 20)">▶ Démarrer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="card-icon">🎯</span> Simulations de test d'entrée</div>
+            <div class="alert alert-warn mb-3">
+              <span class="alert-icon">⚠️</span>
+              <div><strong>Conditions réelles :</strong> temps limité, évaluation automatique, rapport immédiat.</div>
+            </div>
+            <div class="exercise-item" onclick="demarrerSimulation('Pack Office complet')">
+              <div class="exercise-num">A</div>
+              <div class="exercise-body">
+                <div class="exercise-name">Simulation Pack Office complète</div>
+                <div class="exercise-meta"><span class="lvl lvl-b1">B1</span><span class="tag tag-orange">45 min</span></div>
+              </div>
+            </div>
+            <div class="exercise-item" onclick="demarrerSimulation('Secrétariat — entrée en CAP')">
+              <div class="exercise-num">B</div>
+              <div class="exercise-body">
+                <div class="exercise-name">Simulation Secrétariat — Entrée en CAP</div>
+                <div class="exercise-meta"><span class="lvl lvl-b2">B2</span><span class="tag tag-orange">60 min</span></div>
+              </div>
+            </div>
+            <div class="exercise-item" onclick="demarrerSimulation('Titre Pro ADVF')">
+              <div class="exercise-num">C</div>
+              <div class="exercise-body">
+                <div class="exercise-name">Simulation Titre Pro ADVF</div>
+                <div class="exercise-meta"><span class="lvl lvl-b1">B1</span><span class="tag tag-orange">40 min</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : ENVOI DE TRAVAUX
+           ================================ -->
+      <div class="page" id="page-envoi">
+        <div class="page-header">
+          <div class="page-title">📤 Envoyer mes travaux</div>
+          <div class="page-subtitle">Déposez vos fichiers pour que votre formatrice puisse les corriger</div>
+        </div>
+
+        <div class="alert alert-warn">
+          <span class="alert-icon">📁</span>
+          <div>
+            <strong>Nom de fichier obligatoire :</strong> Enregistrez votre document dans votre dossier <strong>Documents</strong> avec ce format :<br>
+            <code style="background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:4px;">NomRéférente_NuméroGroupe_NomExercice.extension</code><br>
+            Exemple : <em>Martin_G3_LettreCandidature.docx</em>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📎</span> Déposer un fichier</div>
+
+            <div class="upload-zone" id="uploadZone">
+              <div class="upload-icon">📤</div>
+              <div class="upload-title">Cliquez ou glissez votre fichier ici</div>
+              <div class="upload-sub">Déposez votre travail pour l'envoyer à votre formatrice</div>
+              <div class="upload-types">Word (.docx) · Excel (.xlsx) · PowerPoint (.pptx) · Publisher (.pub)</div>
+              <input type="file" id="fileInput" style="display:none;" accept=".docx,.xlsx,.pptx,.pub,.doc,.xls,.ppt">
+            </div>
+
+            <div style="margin-top:18px;">
+              <div class="form-group">
+                <label class="form-label">Module concerné</label>
+                <select class="form-select">
+                  <option>Word 2019</option>
+                  <option>Excel 2019</option>
+                  <option>PowerPoint 2019</option>
+                  <option>Publisher 2019</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Exercice / Cas pratique</label>
+                <select class="form-select">
+                  <option>Présentation de mon métier</option>
+                  <option>Lettre de candidature</option>
+                  <option>Planning hebdomadaire</option>
+                  <option>Flyer ADVF</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Message à la formatrice (facultatif)</label>
+                <textarea class="form-textarea" placeholder="Exemple : J'ai eu des difficultés avec la mise en page de la 3e diapositive..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-lg btn-full" onclick="envoyerTravail()">
+                📤 Envoyer mon travail
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📜</span> Historique des envois</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Fichier</th><th>Module</th><th>Date</th><th>Statut</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Dupont_G3_LettreCandidature.docx</td>
+                    <td><span class="tag tag-blue">Word</span></td>
+                    <td>22/04/2026</td>
+                    <td><span class="tag tag-green">✓ Corrigé</span></td>
+                  </tr>
+                  <tr>
+                    <td>Dupont_G3_Tableau1.xlsx</td>
+                    <td><span class="tag tag-green">Excel</span></td>
+                    <td>18/04/2026</td>
+                    <td><span class="tag tag-orange">⏳ En attente</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : PROGRESSION & BADGES
+           ================================ -->
+      <div class="page" id="page-progression">
+        <div class="page-header">
+          <div class="page-title">📊 Ma progression & Badges</div>
+          <div class="page-subtitle">Suivez votre avancement et débloquez vos récompenses</div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--primary);">47%</div>
+            <div class="stat-label">Progression globale</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent);">12</div>
+            <div class="stat-label">Exercices réalisés</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--warn);">3</div>
+            <div class="stat-label">Badges gagnés</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--purple);">2h30</div>
+            <div class="stat-label">Temps total</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📈</span> Progression par module</div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name">📄 Word 2019</span><span class="progress-pct">65%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-word" style="width:65%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name">📊 Excel 2019</span><span class="progress-pct">30%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-excel" style="width:30%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name">📽️ PowerPoint</span><span class="progress-pct">20%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-ppt" style="width:20%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name">🖨️ Publisher</span><span class="progress-pct">5%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-pub" style="width:5%"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-icon">🎓</span> Progression par niveau CECRL</div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name"><span class="lvl lvl-a1">A1</span> Débutant</span><span class="progress-pct" style="color:var(--accent);">100% ✓</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-accent" style="width:100%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name"><span class="lvl lvl-a2">A2</span> Élémentaire</span><span class="progress-pct">75%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-primary" style="width:75%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name"><span class="lvl lvl-b1">B1</span> Intermédiaire</span><span class="progress-pct">30%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-primary" style="width:30%"></div></div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-top"><span class="progress-name"><span class="lvl lvl-b2">B2</span> Avancé</span><span class="progress-pct">0%</span></div>
+              <div class="progress-bar"><div class="progress-fill fill-primary" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-icon">🏅</span> Tous mes badges</div>
+          <div class="badges-render"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="card-icon">🖨️</span> Imprimer ma progression</div>
+          <div class="text-muted mb-4">Imprimez votre bulletin de progression pour le partager avec votre formatrice ou l'inclure dans votre dossier.</div>
+          <button class="btn btn-outline" onclick="imprimerPage()">🖨️ Imprimer ma progression</button>
+        </div>
+      </div>
+
+      <!-- ================================
+           PAGE : TABLEAU DE BORD FORMATEUR
+           ================================ -->
+      <div class="page" id="page-formateur">
+        <div class="page-header">
+          <div class="flex-between">
+            <div>
+              <div class="page-title">👨‍🏫 Tableau de bord Formateur</div>
+              <div class="page-subtitle">Suivi, correction et analyse de vos groupes de stagiaires</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" onclick="exporterRapport()">📄 Exporter PDF</button>
+              <button class="btn btn-ghost btn-sm" onclick="imprimerGroupe()">🖨️ Imprimer</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--primary);">24</div>
+            <div class="stat-label">Stagiaires actifs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent);">3</div>
+            <div class="stat-label">Groupes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--warn);">7</div>
+            <div class="stat-label">Travaux à corriger</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--purple);">68%</div>
+            <div class="stat-label">Progression moy.</div>
+          </div>
+        </div>
+
+        <div class="tabs-bar" id="formateurTabs">
+          <button class="tab-btn active" onclick="switchFormateurTab('stagiaires', this)">👥 Stagiaires</button>
+          <button class="tab-btn" onclick="switchFormateurTab('travaux', this)">📝 Travaux à corriger</button>
+          <button class="tab-btn" onclick="switchFormateurTab('stats', this)">📊 Statistiques</button>
+          <button class="tab-btn" onclick="switchFormateurTab('contenus', this)">🧱 Contenus</button>
+        </div>
+
+        <!-- TAB STAGIAIRES -->
+        <div id="ftab-stagiaires" class="formateur-tab-content active">
+          <div class="card">
+            <div class="flex-between mb-4" style="flex-wrap:wrap;gap:10px;">
+              <div class="card-title" style="margin-bottom:0;">👥 Liste des stagiaires</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input class="form-input" id="filtreSearch" style="width:180px;" placeholder="🔍 Rechercher..." oninput="filterStagiaires()">
+                <select class="form-select" id="filtreGroupe" style="width:auto;" onchange="filterStagiaires()">
+                  <option value="all">Tous les groupes</option>
+                  <option value="Groupe 1">Groupe 1</option>
+                  <option value="Groupe 2">Groupe 2</option>
+                  <option value="Groupe 3">Groupe 3</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" onclick="imprimerPage()">🖨️ Imprimer</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Stagiaire</th>
+                    <th>Formation</th>
+                    <th>Niveau FR</th>
+                    <th>Métier</th>
+                    <th>Progression</th>
+                    <th>Dernier accès</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="stagTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB TRAVAUX -->
+        <div id="ftab-travaux" class="formateur-tab-content">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📝</span> Travaux à corriger (7)</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Stagiaire</th><th>Fichier</th><th>Module</th><th>Date</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="travauxTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB STATS -->
+        <div id="ftab-stats" class="formateur-tab-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title"><span class="card-icon">🔍</span> Analyse des difficultés</div>
+              <div class="exercise-item" style="border-left-color:var(--danger);cursor:default;">
+                <div class="exercise-body">
+                  <div class="exercise-name">🔴 Blocage langue — Consignes A1</div>
+                  <div class="text-muted">4 stagiaires en difficulté · Module Word · Groupe 1</div>
+                </div>
+              </div>
+              <div class="exercise-item" style="border-left-color:var(--warn);cursor:default;">
+                <div class="exercise-body">
+                  <div class="exercise-name">🟡 Difficulté numérique — Enregistrement fichiers</div>
+                  <div class="text-muted">6 stagiaires concernés · Word + Excel</div>
+                </div>
+              </div>
+              <div class="exercise-item" style="border-left-color:var(--accent);cursor:default;">
+                <div class="exercise-body">
+                  <div class="exercise-name">🟢 Progression rapide — Niveau B1 → B2</div>
+                  <div class="text-muted">3 stagiaires en avance · Sophie M., Karim O., Léa R.</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="card-icon">📈</span> Progression des groupes</div>
+              <div class="progress-row">
+                <div class="progress-top"><span class="progress-name">Groupe 1 (8 stagiaires)</span><span class="progress-pct">42%</span></div>
+                <div class="progress-bar"><div class="progress-fill fill-primary" style="width:42%"></div></div>
+              </div>
+              <div class="progress-row">
+                <div class="progress-top"><span class="progress-name">Groupe 2 (9 stagiaires)</span><span class="progress-pct">67%</span></div>
+                <div class="progress-bar"><div class="progress-fill fill-accent" style="width:67%"></div></div>
+              </div>
+              <div class="progress-row">
+                <div class="progress-top"><span class="progress-name">Groupe 3 (7 stagiaires)</span><span class="progress-pct">55%</span></div>
+                <div class="progress-bar"><div class="progress-fill fill-primary" style="width:55%"></div></div>
+              </div>
+              <div class="divider"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="exporterRapport()">📄 Exporter rapport</button>
+                <button class="btn btn-ghost btn-sm" onclick="imprimerGroupe()">🖨️ Imprimer</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-icon">📅</span> Évolution dans le temps (30 derniers jours)</div>
+            <div class="alert alert-info">
+              <span class="alert-icon">📊</span>
+              <div>Graphique de suivi : progression hebdomadaire par groupe. <strong>Semaine du 14/04</strong> : +8% Groupe 1, +12% Groupe 2, +6% Groupe 3. <strong>Tendance globale :</strong> ↑ +9% en 30 jours.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONTENUS -->
+        <div id="ftab-contenus" class="formateur-tab-content">
+          <div class="card">
+            <div class="card-title"><span class="card-icon">🧱</span> Gestion des contenus pédagogiques</div>
+            <div class="alert alert-info mb-4">
+              <span class="alert-icon">ℹ️</span>
+              <div>En tant que formateur, vous pouvez ajouter, modifier et organiser les exercices, cas pratiques et tests.</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="toast('➕ Formulaire d\'ajout d\'exercice ouvert !', 2500)">➕ Ajouter un exercice</button>
+              <button class="btn btn-outline" onclick="toast('✏️ Éditeur de cas pratique ouvert !', 2500)">✏️ Modifier un cas pratique</button>
+              <button class="btn btn-ghost" onclick="toast('🎓 Gestion des niveaux ouverte !', 2500)">🎓 Gérer les niveaux</button>
+              <button class="btn btn-ghost" onclick="toast('📝 Éditeur de test ouvert !', 2500)">📝 Créer un test</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div class="toast" id="toast">✅ Action effectuée</div>
+
+<!-- PANEL OVERLAY MOBILE -->
+<div id="sidebarOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:140;" onclick="toggleSidebar()"></div>
+
+<script src="js/app.js"></script>
+<script>
+// Extra: handle auth panel visibility
+document.querySelectorAll('.auth-panel').forEach(p => {
+  p.style.display = p.classList.contains('active') ? 'block' : 'none';
+});
+document.querySelectorAll('.auth-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.auth-panel').forEach(p => {
+      p.style.display = p.dataset.panel === tab.dataset.tab ? 'block' : 'none';
+    });
+  });
+});
+
+// Radio options helper
+function selectRadio(label) {
+  const name = label.querySelector('input').name;
+  document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+    inp.closest('.radio-option').classList.remove('selected');
+  });
+  label.classList.add('selected');
+}
+
+// Mobile sidebar overlay
+const origToggle = window.toggleSidebar;
+window.toggleSidebar = function() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const isOpen = sb.classList.contains('open');
+  sb.classList.toggle('open');
+  ov.style.display = isOpen ? 'none' : 'block';
+};
+
+// Formateur tab contents init
+document.querySelectorAll('.formateur-tab-content').forEach(c => {
+  if (!c.classList.contains('active')) c.style.display = 'none';
+});
+const origSwitch = window.switchFormateurTab;
+window.switchFormateurTab = function(tabId, btn) {
+  document.querySelectorAll('#formateurTabs .tab-btn').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.formateur-tab-content').forEach(c => {
+    c.style.display = c.id === 'ftab-' + tabId ? 'block' : 'none';
+    c.classList.toggle('active', c.id === 'ftab-' + tabId);
+  });
+};
+</script>
+</body>
+</html>
