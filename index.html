@@ -385,12 +385,12 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <nav class="navbar">
-    <button class="mob-btn" onclick="toggleSidebar()">☰</button>
+    <button class="mob-btn" onclick="toggleSidebar()" aria-label="Ouvrir le menu">☰</button>
     <div class="nb-brand" onclick="goHome()"><div class="nb-logo">B</div><span>Ma Plateforme Bureautique</span></div>
     <div class="nb-spacer"></div>
     <div class="nb-actions">
       <span id="nbLvl" class="nb-lvl lB1">B1</span>
-      <div class="user-pill" onclick="logout()">
+      <div class="user-pill" onclick="logout()" role="button" aria-label="Se déconnecter" tabindex="0">
         <div class="avatar" id="nbInit">JD</div>
         <span id="nbName">Jean D.</span>
         <span style="color:var(--text3);font-size:11px">↩</span>
@@ -398,7 +398,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     </div>
   </nav>
   <div class="app-body">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menu principal">
       <div id="sbStagiaire">
         <div class="sb-section">
           <div class="sb-label">Mon espace</div>
@@ -427,7 +427,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     </aside>
     <div id="sbOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:140" onclick="toggleSidebar()"></div>
 
-    <main class="main-content" id="mainScroll">
+    <main class="main-content" id="mainScroll" role="main" aria-label="Contenu principal">
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
@@ -672,7 +672,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 <!-- MODAL EXERCICE -->
 <div class="modal-bg hidden" id="exModal" onclick="if(event.target===this)closeExModal()">
   <div class="modal">
-    <div class="modal-head"><div class="modal-title" id="exModalTitle">Exercice</div><button class="modal-close" onclick="closeExModal()">✕</button></div>
+    <div class="modal-head"><div class="modal-title" id="exModalTitle">Exercice</div><button class="modal-close" onclick="closeExModal()" aria-label="Fermer la fenêtre">✕</button></div>
     <div id="exModalBody"></div>
   </div>
 </div>
@@ -680,12 +680,12 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 <!-- MODAL FICHE STAGIAIRE -->
 <div class="modal-bg hidden" id="ficheModal" onclick="if(event.target===this)closeFicheModal()">
   <div class="modal">
-    <div class="modal-head"><div class="modal-title" id="ficheModalTitle">Fiche stagiaire</div><button class="modal-close" onclick="closeFicheModal()">✕</button></div>
+    <div class="modal-head"><div class="modal-title" id="ficheModalTitle">Fiche stagiaire</div><button class="modal-close" onclick="closeFicheModal()" aria-label="Fermer la fenêtre">✕</button></div>
     <div id="ficheModalBody"></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 'use strict';
@@ -698,9 +698,30 @@ function safeGet(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
   catch(e) { console.warn('safeGet error for', key, e); return fallback; }
 }
+// FIX #2: simpleMode content helper
+function txt(full, simple) {
+  return S.settings.simpleMode ? simple : full;
+}
+function simplePicto(action) {
+  const map = {
+    'clic': '🖱️ Clic', 'clique': '🖱️ Clic', 'ouvrir': '📂 Ouvrir',
+    'enregistrer': '💾 Enregistrer', 'saisir': '⌨️ Taper', 'taper': '⌨️ Taper',
+    'insertion': '➕ Insérer', 'insérer': '➕ Insérer', 'supprimer': '🗑️ Supprimer',
+    'fermer': '✕ Fermer', 'imprimer': '🖨️ Imprimer', 'choisir': '👆 Choisir'
+  };
+  for (const [k, v] of Object.entries(map)) {
+    if (action.toLowerCase().includes(k)) return v;
+  }
+  return '👉 ' + action;
+}
+
 function safeSet(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-  catch(e) { console.warn('safeSet error for', key, e); return false; }
+  catch(e) { // FIX #7
+    console.warn('safeSet error for', key, e);
+    if (key === 'mpb_prog') toast('⚠️ Impossible de sauvegarder votre progression. Stockage plein ?', 5000);
+    return false;
+  }
 }
 
 const S = {
@@ -727,6 +748,10 @@ const S = {
   activeFilter: 'all',
   quizIdx: 0,
   quizAnswers: [],
+  posQuizIdx: 0,    // FIX #3: positionnement quiz state
+  posAnswers: [],
+  testQuizIdx: 0,   // FIX #3: test mode quiz state
+  testAnswers: [],
 };
 
 // ── DATA ───────────────────────────────────────
@@ -899,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!S.prog.badges) S.prog.badges = [];
   if (!S.prog.activity) S.prog.activity = [];
   if (!S.prog.casProgress) S.prog.casProgress = {}; // FIX #1
+  if (!S.prog.weekStart) { S.prog.weekStart = Date.now(); saveState(); } // FIX #15
   // FIX #14: auto-reset weekly on new week
   const weekMs = 7 * 24 * 60 * 60 * 1000;
   if (Date.now() - (S.prog.weekStart || 0) > weekMs) {
@@ -907,7 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
   }
   // First badge
-  if (!S.prog.badges.includes('first')) { S.prog.badges.push('first'); saveState(); }
+  if (!S.prog.badges.includes('first')) unlockBadge('first'); // FIX #4
   // FIX #6: sync badge counter
   updateBadgeCounter();
   // FIX #6: Escape key closes any open modal
@@ -1010,10 +1036,20 @@ function logout() {
   document.getElementById('modDetail')?.classList.add('hidden');
   document.getElementById('casDetail')?.classList.add('hidden');
   document.getElementById('testDetail')?.classList.add('hidden');
+  // FIX #12: Clear search fields and filters
+  const stagSearch = document.getElementById('stagSearch');
+  if (stagSearch) stagSearch.value = '';
+  const stagGrp = document.getElementById('stagGrp');
+  if (stagGrp) stagGrp.value = 'all';
+  const stagNiv = document.getElementById('stagNiv');
+  if (stagNiv) stagNiv.value = 'all';
+  const fileInfo = document.getElementById('fileInfo');
+  if (fileInfo) fileInfo.classList.add('hidden');
   // Clear session
   sessionStorage.removeItem('mpb_sess');
   S.currentUser = null;
   S.role = 'stagiaire';
+  S.currentPage = 'dashboard';
   // Show auth
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('authScreen').classList.remove('hidden');
@@ -1073,6 +1109,7 @@ function showPage(id) {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sbOverlay').style.display = 'none';
   document.getElementById('mainScroll').scrollTop = 0;
+  S.currentPage = id; // FIX #2e
   // Lazy renders
   if (id === 'dashboard') renderDashboard();
   if (id === 'modules') renderModules();
@@ -1203,6 +1240,13 @@ function applySavedSettings() {
   // Restore level display
   const nbLvl = document.getElementById('nbLvl');
   if (nbLvl) { nbLvl.textContent = cfg.niveauFr; nbLvl.className = 'nb-lvl l' + cfg.niveauFr; }
+  // FIX #5: Highlight selected level in lvlPicker
+  document.querySelectorAll('#lvlPicker .lvl').forEach(el => {
+    const isSelected = el.textContent.replace(' ✓','').trim() === cfg.niveauFr || el.getAttribute('onclick')?.includes("'"+cfg.niveauFr+"'");
+    el.style.outline = isSelected ? '2px solid #166534' : '';
+    el.style.outlineOffset = isSelected ? '2px' : '';
+    el.textContent = isSelected ? cfg.niveauFr + ' ✓' : el.textContent.replace(' ✓','');
+  });
   // Restore radio buttons
   const formR = document.querySelector(`input[name="form"][value="${cfg.formation}"]`);
   if (formR) { formR.checked = true; formR.closest('.ropt')?.classList.add('on'); }
@@ -1212,7 +1256,10 @@ function applySavedSettings() {
 function toggleSimple() {
   S.settings.simpleMode = !S.settings.simpleMode;
   document.getElementById('btnSimple').classList.toggle('on', S.settings.simpleMode);
-  toast(S.settings.simpleMode ? '🔤 Mode simplifié activé (A1)' : '🔤 Mode simplifié désactivé');
+  toast(S.settings.simpleMode ? '🔤 Mode simplifié activé — Consignes courtes avec pictogrammes' : '🔤 Mode normal rétabli');
+  // FIX #2: Re-render current page to apply simpleMode
+  if (S.currentPage === 'modules') renderExList();
+  if (S.currentPage === 'cas') renderCas();
 }
 function setFont(s) {
   document.documentElement.classList.remove('font-lg', 'font-xl');
@@ -1230,11 +1277,11 @@ function toggleContrast() {
 
 // ── QUIZ POSITIONNEMENT ────────────────────────
 function startQuizPositionnement() {
-  S.quizIdx = 0; S.quizAnswers = [];
+  S.posQuizIdx = 0; S.posAnswers = []; // FIX #3
   renderQuizQ();
 }
 function renderQuizQ() {
-  const total = QUIZ_POSITIONNEMENT.length, i = S.quizIdx;
+  const total = QUIZ_POSITIONNEMENT.length, i = S.posQuizIdx; // FIX #3
   if (i >= total) { showQuizResult(); return; }
   const q = QUIZ_POSITIONNEMENT[i];
   setEl('quizContent', `
@@ -1250,15 +1297,15 @@ function renderQuizQ() {
     <div id="qfb" class="quiz-fb"></div>
     <div class="quiz-nav">
       <span class="quiz-prog">${i} / ${total} répondues</span>
-      <button class="btn btn-primary hidden" id="qNext" onclick="S.quizIdx++;renderQuizQ()">Question suivante →</button>
+      <button class="btn btn-primary hidden" id="qNext" onclick="S.posQuizIdx++;renderQuizQ()">Question suivante →</button>
     </div>`);
 }
 function answerQuizPos(chosen) {
-  const q = QUIZ_POSITIONNEMENT[S.quizIdx];
+  const q = QUIZ_POSITIONNEMENT[S.posQuizIdx]; // FIX #3
   document.querySelectorAll('#quizContent .qopt').forEach(el => el.classList.add('disabled'));
   document.querySelectorAll('#quizContent .qopt')[chosen].classList.add(chosen === q.rep ? 'correct' : 'wrong');
   document.querySelectorAll('#quizContent .qopt')[q.rep].classList.add('correct');
-  S.quizAnswers.push(chosen === q.rep);
+  S.posAnswers.push(chosen === q.rep); // FIX #3
   const fb = document.getElementById('qfb');
   if (fb) {
     fb.className = 'quiz-fb show';
@@ -1269,7 +1316,7 @@ function answerQuizPos(chosen) {
   document.getElementById('qNext')?.classList.remove('hidden');
 }
 function showQuizResult() {
-  const score = S.quizAnswers.filter(Boolean).length, total = QUIZ_POSITIONNEMENT.length;
+  const score = S.posAnswers.filter(Boolean).length, total = QUIZ_POSITIONNEMENT.length; // FIX #3
   const pct = Math.round((score / total) * 100);
   const lvl = pct >= 87 ? 'C1' : pct >= 73 ? 'B2' : pct >= 53 ? 'B1' : pct >= 33 ? 'A2' : 'A1';
   if (!S.prog.badges.includes('positionnement')) { unlockBadge('positionnement'); }
@@ -1360,8 +1407,9 @@ function renderExList() {
     return `<div class="ex-item ${done ? 'done' : ''} ${locked ? 'locked' : ''}" data-mod="${S.activeModule}" data-ex="${ex.id}">
       <div class="ex-num">${ex.num}.</div>
       <div class="ex-body">
-        <div class="ex-name">${ex.name}</div>
-        <div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span>${statusTag}<span style="font-size:12px;color:var(--text3)">⏱ ${ex.time}</span></div>
+        <div class="ex-name">${S.settings.simpleMode ? '👉 ' : ''}${ex.name}</div>
+        <div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span>${statusTag}<span style="font-size:12px;color:var(--text3)">⏱ ${ex.time}</span>
+        <button class="tts-btn" style="padding:3px 9px;font-size:11px" onclick="event.stopPropagation();ttsSpeak('${ex.name.replace(/'/g,'')}')" title="Écouter">🔊</button></div>
       </div>
       ${clickable && !done ? `<button class="btn btn-primary btn-sm ex-open-btn">Commencer</button>` : ''}
     </div>`;
@@ -1396,14 +1444,21 @@ function openExModal(modKey, exId) {
     <div class="alert al-info mb3"><span>🎯</span><div><b>Objectif :</b> ${ex.name} — <span class="lvl l${ex.lvl}">${ex.lvl}</span> — ⏱ ${ex.time}</div></div>`;
 
   if (ex.type === 'steps') {
-    const doneSteps = safeGet('mpb_steps_' + exId, []);
+    const doneSteps = S.prog.exercises[exId + '_steps'] || []; // FIX #9
+    // FIX #2: Adapt step display to simpleMode
+    const isSimple = S.settings.simpleMode;
     body += `<div class="steps" id="stepsWrap_${exId}">` +
-      ex.steps.map((s, i) => `
+      ex.steps.map((s, i) => {
+        const stepText = isSimple
+          ? `<div class="st-tip">${simplePicto(s)}</div><div class="st-desc" style="font-size:16px;font-weight:600">${s.split('→')[0].trim()}</div>`
+          : `<div class="st-desc">${s}</div>`;
+        return `
         <div class="st-item" id="sti_${exId}_${i}">
           <div class="st-circle ${doneSteps.includes(i) ? 'done' : 'pend'}" id="stc_${exId}_${i}">${doneSteps.includes(i) ? '✓' : i+1}</div>
-          <div class="st-body"><div class="st-title">Étape ${i+1}</div><div class="st-desc">${s}</div></div>
+          <div class="st-body"><div class="st-title">${isSimple ? '👉 ' : ''}Étape ${i+1}</div>${stepText}</div>
           ${!doneSteps.includes(i) ? `<button class="btn btn-primary btn-sm" onclick="validateStep('${exId}','${modKey}',${i},${ex.steps.length})">✓ Fait</button>` : '<span class="tag t-green">✓</span>'}
-        </div>`).join('') + '</div>';
+        </div>`;
+      }).join('') + '</div>';
     // Auto-complete if all steps done
     if (doneSteps.length >= ex.steps.length) {
       body += `<div class="alert al-ok mt3"><span>🎉</span><div>Exercice complété ! <button class="btn btn-ghost btn-sm" onclick="closeExModal()">Fermer</button></div></div>`;
@@ -1415,6 +1470,11 @@ function openExModal(modKey, exId) {
         ${q.opts.map((o, i) => `<div class="qopt" data-idx="${i}" data-correct="${q.rep}" data-exid="${exId}" data-modkey="${modKey}"><div class="qopt-letter">${['A','B','C','D'][i]}</div><span>${o}</span></div>`).join('')}
       </div>
       <div id="exqfb_${exId}" class="quiz-fb"></div>`;
+  }
+
+  // FIX #8: Fallback for unknown exercise type
+  if (!body) {
+    body = `<div class="alert al-warn"><span>⚠️</span><div>Cet exercice n'est pas encore disponible. Contactez votre formatrice.</div></div>`;
   }
 
   setEl('exModalBody', body);
@@ -1441,11 +1501,11 @@ function validateStep(exId, modKey, stepIdx, total) {
   const btn = document.querySelector(`#sti_${exId}_${stepIdx} button`);
   if (btn) btn.replaceWith(Object.assign(document.createElement('span'), { className: 'tag t-green', textContent: '✓' }));
 
-  // FIX #16: Save step progress to localStorage
-  const key = 'mpb_steps_' + exId;
-  const done = safeGet(key, []);
+  // FIX #9: Store steps in S.prog instead of separate localStorage keys
+  if (!S.prog.exercises[exId + '_steps']) S.prog.exercises[exId + '_steps'] = [];
+  const done = S.prog.exercises[exId + '_steps'];
   if (!done.includes(stepIdx)) done.push(stepIdx);
-  safeSet(key, done);
+  saveState();
 
   if (done.length >= total) completeExercise(exId, modKey);
   else toast('✅ Étape ' + (stepIdx + 1) + ' validée !');
@@ -1481,6 +1541,7 @@ function completeExercise(exId, modKey) {
   // Activity log
   const now = new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   S.prog.activity.push(now + ' — ✅ ' + (m.exercises.find(e => e.id === exId)?.name || exId) + ' terminé');
+  if (S.prog.activity.length > 50) S.prog.activity = S.prog.activity.slice(-50); // FIX #1
 
   // Weekly counter
   S.prog.weekly = (S.prog.weekly || 0) + 1;
@@ -1695,14 +1756,14 @@ function renderTests() {
 function startTestMode(label) {
   const detail = document.getElementById('testDetail');
   detail.classList.remove('hidden');
-  S.quizIdx = 0; S.quizAnswers = [];
+  S.testQuizIdx = 0; S.testAnswers = []; // FIX #3
   detail.innerHTML = `<div class="card"><div class="card-title">📝 ${label}</div><div class="alert al-info mb3"><span>⏱️</span><div>Test démarré sur la base des questions de positionnement.</div></div><div id="testQuizContent"></div></div>`;
   renderTestQ();
   detail.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderTestQ() {
-  const total = Math.min(10, QUIZ_POSITIONNEMENT.length), i = S.quizIdx;
+  const total = Math.min(10, QUIZ_POSITIONNEMENT.length), i = S.testQuizIdx; // FIX #3
   if (i >= total) { showTestResult(total); return; }
   const q = QUIZ_POSITIONNEMENT[i];
   setEl('testQuizContent', `
@@ -1713,7 +1774,7 @@ function renderTestQ() {
       ${q.opts.map((o, j) => `<div class="qopt" data-tidx="${j}" data-trep="${q.rep}"><div class="qopt-letter">${['A','B','C','D'][j]}</div><span>${o}</span></div>`).join('')}
     </div>
     <div id="testfb" class="quiz-fb"></div>
-    <div class="quiz-nav"><span class="quiz-prog">Question ${i+1}/${total}</span><button class="btn btn-primary hidden" id="testNext" onclick="S.quizIdx++;renderTestQ()">Suivante →</button></div>`);
+    <div class="quiz-nav"><span class="quiz-prog">Question ${i+1}/${total}</span><button class="btn btn-primary hidden" id="testNext" onclick="S.testQuizIdx++;renderTestQ()">Suivante →</button></div>`);
 
   document.querySelectorAll('#testQuizContent .qopt').forEach(opt => {
     opt.addEventListener('click', () => {
@@ -1721,7 +1782,7 @@ function renderTestQ() {
       document.querySelectorAll('#testQuizContent .qopt').forEach(el => el.classList.add('disabled'));
       opt.classList.add(chosen === correct ? 'correct' : 'wrong');
       document.querySelectorAll('#testQuizContent .qopt')[correct].classList.add('correct');
-      S.quizAnswers.push(chosen === correct);
+      S.testAnswers.push(chosen === correct); // FIX #3
       const fb = document.getElementById('testfb');
       if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; fb.textContent=chosen===correct?'✅ Correct !':'❌ ' + QUIZ_POSITIONNEMENT[S.quizIdx].opts[correct]; }
       document.getElementById('testNext')?.classList.remove('hidden');
@@ -1730,7 +1791,7 @@ function renderTestQ() {
 }
 
 function showTestResult(total) {
-  const score = S.quizAnswers.filter(Boolean).length;
+  const score = S.testAnswers.filter(Boolean).length; // FIX #3
   const pct = Math.round(score / total * 100);
   const mention = pct >= 80 ? 'Excellent 🏆' : pct >= 60 ? 'Bien ✅' : pct >= 40 ? 'Passable ⚠️' : 'À retravailler 📚';
   setEl('testQuizContent', `
@@ -1785,6 +1846,7 @@ function envoyerTravail() {
   safeSet('mpb_travaux', S.travaux);
   if (!S.prog.badges.includes('envoi')) unlockBadge('envoi');
   S.prog.activity.push(d.toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' — 📤 Envoyé : ' + nomFichier);
+  if (S.prog.activity.length > 50) S.prog.activity = S.prog.activity.slice(-50); // FIX #1
   saveState();
   renderEnvoi();
   confetti();
@@ -2036,8 +2098,12 @@ function ttsSpeak(text) {
   const voices = speechSynthesis.getVoices();
   const frVoice = voices.find(v => v.lang.startsWith('fr'));
   if (frVoice) u.voice = frVoice;
-  speechSynthesis.speak(u);
-  toast('🔊 Lecture audio en cours…');
+  try { // FIX #6
+    speechSynthesis.speak(u);
+    toast('🔊 Lecture audio en cours…');
+  } catch(e) {
+    toast('⚠️ Lecture audio non disponible sur ce navigateur.');
+  }
 }
 
 // ── CONFETTI ───────────────────────────────────
@@ -2057,11 +2123,17 @@ function val(id) { return (document.getElementById(id)?.value || '').trim(); }
 function setEl(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
 function saveState() { safeSet('mpb_prog', S.prog); }
 
-let tTimer;
+let tTimer; let tQueue = [];
 function toast(msg, dur = 3000) {
+  // FIX #14: Simple queue — show immediately, queue if one already showing
   const el = document.getElementById('toast');
+  if (el.classList.contains('show')) {
+    clearTimeout(tTimer);
+    tTimer = setTimeout(() => { el.classList.remove('show'); setTimeout(() => toast(msg, dur), 200); }, 800);
+    return;
+  }
   el.innerHTML = msg; el.classList.add('show');
-  clearTimeout(tTimer); tTimer = setTimeout(() => el.classList.remove('show'), dur);
+  tTimer = setTimeout(() => el.classList.remove('show'), dur);
 }
 </script>
 </body>
