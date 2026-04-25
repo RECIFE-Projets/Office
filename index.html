@@ -43,7 +43,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 .auth-tabs{display:flex;background:var(--surface2);border-radius:var(--r-sm);padding:4px;margin-bottom:22px;gap:4px}
 .auth-tab{flex:1;text-align:center;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text3);transition:all .2s;border:none;background:none}
 .auth-tab.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow-sm)}
-.auth-panel{display:none}.auth-panel.active{display:block;animation:fadeUp .25s ease}
+.auth-panel{display:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ── APP LAYOUT ───────────────────────────────── */
@@ -331,7 +331,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
   .g2,.g3{grid-template-columns:1fr}.f2{grid-template-columns:1fr}
   .sg{grid-template-columns:repeat(2,1fr)}.auth-card{padding:26px 18px}
 }
-@media print{.sidebar,.navbar,.toast,.btn{display:none!important}.main-content{padding:0}.card{box-shadow:none;border:1px solid #ccc}#authScreen{display:none!important}#mainApp{display:block!important}}
+@media print{.sidebar,.navbar,.toast,.btn{display:none!important}.modal-bg{display:none!important}.main-content{padding:0}.card{box-shadow:none;border:1px solid #ccc}#authScreen{display:none!important}#mainApp{display:block!important}}
 </style>
 </head>
 <body>
@@ -348,7 +348,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <button class="auth-tab active" onclick="authTab('login',this)">Connexion</button>
       <button class="auth-tab" onclick="authTab('register',this)">Inscription</button>
     </div>
-    <div class="auth-panel active" id="apLogin">
+    <div class="auth-panel" id="apLogin" style="display:block">
       <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email"></div>
       <div class="fg"><label class="fl">Mot de passe</label>
         <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
@@ -377,7 +377,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       </div>
       <div class="alert al-warn"><span>⚠️</span><div><b>Important :</b> Aucun e-mail ne sera envoyé. <b>Notez vos identifiants.</b></div></div>
       <div id="rErr" class="f-err hidden"></div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="doRegister()">✅ Créer mon compte</button>
+      <button class="btn btn-primary btn-full btn-lg" id="btnRegister" onclick="doRegister(this)">✅ Créer mon compte</button>
     </div>
   </div>
 </div>
@@ -693,25 +693,36 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 //  MA PLATEFORME BUREAUTIQUE v2.1 — BUGFIX
 // ══════════════════════════════════════════════
 
+// FIX #14: Safe localStorage access
+function safeGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { console.warn('safeGet error for', key, e); return fallback; }
+}
+function safeSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch(e) { console.warn('safeSet error for', key, e); return false; }
+}
+
 const S = {
   role: 'stagiaire',
   currentUser: null,
-  users: JSON.parse(localStorage.getItem('mpb_users') || '[]'),
+  users: safeGet('mpb_users', []),
   // FIX #4: prog always has word/excel/ppt/pub properly initialized
-  prog: JSON.parse(localStorage.getItem('mpb_prog') || JSON.stringify({
+  prog: safeGet('mpb_prog', {
     word:0, excel:0, ppt:0, pub:0,
-    exercises:{}, badges:[], activity:[], weekly:0, weekStart: Date.now()
-  })),
-  settings: JSON.parse(localStorage.getItem('mpb_settings') || JSON.stringify({
+    exercises:{}, badges:[], activity:[], weekly:0, weekStart: Date.now(),
+    casProgress:{}
+  }),
+  settings: safeGet('mpb_settings', {
     formation:'savoirs', niveauNum:'inter',
     metiers:['general'], niveauFr:'B1',
     simpleMode:false, fontSize:'n', contrast:false
-  })),
-  travaux: JSON.parse(localStorage.getItem('mpb_travaux') || JSON.stringify([
+  }),
+  travaux: safeGet('mpb_travaux', [
     {id:1, stag:'Jean Dupont', fichier:'Dupont_G3_LettreCand.docx', module:'Word', date:'22/04/2026', statut:'corrige', note:'18/20', comment:'Très bien ! Attention à la ponctuation.'},
     {id:2, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04/2026', statut:'attente', note:'', comment:''}
   ])),
-  msgs: [],
+  msgs: safeGet('mpb_msgs', []),
   activeModule: null,
   activeFilter: 'all',
   quizIdx: 0,
@@ -887,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!S.prog.exercises) S.prog.exercises = {};
   if (!S.prog.badges) S.prog.badges = [];
   if (!S.prog.activity) S.prog.activity = [];
+  if (!S.prog.casProgress) S.prog.casProgress = {}; // FIX #1
   // FIX #14: auto-reset weekly on new week
   const weekMs = 7 * 24 * 60 * 60 * 1000;
   if (Date.now() - (S.prog.weekStart || 0) > weekMs) {
@@ -898,6 +910,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!S.prog.badges.includes('first')) { S.prog.badges.push('first'); saveState(); }
   // FIX #6: sync badge counter
   updateBadgeCounter();
+  // FIX #6: Escape key closes any open modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeExModal();
+      closeFicheModal();
+    }
+  });
+
   // Session restore
   const sess = sessionStorage.getItem('mpb_sess');
   if (sess) {
@@ -948,17 +968,21 @@ function loginAs(role) {
   toast('✅ Connexion réussie ! Bienvenue sur Ma Plateforme Bureautique.');
 }
 
-function doRegister() {
+function doRegister(btn) {
+  // FIX #11: Prevent double-click
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Création…'; }
   const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp');
   const err = document.getElementById('rErr');
-  if (!pre || !nom || !email || !mdp) { showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.'); return; }
-  if (mdp.length < 6) { showErr(err, '⚠️ Mot de passe trop court (minimum 6 caractères).'); return; }
-  if (S.users.find(u => u.email === email)) { showErr(err, '⚠️ Cet e-mail est déjà utilisé.'); return; }
+  const re_enable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; }};
+  if (!pre || !nom || !email || !mdp) { showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.'); re_enable(); return; }
+  if (mdp.length < 6) { showErr(err, '⚠️ Mot de passe trop court (minimum 6 caractères).'); re_enable(); return; }
+  if (S.users.find(u => u.email === email)) { showErr(err, '⚠️ Cet e-mail est déjà utilisé.'); re_enable(); return; }
   const role = document.querySelector('#apRegister .role-card.selected')?.dataset.role || 'stagiaire';
   const user = { prenom: pre, nom, email, role, createdAt: Date.now() };
   // Never store passwords in plain text — store hash simulation
   S.users.push({ ...user, mdp: btoa(mdp) });
-  localStorage.setItem('mpb_users', JSON.stringify(S.users));
+  safeSet('mpb_users', S.users);
   err.classList.add('hidden');
   S.currentUser = { prenom: pre, nom, initials: (pre[0] + nom[0]).toUpperCase() };
   toast('✅ Compte créé ! Notez vos identifiants.');
@@ -966,12 +990,33 @@ function doRegister() {
 }
 
 function logout() {
-  sessionStorage.removeItem('mpb_sess');
-  document.getElementById('mainApp').classList.add('hidden');
-  document.getElementById('authScreen').classList.remove('hidden');
-  // Reset nav
+  // FIX #2 #9: Close everything, reset all UI sections before hiding app
+  closeExModal();
+  closeFicheModal();
+  // Close mobile sidebar
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sbOverlay').style.display = 'none';
+  // Reset role-specific sections to default (stagiaire)
+  document.getElementById('sbStagiaire')?.classList.remove('hidden');
+  document.getElementById('sbFormateur')?.classList.add('hidden');
+  document.getElementById('nbLvl')?.classList.remove('hidden');
+  // Reset nav active state
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelector('.nav-link[data-page="dashboard"]')?.classList.add('active');
+  // Reset pages — hide all, show dashboard as default
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-dashboard')?.classList.add('active');
+  // Hide sub-panels
+  document.getElementById('modDetail')?.classList.add('hidden');
+  document.getElementById('casDetail')?.classList.add('hidden');
+  document.getElementById('testDetail')?.classList.add('hidden');
+  // Clear session
+  sessionStorage.removeItem('mpb_sess');
+  S.currentUser = null;
+  S.role = 'stagiaire';
+  // Show auth
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
 }
 
 function showErr(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
@@ -1015,7 +1060,9 @@ function showPage(id) {
   if (pg) pg.classList.add('active');
   const nl = document.querySelector(`.nav-link[data-page="${id}"]`);
   if (nl) nl.classList.add('active');
-  // FIX #7: Always close sub-panels on page change
+  // FIX #5: Always close modals and sub-panels on page change
+  closeExModal();
+  closeFicheModal();
   const modDetail = document.getElementById('modDetail');
   if (modDetail && id !== 'modules') modDetail.classList.add('hidden');
   const casDetail = document.getElementById('casDetail');
@@ -1119,7 +1166,7 @@ function toggleRopt(label, name) {
 function saveParc() {
   S.settings.formation = document.querySelector('input[name="form"]:checked')?.value || 'savoirs';
   S.settings.niveauNum = document.querySelector('input[name="num"]:checked')?.value || 'inter';
-  localStorage.setItem('mpb_settings', JSON.stringify(S.settings));
+  safeSet('mpb_settings', S.settings);
   const saved = document.getElementById('parcSaved');
   if (saved) saved.textContent = '✅ Parcours enregistré le ' + new Date().toLocaleDateString('fr-FR');
 }
@@ -1144,6 +1191,7 @@ function setLvl(lvl, el) {
   el.style.outlineOffset = '2px';
   el.textContent = lvl + ' ✓';
   saveParc();
+  checkBadges('word'); // FIX #8: Re-check badges on level change
   toast('🎓 Niveau ' + lvl + ' enregistré.');
 }
 function applySavedSettings() {
@@ -1348,7 +1396,7 @@ function openExModal(modKey, exId) {
     <div class="alert al-info mb3"><span>🎯</span><div><b>Objectif :</b> ${ex.name} — <span class="lvl l${ex.lvl}">${ex.lvl}</span> — ⏱ ${ex.time}</div></div>`;
 
   if (ex.type === 'steps') {
-    const doneSteps = JSON.parse(localStorage.getItem('mpb_steps_' + exId) || '[]');
+    const doneSteps = safeGet('mpb_steps_' + exId, []);
     body += `<div class="steps" id="stepsWrap_${exId}">` +
       ex.steps.map((s, i) => `
         <div class="st-item" id="sti_${exId}_${i}">
@@ -1395,9 +1443,9 @@ function validateStep(exId, modKey, stepIdx, total) {
 
   // FIX #16: Save step progress to localStorage
   const key = 'mpb_steps_' + exId;
-  const done = JSON.parse(localStorage.getItem(key) || '[]');
+  const done = safeGet(key, []);
   if (!done.includes(stepIdx)) done.push(stepIdx);
-  localStorage.setItem(key, JSON.stringify(done));
+  safeSet(key, done);
 
   if (done.length >= total) completeExercise(exId, modKey);
   else toast('✅ Étape ' + (stepIdx + 1) + ' validée !');
@@ -1422,8 +1470,9 @@ function completeExercise(exId, modKey) {
   if (S.prog.exercises[exId]) return; // Already done
   S.prog.exercises[exId] = true;
 
-  // Update module progress correctly
+  // FIX #4: Guard against invalid modKey
   const m = MODULES_DATA[modKey];
+  if (!m) { console.warn('completeExercise: unknown modKey', modKey); return; }
   const totalEx = m.exercises.length;
   const doneEx = m.exercises.filter(e => S.prog.exercises[e.id]).length;
   const newPct = Math.round((doneEx / totalEx) * 100);
@@ -1458,6 +1507,10 @@ function checkBadges(modKey) {
   if (p.excel >= 10 && !p.badges.includes('excel_a1')) unlockBadge('excel_a1');
   if (p.ppt >= 10 && !p.badges.includes('ppt_a1')) unlockBadge('ppt_a1');
   if (p.word >= 100 && p.excel >= 100 && p.ppt >= 100 && p.pub >= 100 && !p.badges.includes('pack')) unlockBadge('pack');
+  // FIX #8: Medal C2 — unlocked when all modules at 100% AND level is C1 or C2
+  if (p.word >= 100 && p.excel >= 100 && p.ppt >= 100 && p.pub >= 100
+      && ['C1','C2'].includes(S.settings.niveauFr)
+      && !p.badges.includes('medaille_c2')) unlockBadge('medaille_c2');
 }
 
 function unlockBadge(id) {
@@ -1471,6 +1524,11 @@ function unlockBadge(id) {
 
 // ── CAS PRATIQUES ──────────────────────────────
 function renderCas() {
+  // FIX #1: Restore all cas progress before rendering cards
+  CAS_PRATIQUES.forEach(cp => {
+    const saved = (S.prog.casProgress || {})[cp.id] || [];
+    cp.etapes.forEach(et => { et.done = saved.includes(et.num); });
+  });
   setEl('casGrid', CAS_PRATIQUES.map(cp => {
     const doneCnt = cp.etapes.filter(e => e.done).length;
     const progPct = Math.round(doneCnt / cp.etapes.length * 100);
@@ -1494,6 +1552,10 @@ function renderCas() {
 function openCas(id) {
   const cp = CAS_PRATIQUES.find(c => c.id === id);
   if (!cp) return;
+  // FIX #1: Restore cas progress from localStorage
+  const savedSteps = (S.prog.casProgress || {})[id] || [];
+  cp.etapes.forEach(et => { et.done = savedSteps.includes(et.num); });
+
   const doneCnt = cp.etapes.filter(e => e.done).length;
   const progPct = Math.round(doneCnt / cp.etapes.length * 100);
   const extMap = { 't-green': 'xlsx', 't-orange': 'pptx', 't-purple': 'pub' };
@@ -1561,13 +1623,18 @@ function validateCasStep(cpId, num) {
   const lbl = document.querySelector('#casDetail .muted');
   if (lbl) lbl.textContent = `Étapes : ${doneCnt} / ${cp.etapes.length}`;
 
+  // FIX #1: Persist cas step progress
+  if (!S.prog.casProgress) S.prog.casProgress = {};
+  if (!S.prog.casProgress[cpId]) S.prog.casProgress[cpId] = [];
+  if (!S.prog.casProgress[cpId].includes(num)) S.prog.casProgress[cpId].push(num);
+
   if (cp.etapes.every(e => e.done)) {
     confetti();
     toast('🎉 Cas pratique terminé ! N\'oubliez pas d\'envoyer votre travail.', 4000);
   } else {
     toast('✅ Étape ' + num + ' validée !');
   }
-  saveState(); // FIX #16
+  saveState();
 }
 
 // ── MÉTIERS ────────────────────────────────────
@@ -1713,8 +1780,9 @@ function envoyerTravail() {
   const module = document.getElementById('envoiMod')?.value || 'Word';
   const nomFichier = info.querySelector('b')?.textContent || 'fichier.docx';
   const d = new Date();
-  S.travaux.push({ id: Date.now(), stag: S.currentUser?.prenom + ' ' + (S.currentUser?.nom||''), fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '' });
-  localStorage.setItem('mpb_travaux', JSON.stringify(S.travaux));
+  const stagName = (S.currentUser?.prenom + ' ' + (S.currentUser?.nom||'')).trim(); // FIX #13
+  S.travaux.push({ id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '' });
+  safeSet('mpb_travaux', S.travaux);
   if (!S.prog.badges.includes('envoi')) unlockBadge('envoi');
   S.prog.activity.push(d.toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' — 📤 Envoyé : ' + nomFichier);
   saveState();
@@ -1774,11 +1842,14 @@ function renderProgression() {
 
 // ── FORMATEUR ──────────────────────────────────
 function renderFormateur() {
+  const travCount = getFormTravaux().length;
   setEl('formStats', `
     <div class="sc"><div class="sv" style="color:var(--primary)">24</div><div class="sl">Stagiaires actifs</div></div>
     <div class="sc"><div class="sv" style="color:var(--accent)">3</div><div class="sl">Groupes</div></div>
-    <div class="sc"><div class="sv" style="color:var(--warn)">7</div><div class="sl">Travaux à corriger</div></div>
+    <div class="sc"><div class="sv" style="color:var(--warn)">${travCount}</div><div class="sl">Travaux à corriger</div></div>
     <div class="sc"><div class="sv" style="color:var(--purple)">68%</div><div class="sl">Progression moy.</div></div>`);
+  const trBadgeEl = document.getElementById('trBadge');
+  if (trBadgeEl) trBadgeEl.textContent = travCount;
   renderStagTable(); renderTravTable(); renderDiffStats(); renderGrpProg(); renderMsgs();
 }
 
@@ -1815,14 +1886,26 @@ function renderStagTable() {
     </tr>`).join('') || '<tr><td colspan="7" class="muted tc" style="padding:20px">Aucun stagiaire trouvé.</td></tr>');
 }
 
-const FORM_TRAVAUX = [
-  { id:1, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04' },
-  { id:2, stag:'Amara Diallo', fichier:'Diallo_G2_Lettre.docx', module:'Word', date:'17/04' },
-  { id:3, stag:'Fatou Koné', fichier:'Kone_G1_DocA1.docx', module:'Word', date:'15/04' },
-  { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' },
-];
+// FIX #3: FORM_TRAVAUX merges demo data + real submissions from localStorage
+function getFormTravaux() {
+  const demo = [
+    { id:1, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04' },
+    { id:2, stag:'Amara Diallo', fichier:'Diallo_G2_Lettre.docx', module:'Word', date:'17/04' },
+    { id:3, stag:'Fatou Koné', fichier:'Kone_G1_DocA1.docx', module:'Word', date:'15/04' },
+    { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' },
+  ];
+  const fromLS = safeGet('mpb_travaux', [])
+    .filter(t => t.statut === 'attente')
+    .map(t => ({ id: t.id, stag: t.stag, fichier: t.fichier, module: t.module, date: t.date }));
+  // Merge: real submissions first, then demo
+  const all = [...fromLS, ...demo];
+  // Deduplicate by fichier
+  const seen = new Set();
+  return all.filter(t => { if (seen.has(t.fichier)) return false; seen.add(t.fichier); return true; });
+}
 
 function renderTravTable() {
+  const FORM_TRAVAUX = getFormTravaux();
   setEl('travBody', FORM_TRAVAUX.map(t => `
     <tr id="trow_${t.id}">
       <td style="font-weight:700">${t.stag}</td>
@@ -1834,6 +1917,16 @@ function renderTravTable() {
         <button class="btn btn-success btn-sm" onclick="validerTrav(${t.id})">✅ Valider</button>
       </td>
     </tr>`).join(''));
+}
+
+function ouvrirCorrectionForStag(stagId) {
+  // FIX #12: Find first pending travail for this stagiaire
+  const s = DEMO_STAGIAIRES.find(st => st.id === stagId);
+  if (!s) return;
+  const travaux = getFormTravaux();
+  const trav = travaux.find(t => t.stag.includes(s.nom));
+  if (trav) ouvrirCorrection(trav.id);
+  else toast('ℹ️ Aucun travail en attente pour ce stagiaire.');
 }
 
 function ouvrirCorrection(id) {
@@ -1925,6 +2018,7 @@ function sendMsg() {
   if (!text.trim()) { toast('⚠️ Écrivez un message avant d\'envoyer.'); return; }
   S.msgs.push({ to, text, date: new Date().toLocaleString('fr-FR') });
   document.getElementById('msgText').value = '';
+  safeSet('mpb_msgs', S.msgs);
   renderMsgs();
   toast('📨 Message envoyé à ' + to + ' !');
 }
@@ -1961,7 +2055,7 @@ function confetti() {
 // ── UTILS ──────────────────────────────────────
 function val(id) { return (document.getElementById(id)?.value || '').trim(); }
 function setEl(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
-function saveState() { localStorage.setItem('mpb_prog', JSON.stringify(S.prog)); }
+function saveState() { safeSet('mpb_prog', S.prog); }
 
 let tTimer;
 function toast(msg, dur = 3000) {
