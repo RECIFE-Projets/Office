@@ -362,11 +362,11 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     </div>
     <div class="auth-panel" id="apRegister">
       <div class="f2">
-        <div class="fg"><label class="fl">Prénom *</label><input id="rPre" class="fi" type="text" placeholder="Prénom"></div>
-        <div class="fg"><label class="fl">Nom *</label><input id="rNom" class="fi" type="text" placeholder="Nom"></div>
+        <div class="fg"><label class="fl">Prénom <span style="color:var(--danger)">*</span></label><input id="rPre" class="fi" type="text" placeholder="Prénom"></div>
+        <div class="fg"><label class="fl">Nom <span style="color:var(--danger)">*</span></label><input id="rNom" class="fi" type="text" placeholder="Nom"></div>
       </div>
-      <div class="fg"><label class="fl">E-mail *</label><input id="rEmail" class="fi" type="email" placeholder="votre@email.com"></div>
-      <div class="fg"><label class="fl">Mot de passe * (min. 6 caractères)</label>
+      <div class="fg"><label class="fl">E-mail <span style="color:var(--danger)">*</span></label><input id="rEmail" class="fi" type="email" placeholder="votre@email.com"></div>
+      <div class="fg"><label class="fl">Mot de passe <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--text3)">(min. 6 caractères)</span></label>
         <div class="f-icon-wrap"><input id="rMdp" class="fi" type="password" placeholder="Choisissez un mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
       </div>
       <div class="fg"><label class="fl">Vous êtes :</label>
@@ -376,7 +376,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         </div>
       </div>
       <div class="alert al-warn"><span>⚠️</span><div><b>Important :</b> Aucun e-mail ne sera envoyé. <b>Notez vos identifiants.</b></div></div>
-      <div id="rErr" class="f-err hidden"></div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px"><span style="color:var(--danger)">*</span> Champs obligatoires</p><div id="rErr" class="f-err hidden"></div>
       <button class="btn btn-primary btn-full btn-lg" id="btnRegister" onclick="doRegister(this)">✅ Créer mon compte</button>
     </div>
   </div>
@@ -435,7 +435,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <h1 id="heroName">Bonjour 👋</h1>
           <p>Continuez votre apprentissage du Pack Office. Chaque exercice vous rapproche de votre objectif !</p>
           <div class="hero-btns">
-            <button class="hbw" onclick="showPage('modules')">▶ Reprendre les modules</button>
+            <button class="hbw" id="heroBtnModules" onclick="showPage('modules')">▶ Reprendre les modules</button>
             <button class="hbo" onclick="showPage('cas')">🧩 Cas pratiques</button>
             <button class="hbo" onclick="showPage('tests')">📝 Me tester</button>
           </div>
@@ -452,6 +452,10 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div class="bdg-grid" id="dashBadges"></div>
             <button class="btn btn-outline btn-sm mt3" onclick="showPage('progression')">Tous mes badges →</button>
           </div>
+        </div>
+        <div class="card" id="dashMsgsCard" style="display:none">
+          <div class="card-title">💬 Mes messages <span id="dashMsgBadge" style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:20px;font-size:11px;margin-left:6px"></span></div>
+          <div id="dashMsgs"></div>
         </div>
         <div class="card"><div class="card-title">🔔 Prochaines étapes</div><div id="dashSteps" class="steps"></div></div>
         <div class="card"><div class="card-title">📅 Activité récente</div><div id="dashActivity"></div></div>
@@ -515,7 +519,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 
       <!-- MODULES -->
       <div class="page" id="page-modules">
-        <div class="ph"><div class="ph-title">📚 Modules bureautiques</div><div class="ph-sub">Cliquez sur un logiciel pour commencer</div></div>
+        <div class="ph"><div class="ph-title">📚 Modules bureautiques</div><div class="ph-sub">Cliquez sur un logiciel pour commencer — <span style="color:var(--warn)">⚠️</span> = étape critique (ex : insérer une image depuis l'ordinateur)</div></div>
         <div class="g2" id="modGrid"></div>
         <div id="modDetail" class="hidden mt3">
           <div class="card">
@@ -573,8 +577,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <input type="file" id="fileIn" style="display:none" accept=".docx,.xlsx,.pptx,.pub,.doc,.xls,.ppt">
             </div>
             <div id="fileInfo" class="hidden mt3"></div>
-            <div class="fg mt4"><label class="fl">Module</label><select class="fs" id="envoiMod"><option>Word 2019</option><option>Excel 2019</option><option>PowerPoint 2019</option><option>Publisher 2019</option></select></div>
-            <div class="fg"><label class="fl">Exercice</label><select class="fs"><option>Présentation métier</option><option>Lettre de candidature</option><option>Planning hebdomadaire</option><option>Flyer ADVF</option><option>Autre</option></select></div>
+            <div class="fg mt4"><label class="fl">Module</label><select class="fs" id="envoiMod" onchange="updateEnvoiExSelect()"><option>Word 2019</option><option>Excel 2019</option><option>PowerPoint 2019</option><option>Publisher 2019</option></select></div>
+            <div class="fg"><label class="fl">Exercice</label><select class="fs" id="envoiEx"><option value="">-- Choisir --</option></select></div>
             <div class="fg"><label class="fl">Message (facultatif)</label><textarea class="fta" placeholder="Difficultés rencontrées…"></textarea></div>
             <button class="btn btn-primary btn-full btn-lg" onclick="envoyerTravail()">📤 Envoyer mon travail</button>
           </div>
@@ -624,8 +628,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <div class="card-title" style="margin-bottom:0">👥 Stagiaires</div>
               <div class="flex gap2 fwrap">
                 <input class="fi" id="stagSearch" style="width:160px" placeholder="🔍 Rechercher…" oninput="renderStagTable()">
-                <select class="fs" id="stagGrp" style="width:auto" onchange="renderStagTable()"><option value="all">Tous groupes</option><option>Groupe 1</option><option>Groupe 2</option><option>Groupe 3</option></select>
-                <select class="fs" id="stagNiv" style="width:auto" onchange="renderStagTable()"><option value="all">Tous niveaux</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option></select>
+                <select class="fs" id="stagGrp" style="width:auto" onchange="renderStagTable()" id="stagGrpSel"></select>
+                <select class="fs" id="stagNiv" style="width:auto" onchange="renderStagTable()"><option value="all">Tous niveaux</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option></select>
               </div>
             </div>
             <div class="tw-wrap"><table><thead><tr><th>Stagiaire</th><th>Formation</th><th>Niveau FR</th><th>Métier</th><th>Progression</th><th>Dernier accès</th><th>Actions</th></tr></thead><tbody id="stagBody"></tbody></table></div>
@@ -746,7 +750,7 @@ const S = {
   }),
   settings: safeGet('mpb_settings', {
     formation:'savoirs', niveauNum:'inter',
-    metiers:['general'], niveauFr:'B1',
+    metiers:['general'], niveauFr:'',
     simpleMode:false, fontSize:'n', contrast:false
   }),
   travaux: safeGet('mpb_travaux', [
@@ -1018,11 +1022,24 @@ function loginAs(role) {
   sessionStorage.setItem('mpb_sess', JSON.stringify({ role, user: demoUser }));
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('demoBanner')?.remove();
+  // Remove demo banner if present
+  document.getElementById('demoBanner')?.remove();
   // Clear any error
   const errEl = document.getElementById('lErr');
   if (errEl) errEl.classList.add('hidden');
+  const isDemo = !email;
   initApp(role, demoUser);
-  toast('✅ Bienvenue ' + demoUser.prenom + ' !');
+  if (isDemo) {
+    setTimeout(() => {
+      const banner = document.createElement('div');
+      banner.id = 'demoBanner';
+      banner.style.cssText = 'background:#f59e0b;color:#fff;text-align:center;padding:8px;font-weight:700;font-size:13px;position:sticky;top:0;z-index:300';
+      banner.textContent = '🎭 Mode démonstration — Aucun compte connecté. Inscrivez-vous pour sauvegarder votre progression.';
+      document.getElementById('mainApp').prepend(banner);
+    }, 300);
+  }
+  toast('✅ Bienvenue ' + esc(demoUser.prenom) + ' !');
 }
 
 function doRegister(btn) {
@@ -1043,8 +1060,18 @@ function doRegister(btn) {
   safeSet('mpb_users', S.users);
   err.classList.add('hidden');
   S.currentUser = { prenom: pre, nom, initials: (pre[0] + nom[0]).toUpperCase() };
-  toast('✅ Compte créé ! Notez vos identifiants.');
-  setTimeout(() => loginAs(role), 1400);
+  // FIX #4: Show credentials clearly before redirect
+  const confirmHtml = `<div style="background:#f0fdf4;border:2px solid var(--accent);border-radius:12px;padding:18px;margin-top:12px">
+    <div style="font-size:15px;font-weight:800;color:#065f46;margin-bottom:8px">✅ Compte créé avec succès !</div>
+    <div style="font-size:13px;color:#065f46;margin-bottom:12px">📌 <b>Notez vos identifiants :</b></div>
+    <div style="background:#fff;border-radius:8px;padding:12px;font-size:14px;font-family:monospace">
+      📧 ${esc(email)}<br>🔑 ${esc(mdp).replace(/./g,'•')}
+    </div>
+    <button class="btn btn-success btn-full mt3" onclick="this.closest('div.card,div[style]').remove();loginAs('${role}')">
+      ▶ Accéder à la plateforme
+    </button>
+  </div>`;
+  document.getElementById('apRegister').insertAdjacentHTML('beforeend', confirmHtml);
 }
 
 function logout() {
@@ -1115,8 +1142,10 @@ function initApp(role, user) {
   } else {
     sbS.classList.remove('hidden'); sbF.classList.add('hidden');
     nbLvl.classList.remove('hidden');
-    nbLvl.textContent = S.settings.niveauFr;
-    nbLvl.className = 'nb-lvl l' + S.settings.niveauFr;
+    const lvlVal = S.settings.niveauFr;
+    nbLvl.textContent = lvlVal || '? Niveau';
+    nbLvl.className = lvlVal ? 'nb-lvl l' + lvlVal : 'nb-lvl';
+    if (!lvlVal) nbLvl.title = 'Faites le test de positionnement pour définir votre niveau';
     showPage('dashboard'); // B13: showPage already calls renderDashboard
   }
   updateBadgeCounter();
@@ -1176,6 +1205,9 @@ function renderDashboard() {
 
   // Hero greeting
   setEl('heroName', 'Bonjour ' + esc(u?.prenom || 'stagiaire') + ' 👋');
+  // FIX #6: Dynamic hero button
+  const heroBtnMod = document.getElementById('heroBtnModules');
+  if (heroBtnMod) heroBtnMod.textContent = nbEx === 0 ? '▶ Commencer Word A1' : '▶ Reprendre les modules';
 
   // Stats
   setEl('dashStats', `
@@ -1217,23 +1249,27 @@ function renderDashboard() {
       ${!s.done ? `<button class="btn btn-primary btn-sm" onclick="showPage('${s.page}')">Continuer</button>` : '<span class="tag t-green">✓ Fait</span>'}
     </div>`).join(''));
 
-  // B8: Call to action for new users
-  const isNew = nbEx === 0 && p.word === 0;
-  if (isNew) {
-    const cta = document.getElementById('page-dashboard');
-    const existing = document.getElementById('dashCTA');
-    if (!existing && cta) {
-      const ctaHtml = `<div id="dashCTA" class="card" style="border:2px solid var(--accent);background:var(--accent-light)">
-        <div class="card-title" style="color:#065f46">🚀 Par où commencer ?</div>
-        <div style="font-size:14px;color:#065f46;margin-bottom:14px">Bienvenue ! Voici les 3 premières étapes pour démarrer votre apprentissage :</div>
-        <div class="steps">
-          <div class="st-item"><div class="st-circle" style="background:var(--accent)">1</div><div class="st-body"><div class="st-title">Configurez votre parcours</div><div class="st-desc">Choisissez votre niveau de français, votre formation et votre métier cible</div></div><button class="btn btn-success btn-sm" onclick="showPage('parcours')">Configurer →</button></div>
-          <div class="st-item"><div class="st-circle pend">2</div><div class="st-body"><div class="st-title">Commencez par Word A1</div><div class="st-desc">Ouvrez le module Word et faites votre premier exercice</div></div><button class="btn btn-outline btn-sm" onclick="showPage('modules')">Commencer →</button></div>
-          <div class="st-item"><div class="st-circle pend">3</div><div class="st-body"><div class="st-title">Testez votre niveau de français</div><div class="st-desc">15 questions pour adapter le contenu à votre niveau</div></div><button class="btn btn-ghost btn-sm" onclick="showPage('positionnement')">Tester →</button></div>
-        </div>
-      </div>`;
-      cta.querySelector('.hero').insertAdjacentHTML('afterend', ctaHtml);
-    }
+  // FIX #7: Dynamic next steps based on real progress
+  const ctaEl = document.getElementById('page-dashboard');
+  const ctaExisting = document.getElementById('dashCTA');
+  const steps7 = [
+    { done: !!S.settings.niveauFr, title: 'Définir votre niveau', desc: 'Faites le test de positionnement ou choisissez votre niveau', action: "showPage('parcours')", btn: '📝 Configurer', color: 'var(--accent)' },
+    { done: p.word > 0, title: 'Commencer Word A1', desc: 'Faites votre premier exercice Word', action: "openMod('word');showPage('modules')", btn: '▶ Commencer', color: 'var(--primary)' },
+    { done: p.badges.includes('envoi'), title: 'Envoyer un travail', desc: 'Déposez un fichier à votre formatrice', action: "showPage('envoi')", btn: '📤 Envoyer', color: 'var(--warn)' },
+  ];
+  if (steps7.some(s => !s.done)) {
+    const ctaHtml = `<div id="dashCTA" class="card" style="border:2px solid var(--accent);background:var(--accent-light)">
+      <div class="card-title" style="color:#065f46">🚀 ${p.word > 0 ? 'Continuez votre progression' : 'Par où commencer ?'}</div>
+      <div class="steps">
+        ${steps7.map((s,i) => `<div class="st-item">
+          <div class="st-circle ${s.done?'done':'pend'}" style="${s.done?'':'background:var(--surface3);color:var(--text3)'}">${s.done?'✓':i+1}</div>
+          <div class="st-body"><div class="st-title">${s.title}</div><div class="st-desc">${s.desc}</div></div>
+          ${!s.done ? `<button class="btn btn-sm" style="background:${s.color};color:#fff" onclick="${s.action}">${s.btn}</button>` : '<span class="tag t-green">✓ Fait</span>'}
+        </div>`).join('')}
+      </div>
+    </div>`;
+    if (!ctaExisting && ctaEl) ctaEl.querySelector('.hero').insertAdjacentHTML('afterend', ctaHtml);
+    else if (ctaExisting) ctaExisting.outerHTML = ctaHtml;
   } else {
     document.getElementById('dashCTA')?.remove();
   }
@@ -1244,6 +1280,20 @@ function renderDashboard() {
     : '<div class="muted">Aucune activité récente. Commencez un exercice !</div>');
 
   updateBadgeCounter();
+  // FIX #49: Messages reçus par le stagiaire (u est déclaré dans cette fonction)
+  const myName = u ? (u.prenom + ' ' + (u.nom||'')).trim() : 'Jean Dupont';
+  const myMsgs = S.msgs.filter(m => m.to === myName || m.to === 'Tous les stagiaires');
+  const msgsCard49 = document.getElementById('dashMsgsCard');
+  if (msgsCard49 && myMsgs.length > 0) {
+    msgsCard49.style.display = 'block';
+    const badge49 = document.getElementById('dashMsgBadge');
+    if (badge49) badge49.textContent = myMsgs.length;
+    setEl('dashMsgs', myMsgs.slice(-5).reverse().map(m =>
+      `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3)">${m.date}</div>
+        <div style="font-size:14px;margin-top:4px">💬 ${esc(m.text)}</div>
+      </div>`).join(''));
+  } else if (msgsCard49) msgsCard49.style.display = 'none';
 }
 
 // FIX #6: Badge counter always synced
@@ -1254,8 +1304,14 @@ function updateBadgeCounter() {
 
 // ── PARCOURS ───────────────────────────────────
 function toggleRopt(label, name) {
-  document.querySelectorAll(`[name="${name}"]`).forEach(inp => inp.closest('.ropt')?.classList.remove('on'));
+  // FIX #8: Properly remove .on from ALL ropt in the same group
+  document.querySelectorAll('.ropt').forEach(r => {
+    const inp = r.querySelector(`input[name="${name}"]`);
+    if (inp) r.classList.remove('on');
+  });
   label.classList.add('on');
+  const inp = label.querySelector('input');
+  if (inp) inp.checked = true;
   saveParc();
 }
 function saveParc() {
@@ -1297,7 +1353,10 @@ function applySavedSettings() {
   });
   // Restore level display
   const nbLvl = document.getElementById('nbLvl');
-  if (nbLvl) { nbLvl.textContent = cfg.niveauFr; nbLvl.className = 'nb-lvl l' + cfg.niveauFr; }
+  if (nbLvl) {
+    nbLvl.textContent = cfg.niveauFr || '? Niveau';
+    nbLvl.className = cfg.niveauFr ? 'nb-lvl l' + cfg.niveauFr : 'nb-lvl';
+  }
   // FIX #5: Highlight selected level in lvlPicker
   // B20: Use only onclick to identify correct level (avoids partial textContent match)
   document.querySelectorAll('#lvlPicker .lvl').forEach(el => {
@@ -1358,12 +1417,14 @@ function renderQuizQ() {
     </div>
     <div id="qfb" class="quiz-fb"></div>
     <div class="quiz-nav">
-      <span class="quiz-prog">${i} / ${total} répondues</span>
+      <span class="quiz-prog">Question ${i+1} / ${total}</span>
       <button class="btn btn-primary hidden" id="qNext" onclick="S.posQuizIdx++;renderQuizQ()">Question suivante →</button>
     </div>`);
 }
 function answerQuizPos(chosen) {
-  const q = QUIZ_POSITIONNEMENT[S.posQuizIdx]; // FIX #3
+  const qRawPos = QUIZ_POSITIONNEMENT[S.posQuizIdx]; // FIX #3
+  const { opts: qPosOpts, rep: qPosRep } = shuffleOpts(qRawPos.opts, qRawPos.rep);
+  const q = { ...qRawPos, opts: qPosOpts, rep: qPosRep };
   document.querySelectorAll('#quizContent .qopt').forEach(el => el.classList.add('disabled'));
   document.querySelectorAll('#quizContent .qopt')[chosen].classList.add(chosen === q.rep ? 'correct' : 'wrong');
   document.querySelectorAll('#quizContent .qopt')[q.rep].classList.add('correct');
@@ -1428,7 +1489,9 @@ function renderModules() {
 }
 
 function openMod(key) {
-  // B17: Always reset filter on any module open (same or different)
+  // FIX #15: Toggle if same module clicked again
+  if (S.activeModule === key) { closeModDetail(); return; }
+  // Always reset filter
   S.activeFilter = 'all';
   document.querySelectorAll('#exTabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   S.activeModule = key;
@@ -1492,6 +1555,16 @@ function renderExList() {
 }
 
 // ── EXERCISE MODAL ─────────────────────────────
+function shuffleOpts(opts, rep) {
+  // FIX #16: Shuffle quiz options while tracking correct answer
+  const indexed = opts.map((o, i) => ({ o, correct: i === rep }));
+  for (let i = indexed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+  return { opts: indexed.map(x => x.o), rep: indexed.findIndex(x => x.correct) };
+}
+
 function openExModal(modKey, exId) {
   const m = MODULES_DATA[modKey];
   if (!m) return;
@@ -1518,7 +1591,13 @@ function openExModal(modKey, exId) {
         return `
         <div class="st-item" id="sti_${exId}_${i}">
           <div class="st-circle ${doneSteps.includes(i) ? 'done' : 'pend'}" id="stc_${exId}_${i}">${doneSteps.includes(i) ? '✓' : i+1}</div>
-          <div class="st-body"><div class="st-title">${isSimple ? '👉 ' : ''}Étape ${i+1}</div>${stepText}</div>
+          <div class="st-body">
+            <div class="st-title" style="display:flex;align-items:center;gap:6px">
+              ${isSimple ? '👉 ' : ''}Étape ${i+1}
+              <button class="tts-btn" style="padding:2px 8px;font-size:11px;margin:0" data-step-idx="${i}">🔊</button>
+            </div>
+            ${stepText}
+          </div>
           ${!doneSteps.includes(i) ? `<button class="btn btn-primary btn-sm" onclick="validateStep('${exId}','${modKey}',${i},${ex.steps.length})">✓ Fait</button>` : '<span class="tag t-green">✓</span>'}
         </div>`;
       }).join('') + '</div>';
@@ -1527,7 +1606,9 @@ function openExModal(modKey, exId) {
       body += `<div class="alert al-ok mt3"><span>🎉</span><div>Exercice complété ! <button class="btn btn-ghost btn-sm" onclick="closeExModal()">Fermer</button></div></div>`;
     }
   } else if (ex.type === 'quiz') {
-    const q = QUIZ_DATA[ex.qIdx];
+    const qRaw = QUIZ_DATA[ex.qIdx];
+    const { opts: qOpts, rep: qRep } = shuffleOpts(qRaw.opts, qRaw.rep);
+    const q = { ...qRaw, opts: qOpts, rep: qRep };
     body += `<div class="quiz-q">${q.q}</div>
       <div class="quiz-opts">
         ${q.opts.map((o, i) => `<div class="qopt" data-idx="${i}" data-correct="${q.rep}" data-exid="${exId}" data-modkey="${modKey}"><div class="qopt-letter">${['A','B','C','D'][i]}</div><span>${o}</span></div>`).join('')}
@@ -1543,6 +1624,17 @@ function openExModal(modKey, exId) {
   body += `<div class="alert al-warn mt3"><span>💾</span><div><b>Rappel :</b> Enregistrez votre fichier dans Documents → <code>NomRéférente_Groupe_${ex.name.replace(/['"]/g,'').substring(0,20)}</code></div></div>`;
 
   setEl('exModalBody', body);
+
+  // FIX #19: Attach per-step TTS listeners
+  if (ex.type === 'steps') {
+    document.querySelectorAll('#exModalBody .tts-btn[data-step-idx]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const stepDesc = btn.closest('.st-body')?.querySelector('.st-desc')?.textContent || '';
+        ttsSpeak(stepDesc);
+      });
+    });
+  }
 
   // Attach quiz listeners after render
   if (ex.type === 'quiz') {
@@ -1614,8 +1706,23 @@ function completeExercise(exId, modKey) {
   // Check badges
   checkBadges(modKey);
   saveState();
-  closeExModal();
+  // FIX #17: Show completion summary with next exercise
   confetti();
+  const m17 = MODULES_DATA[modKey];
+  const allExs = m17 ? m17.exercises : [];
+  const doneIds = Object.keys(S.prog.exercises).filter(k => !k.includes('_steps') && S.prog.exercises[k]);
+  const remaining = allExs.filter(e => !S.prog.exercises[e.id]);
+  const nextEx = remaining[0];
+  setEl('exModalBody', `<div class="tc" style="padding:20px 0">
+    <div style="font-size:52px;margin-bottom:12px">🎉</div>
+    <div style="font-size:20px;font-weight:900;margin-bottom:8px">Exercice terminé !</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:20px">${m17?.name||''} — ${doneIds.filter(id=>allExs.find(e=>e.id===id)).length} / ${allExs.length} exercices complétés</div>
+    <div class="flex gap2 fwrap" style="justify-content:center">
+      ${nextEx ? `<button class="btn btn-primary" onclick="closeExModal();openExModal('${modKey}','${nextEx.id}')">▶ Exercice suivant : ${nextEx.name.substring(0,25)}…</button>` : '<span class="tag t-green" style="font-size:14px;padding:10px 20px">🏆 Module complété !</span>'}
+      <button class="btn btn-ghost" onclick="closeExModal()">Fermer</button>
+    </div>
+  </div>`);
+  document.getElementById('exModal').classList.remove('hidden');
   toast('🎉 Exercice terminé ! Progression mise à jour.');
   renderModules();
   renderDashboard();
@@ -1633,9 +1740,8 @@ function checkBadges(modKey) {
   if (p.excel >= 10 && !p.badges.includes('excel_a1')) unlockBadge('excel_a1');
   if (p.ppt >= 10 && !p.badges.includes('ppt_a1')) unlockBadge('ppt_a1');
   if (p.word >= 100 && p.excel >= 100 && p.ppt >= 100 && p.pub >= 100 && !p.badges.includes('pack')) unlockBadge('pack');
-  // FIX #8: Medal C2 — unlocked when all modules at 100% AND level is C1 or C2
-  if (p.word >= 100 && p.excel >= 100 && p.ppt >= 100 && p.pub >= 100
-      && ['C1','C2'].includes(S.settings.niveauFr)
+  // FIX #28: Medal C2 — unlock when pack badge earned AND C1 level exercises done
+  if (p.badges.includes('pack') && (doneByLvl['C1']||0) >= 1
       && !p.badges.includes('medaille_c2')) unlockBadge('medaille_c2');
 }
 
@@ -1669,7 +1775,7 @@ function renderCas() {
           ${cp.featured ? '<span class="tag t-blue">Recommandé</span>' : ''}
         </div>
         <div class="pr-bar"><div class="pr-fill fill-primary" style="width:${progPct}%"></div></div>
-        <div class="muted mt2">${progPct > 0 ? `En cours · ${doneCnt}/${cp.etapes.length} étapes` : 'Non commencé · ' + cp.etapes.length + ' étapes'}</div>
+        <div class="muted mt2">${progPct > 0 ? `En cours · ${doneCnt}/${cp.etapes.length} étapes` : cp.etapes.length + ' étapes · Non commencé'}</div>
       </div>
     </div>`;
   }).join(''));
@@ -1712,7 +1818,7 @@ function openCas(id) {
             ${et.tip ? `<div class="st-tip">${et.tip}</div>` : ''}
             <div class="st-desc">${et.desc}</div>
           </div>
-          ${!et.done ? `<button class="btn btn-primary btn-sm" onclick="validateCasStep('${cp.id}',${et.num})">✓ Fait</button>` : '<span class="tag t-green">✓</span>'}
+          ${!et.done ? `<button class="btn btn-primary btn-sm" onclick="validateCasStep('${cp.id}',${et.num})">✓ Fait</button>` : `<button class="btn btn-ghost btn-sm" onclick="undoCasStep('${cp.id}',${et.num})" title="Annuler cette étape">↩</button>`}
         </div>`).join('')}
     </div>
     <div class="alert al-warn mt3"><span>💾</span><div><b>Enregistrement obligatoire :</b> Documents → <code>NomRéférente_Groupe_${cp.id}.${ext}</code></div></div>
@@ -1731,6 +1837,21 @@ function openCas(id) {
 }
 
 // FIX #16: Save cas pratique progress
+function undoCasStep(cpId, num) {
+  // FIX #21: Allow unchecking a cas pratique step
+  const cp = CAS_PRATIQUES.find(c => c.id === cpId);
+  if (!cp) return;
+  const et = cp.etapes.find(e => e.num === num);
+  if (et) et.done = false;
+  if (!S.prog.casProgress) S.prog.casProgress = {};
+  if (S.prog.casProgress[cpId]) {
+    S.prog.casProgress[cpId] = S.prog.casProgress[cpId].filter(n => n !== num);
+  }
+  saveState();
+  openCas(cpId); // Re-render the cas detail
+  toast('↩ Étape ' + num + ' annulée.');
+}
+
 function validateCasStep(cpId, num) {
   const cp = CAS_PRATIQUES.find(c => c.id === cpId);
   if (!cp) return;
@@ -1761,6 +1882,7 @@ function validateCasStep(cpId, num) {
     toast('✅ Étape ' + num + ' validée !');
   }
   saveState();
+  renderCas(); // FIX #22
 }
 
 // ── MÉTIERS ────────────────────────────────────
@@ -1970,9 +2092,19 @@ function handleFile(f) {
   }
 }
 
+function updateEnvoiExSelect() {
+  const mod = document.getElementById('envoiMod')?.value?.toLowerCase().replace(' 2019','').replace('powerpoint','ppt').replace('publisher','pub');
+  const sel = document.getElementById('envoiEx');
+  if (!sel || !mod || !MODULES_DATA[mod]) return;
+  const exs = MODULES_DATA[mod].exercises;
+  sel.innerHTML = '<option value="">-- Choisir un exercice --</option>' +
+    exs.map(e => `<option value="${e.id}">${e.name} (${e.lvl})</option>`).join('') +
+    '<option value="autre">Autre</option>';
+}
+
 function validateFileName(fname) {
   const base = fname.replace(/\.[^.]+$/, '');
-  return base.split('_').length >= 2;
+  return base.split('_').length >= 3; // FIX #23: require NomRef_Groupe_Exo
 }
 
 function envoyerTravail() {
@@ -1996,7 +2128,7 @@ function envoyerTravail() {
   saveState();
   renderEnvoi();
   confetti();
-  toast('📤 Travail envoyé avec succès ! Votre formatrice sera notifiée.', 4000);
+  toast('📤 Travail enregistré. Remettez le fichier physiquement à votre formatrice.', 4000);
   info.classList.add('hidden');
 }
 
@@ -2023,20 +2155,43 @@ function renderProgression() {
       <div class="pr-bar"><div class="pr-fill ${m.f}" style="width:${p[m.k]}%"></div></div>
     </div>`).join(''));
 
-  // Fix CECRL levels: based on real exercise completion
-  const totalExAll = Object.values(MODULES_DATA).reduce((a,m) => a + m.exercises.length, 0);
-  const doneExAll = Object.keys(p.exercises).filter(k => !k.includes('_steps') && p.exercises[k]).length;
-  const lvlProgress = [
-    { n:'A1', pct: Math.min(100, Math.round((p.word > 0 ? Math.min(p.word, 40) / 40 * 100 : 0))) },
-    { n:'A2', pct: Math.min(100, p.word >= 40 ? Math.round(Math.min(p.word,70)/70*100) : Math.round(p.word/40*50)) },
-    { n:'B1', pct: Math.min(100, p.word >= 60 && p.excel >= 30 ? Math.round((p.word*0.4+p.excel*0.3+p.ppt*0.3)) : Math.round((p.word*0.4+p.excel*0.3+p.ppt*0.3)*0.5)) },
-    { n:'B2', pct: Math.min(100, Math.round((p.word+p.excel+p.ppt+p.pub)/4*0.6)) },
-  ];
-  setEl('progLvl', lvlProgress.map(l => `
+  // FIX #27: CECRL bars = % of exercises done at each level
+  const exByLvl = {};
+  const doneByLvl = {};
+  Object.values(MODULES_DATA).forEach(m => m.exercises.forEach(e => {
+    exByLvl[e.lvl] = (exByLvl[e.lvl]||0) + 1;
+    if (p.exercises[e.id]) doneByLvl[e.lvl] = (doneByLvl[e.lvl]||0) + 1;
+  }));
+  const lvlProgress = ['A1','A2','B1','B2','C1'].map(n => ({
+    n, pct: exByLvl[n] ? Math.round((doneByLvl[n]||0) / exByLvl[n] * 100) : 0
+  }));
+  setEl('progLvl', `<div class="muted mb2">Exercices complétés par niveau CECRL</div>` + lvlProgress.map(l => `
     <div class="pr-row">
       <div class="pr-top"><span class="pr-name"><span class="lvl l${l.n}">${l.n}</span></span><span class="pr-pct">${l.pct}%</span></div>
       <div class="pr-bar"><div class="pr-fill fill-primary" style="width:${l.pct}%"></div></div>
     </div>`).join(''));
+
+  // FIX #26: List completed exercises
+  const doneExList = [];
+  Object.entries(MODULES_DATA).forEach(([mk, m]) => {
+    m.exercises.forEach(e => {
+      if (p.exercises[e.id]) doneExList.push({ mod: m.name, modIcon: m.icon, name: e.name, lvl: e.lvl });
+    });
+  });
+  const doneHtml = doneExList.length
+    ? '<div style="display:flex;flex-wrap:wrap;gap:8px">' + doneExList.map(e =>
+        `<div style="padding:6px 12px;background:var(--accent-light);border-radius:8px;font-size:13px;color:#065f46">
+          ${e.modIcon} <b>${e.name}</b> <span class="lvl l${e.lvl}">${e.lvl}</span>
+        </div>`).join('') + '</div>'
+    : '<div class="muted">Aucun exercice compl\u00e9t\u00e9 pour l\'instant.</div>';
+
+  const existDoneList = document.getElementById('doneExList');
+  if (!existDoneList) {
+    document.getElementById('allBadges').insertAdjacentHTML('beforebegin',
+      `<div class="card-title mt3 mb2">✅ Exercices complétés (${doneExList.length})</div><div id="doneExList">${doneHtml}</div>`);
+  } else {
+    existDoneList.innerHTML = doneHtml;
+  }
 
   setEl('allBadges', BADGES_DEF.map(b => `
     <div class="bdg ${p.badges.includes(b.id) ? 'earned' : ''}">
@@ -2092,13 +2247,32 @@ function renderStagTable() {
   const search = (document.getElementById('stagSearch')?.value || '').toLowerCase();
   const grp = document.getElementById('stagGrp')?.value || 'all';
   const niv = document.getElementById('stagNiv')?.value || 'all';
-  const filtered = DEMO_STAGIAIRES.filter(s => {
+  // FIX #33: Populate dynamic group filter
+  const grpSel = document.getElementById('stagGrpSel') || document.getElementById('stagGrp');
+  if (grpSel) {
+    const groups = ['all', ...new Set(DEMO_STAGIAIRES.map(s=>s.groupe).sort())];
+    const curGrp = grpSel.value || 'all';
+    grpSel.innerHTML = groups.map(g => `<option value="${g}" ${g===curGrp?'selected':''}>${g==='all'?'Tous groupes':g}</option>`).join('');
+  }
+  // FIX #32: Merge real registered users with demo stagiaires
+  const realUsers = S.users.filter(u => u.role === 'stagiaire').map((u, i) => ({
+    id: 900 + i, prenom: u.prenom, nom: u.nom,
+    init: (u.prenom[0]+(u.nom?u.nom[0]:'')).toUpperCase(),
+    formation: 'Inscrit', ftag: 't-green',
+    niveau: u.niveauFr || S.settings.niveauFr || 'A1',
+    lclass: 'l' + (u.niveauFr || 'A1'),
+    metier: 'Non défini', prog: 0, acces: new Date().toLocaleDateString('fr-FR'),
+    groupe: 'Groupe 1',
+    detail: { word:0, excel:0, ppt:0, pub:0, temps:'0min', exFaits:0 }
+  }));
+  const allStagiaires = [...realUsers, ...DEMO_STAGIAIRES];
+  const filtered2 = allStagiaires.filter(s => {
     const ms = !search || (s.prenom + ' ' + s.nom).toLowerCase().includes(search);
     const mg = grp === 'all' || s.groupe === grp;
     const mn = niv === 'all' || s.niveau === niv;
     return ms && mg && mn;
   });
-  setEl('stagBody', filtered.map(s => `
+  setEl('stagBody', filtered2.map(s => `
     <tr>
       <td><div class="flex gap2"><div class="avatar">${s.init}</div><div><div style="font-weight:700">${s.prenom} ${s.nom}</div><div class="muted">${s.groupe}</div></div></div></td>
       <td><span class="tag ${s.ftag}">${s.formation}</span></td>
@@ -2159,11 +2333,11 @@ function ouvrirCorrectionForStag(stagId) {
 function ouvrirCorrection(id) {
   const t = FORM_TRAVAUX.find(t => t.id === id);
   if (!t) return;
-  setEl('ficheModalTitle', '✏️ Corriger — ' + t.fichier);
+  setEl('ficheModalTitle', '✏️ Correction : ' + t.fichier.substring(0,40));
   setEl('ficheModalBody', `
     <div class="alert al-info mb3"><span>📎</span><div><b>${t.stag}</b> — ${t.fichier} — ${t.module} — ${t.date}</div></div>
     <div class="fg"><label class="fl">Note</label>
-      <select class="fs" id="corrNote">${['20/20','19/20','18/20','17/20','16/20','15/20','14/20','13/20','12/20','11/20','10/20'].map(n=>`<option>${n}</option>`).join('')}</select>
+      <select class="fs" id="corrNote">${Array.from({length:21},(_,i)=>`<option value="${(20-i)+'/20'}">${(20-i)}/20</option>`).join('')}</select>
     </div>
     <div class="fg"><label class="fl">Commentaire pour le stagiaire</label><textarea class="fta" id="corrComment" rows="4" placeholder="Retour pédagogique détaillé…"></textarea></div>
     <div class="flex gap2 mt4">
@@ -2196,7 +2370,14 @@ function saveCorrAndClose(id) {
 function validerTrav(id) {
   document.getElementById('trow_' + id)?.remove();
   const badge = document.getElementById('trBadge');
-  if (badge) badge.textContent = Math.max(0, parseInt(badge.textContent || '0') - 1);
+  if (badge) {
+    const newCount = Math.max(0, parseInt(badge.textContent || '0') - 1);
+    badge.textContent = newCount;
+    if (newCount === 0) badge.style.display = 'none';
+  }
+  // FIX #41: Also update stats
+  const statTrav = document.querySelector('#formStats .sc:nth-child(3) .sv');
+  if (statTrav) statTrav.textContent = Math.max(0, parseInt(statTrav.textContent||'0') - 1);
   toast('✅ Travail validé et archivé !');
 }
 
@@ -2217,7 +2398,14 @@ function openFiche(id) {
     </div>
     ${[['📄 Word',s.detail.word,'fill-word'],['📊 Excel',s.detail.excel,'fill-excel'],['📽️ PowerPoint',s.detail.ppt,'fill-ppt'],['🖨️ Publisher',s.detail.pub,'fill-pub']].map(([n,v,f])=>`
     <div class="pr-row"><div class="pr-top"><span class="pr-name">${n}</span><span class="pr-pct">${v}%</span></div><div class="pr-bar"><div class="pr-fill ${f}" style="width:${v}%"></div></div></div>`).join('')}
-    <div class="flex gap2 mt4 fwrap">
+        <div style="font-size:14px;font-weight:700;margin:12px 0 8px">🏅 Badges (${s.prog > 60 ? '🏆 Avancé' : s.prog > 30 ? '📈 Intermédiaire' : '🌱 Débutant'})</div>
+    <div class="bdg-grid">
+      ${s.prog >= 10 ? '<div class="bdg earned"><div class="bdg-icon">📄</div><div class="bdg-name">Word A1</div></div>' : ''}
+      ${s.prog >= 20 ? '<div class="bdg earned"><div class="bdg-icon">📊</div><div class="bdg-name">Excel A1</div></div>' : ''}
+      ${s.prog >= 30 ? '<div class="bdg earned"><div class="bdg-icon">⭐</div><div class="bdg-name">5 exercices</div></div>' : ''}
+      ${s.detail.exFaits >= 1 ? '<div class="bdg earned"><div class="bdg-icon">🌟</div><div class="bdg-name">1ère connexion</div></div>' : ''}
+    </div>
+<div class="flex gap2 mt4 fwrap">
       <button class="btn btn-primary" onclick="ouvrirCorrection(1)">✏️ Corriger un travail</button>
       <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimer fiche</button>
       <button class="btn btn-ghost" onclick="closeFicheModal()">Fermer</button>
@@ -2230,24 +2418,56 @@ function closeFicheModal() { document.getElementById('ficheModal').classList.add
 function imprimerFiche(id) { openFiche(id); setTimeout(() => window.print(), 600); }
 
 function renderDiffStats() {
+  // FIX #43: Calculate from DEMO_STAGIAIRES
+  const a1Count = DEMO_STAGIAIRES.filter(s => s.niveau === 'A1').length;
+  const lowProg = DEMO_STAGIAIRES.filter(s => s.prog < 30).length;
+  const highProg = DEMO_STAGIAIRES.filter(s => s.prog > 70);
   setEl('diffAnalyse', `
-    <div class="ex-item" style="border-left-color:var(--danger);cursor:default"><div class="ex-body"><div class="ex-name">🔴 Blocage langue — Consignes A1</div><div class="muted">4 stagiaires · Module Word · Groupe 1</div></div></div>
-    <div class="ex-item" style="border-left-color:var(--warn);cursor:default"><div class="ex-body"><div class="ex-name">🟡 Difficulté numérique — Enregistrement</div><div class="muted">6 stagiaires · Word + Excel</div></div></div>
-    <div class="ex-item" style="border-left-color:var(--accent);cursor:default"><div class="ex-body"><div class="ex-name">🟢 Progression rapide B1→B2</div><div class="muted">Sophie M., Karim O., Léa R.</div></div></div>`);
+    <div class="ex-item" style="border-left-color:var(--danger);cursor:default">
+      <div class="ex-body"><div class="ex-name">🔴 Niveau A1 — Consignes en français courant</div>
+      <div class="muted">${a1Count} stagiaire(s) · Activer mode simplifié recommandé</div></div></div>
+    <div class="ex-item" style="border-left-color:var(--warn);cursor:default">
+      <div class="ex-body"><div class="ex-name">🟡 Progression < 30% — À relancer</div>
+      <div class="muted">${lowProg} stagiaire(s) · ${DEMO_STAGIAIRES.filter(s=>s.prog<30).map(s=>s.prenom).join(', ')}</div></div></div>
+    <div class="ex-item" style="border-left-color:var(--accent);cursor:default">
+      <div class="ex-body"><div class="ex-name">🟢 Progression > 70% — En avance</div>
+      <div class="muted">${highProg.length} stagiaire(s) · ${highProg.map(s=>s.prenom+' '+s.nom[0]+'.').join(', ')}</div></div></div>`);
 }
 
 function renderGrpProg() {
+  // FIX #44: Calculate group progress from DEMO_STAGIAIRES
+  const grpMap = {};
+  DEMO_STAGIAIRES.forEach(s => {
+    if (!grpMap[s.groupe]) grpMap[s.groupe] = [];
+    grpMap[s.groupe].push(s.prog);
+  });
+  const grpData = Object.entries(grpMap).sort().map(([g, progs]) => ({
+    name: g,
+    avg: Math.round(progs.reduce((a,b)=>a+b,0)/progs.length),
+    count: progs.length
+  }));
   setEl('grpProg',
-    [['Groupe 1', 42, 'fill-primary'], ['Groupe 2', 67, 'fill-accent'], ['Groupe 3', 55, 'fill-primary']].map(([n, p, f]) => `
+    grpData.map(({name, avg, count}) => `
     <div class="pr-row">
-      <div class="pr-top"><span class="pr-name">${n}</span><span class="pr-pct">${p}%</span></div>
-      <div class="pr-bar"><div class="pr-fill ${f}" style="width:${p}%"></div></div>
+      <div class="pr-top"><span class="pr-name">${name} (${count} stag.)</span><span class="pr-pct">${avg}%</span></div>
+      <div class="pr-bar"><div class="pr-fill fill-primary" style="width:${avg}%"></div></div>
     </div>`).join('') +
     '<div class="flex gap2 mt3 fwrap"><button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 Export PDF</button><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button></div>');
   setEl('evolGraph', `<div class="alert al-info"><span>📊</span><div>Progression 30 jours : <b>+9% global</b>. Semaine du 14/04 : +8% G1, +12% G2, +6% G3. <b>Meilleure progression :</b> Karim O. (+22%).</div></div>`);
 }
 
+function updateMsgTo() {
+  // FIX #50: Populate message recipients from real S.users
+  const sel = document.getElementById('msgTo');
+  if (!sel) return;
+  const demoNames = DEMO_STAGIAIRES.map(s => s.prenom + ' ' + s.nom);
+  const realNames = S.users.filter(u => u.role === 'stagiaire').map(u => u.prenom + ' ' + (u.nom||''));
+  const allNames = [...new Set([...realNames, ...demoNames])];
+  sel.innerHTML = allNames.map(n => `<option>${n}</option>`).join('') + '<option>Tous les stagiaires</option>';
+}
+
 function renderMsgs() {
+  updateMsgTo();
   setEl('msgHist', S.msgs.length
     ? S.msgs.slice(-5).reverse().map(m => `<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div class="muted" style="font-size:11px">${m.date}</div><div style="font-weight:700">→ ${m.to}</div><div style="font-size:13px;color:var(--text2)">${m.text}</div></div>`).join('')
     : '<div class="muted">Aucun message envoyé.</div>');
@@ -2261,7 +2481,7 @@ function saveContenu() {
   const duree = document.getElementById('cfDuree')?.value?.trim() || '30 min';
   const stepsRaw = document.getElementById('cfSteps')?.value?.trim();
   if (!titre || !stepsRaw) { toast('⚠️ Remplissez au moins le titre et les étapes.'); return; }
-  const steps = stepsRaw.split('\n').map(s=>s.replace(/^(Étape\s*\d+\s*:\s*)/i,'')).filter(Boolean);
+  const steps = stepsRaw.split('\n').map(s=>s.replace(/\r/g,'').replace(/^(Étape\s*\d+\s*:\s*)/i,'')).filter(s=>s.trim()); // FIX #48
   const customExs = safeGet('mpb_custom_exs', []);
   const newEx = { id:'cx'+Date.now(), num: (MODULES_DATA[mod]?.exercises?.length||0)+customExs.filter(e=>e.mod===mod).length+1, name:titre, lvl:niv, time:duree, type:'steps', steps, mod, custom:true };
   customExs.push(newEx);
@@ -2278,9 +2498,34 @@ function renderCustomExList() {
   const customExs = safeGet('mpb_custom_exs', []);
   const el = document.getElementById('customExList');
   if (!el) return;
-  if (!customExs.length) { el.innerHTML = '<div class="muted">Aucun exercice personnalis\u00e9 pour l\'instant.</div>'; return; }
+  if (!customExs.length) { el.innerHTML = '<div class="muted">Aucun exercice personnalisé pour l\'instant. Cliquez sur "➕ Ajouter".</div>'; return; }
   el.innerHTML = '<div class="card-title mt3">Exercices personnalisés</div>' +
-    customExs.map((ex,i) => `<div class="ex-item"><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span><span class="tag t-blue">${MODULES_DATA[ex.mod]?.name||ex.mod}</span></div></div><button class="btn btn-ghost btn-sm" onclick="deleteCustomEx(${i})">🗑️</button></div>`).join('');
+    customExs.map((ex,i) => `<div class="ex-item"><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span><span class="tag t-blue">${MODULES_DATA[ex.mod]?.name||ex.mod}</span></div></div><div class="flex gap2"><button class="btn btn-outline btn-sm" onclick="editCustomEx(${i})">✏️</button><button class="btn btn-ghost btn-sm" onclick="deleteCustomEx(${i})">🗑️</button></div></div>`).join('');
+}
+
+function editCustomEx(idx) {
+  // FIX #47: Pre-fill form with existing exercise data
+  const customExs = safeGet('mpb_custom_exs', []);
+  const ex = customExs[idx];
+  if (!ex) return;
+  const modEl = document.getElementById('cfMod');
+  const titreEl = document.getElementById('cfTitre');
+  const nivEl = document.getElementById('cfNiv');
+  const dureeEl = document.getElementById('cfDuree');
+  const stepsEl = document.getElementById('cfSteps');
+  if (modEl) modEl.value = ex.mod;
+  if (titreEl) titreEl.value = ex.name;
+  if (nivEl) nivEl.value = ex.lvl;
+  if (dureeEl) dureeEl.value = ex.time;
+  if (stepsEl) stepsEl.value = ex.steps.join('\n');
+  // Set edit mode
+  const form = document.getElementById('contenuForm');
+  if (form) {
+    form.classList.remove('hidden');
+    form.dataset.editIdx = idx;
+    form.querySelector('.btn-primary').textContent = '💾 Modifier l\'exercice';
+  }
+  deleteCustomEx(idx); // Remove old version
 }
 
 function deleteCustomEx(idx) {
@@ -2306,7 +2551,11 @@ function sendMsg() {
   toast('📨 Message envoyé à ' + to + ' !');
 }
 
-function exportPDF() { toast('📄 Rapport PDF généré !'); }
+function exportPDF() {
+  // FIX #29: Use browser print as PDF (Ctrl+P → Save as PDF)
+  toast('📄 Utilisez Ctrl+P → "Enregistrer en PDF" pour exporter.', 4000);
+  setTimeout(() => window.print(), 600);
+}
 
 // ── TTS ────────────────────────────────────────
 // FIX #18: TTS accepts any string safely
