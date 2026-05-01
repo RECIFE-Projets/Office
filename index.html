@@ -567,8 +567,9 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div class="card-title">📎 Déposer un fichier</div>
             <div class="up-zone" id="upZone" onclick="document.getElementById('fileIn').click()">
               <div class="up-icon">📤</div>
-              <div class="up-title">Cliquez ou glissez votre fichier</div>
-              <div class="up-sub">Word · Excel · PowerPoint · Publisher</div>
+              <div class="up-title">Cliquez pour choisir votre fichier</div>
+              <div class="up-sub">Sur mobile : appuyez sur cette zone</div>
+              <div class="up-sub" style="margin-top:4px">Word · Excel · PowerPoint · Publisher</div>
               <input type="file" id="fileIn" style="display:none" accept=".docx,.xlsx,.pptx,.pub,.doc,.xls,.ppt">
             </div>
             <div id="fileInfo" class="hidden mt3"></div>
@@ -643,13 +644,22 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div id="ft-contenus" class="hidden">
           <div class="card">
             <div class="card-title">🧱 Gestion des contenus</div>
-            <div class="alert al-info mb4"><span>ℹ️</span><div>Ajoutez et modifiez exercices, cas pratiques et tests.</div></div>
-            <div class="flex gap2 fwrap">
-              <button class="btn btn-primary" onclick="toast('➕ Formulaire d\'ajout ouvert !')">➕ Ajouter exercice</button>
-              <button class="btn btn-outline" onclick="toast('✏️ Éditeur ouvert !')">✏️ Modifier cas pratique</button>
-              <button class="btn btn-ghost" onclick="toast('📝 Éditeur de test ouvert !')">📝 Créer un test</button>
-              <button class="btn btn-ghost" onclick="toast('🎓 Gestion niveaux ouverte !')">🎓 Gérer les niveaux</button>
+            <div class="alert al-info mb4"><span>ℹ️</span><div>Ajoutez des exercices personnalisés visibles par tous les stagiaires.</div></div>
+            <div id="contenuForm" class="hidden">
+              <div class="fg"><label class="fl">Module</label><select class="fs" id="cfMod"><option value="word">Word 2019</option><option value="excel">Excel 2019</option><option value="ppt">PowerPoint 2019</option><option value="pub">Publisher 2019</option></select></div>
+              <div class="fg"><label class="fl">Titre de l'exercice</label><input class="fi" id="cfTitre" placeholder="Ex: Créer un en-tête professionnel"></div>
+              <div class="fg"><label class="fl">Niveau</label><select class="fs" id="cfNiv"><option value="A1">A1</option><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C1">C1</option></select></div>
+              <div class="fg"><label class="fl">Durée estimée</label><input class="fi" id="cfDuree" placeholder="Ex: 25 min"></div>
+              <div class="fg"><label class="fl">Étapes (une par ligne)</label><textarea class="fta" id="cfSteps" rows="6" placeholder="Étape 1 : Ouvrez Word"></textarea></div>
+              <div class="flex gap2 mt3">
+                <button class="btn btn-primary" onclick="saveContenu()">💾 Enregistrer</button>
+                <button class="btn btn-ghost" onclick="document.getElementById('contenuForm').classList.add('hidden')">Annuler</button>
+              </div>
             </div>
+            <div class="flex gap2 fwrap mb3">
+              <button class="btn btn-primary" onclick="document.getElementById('contenuForm').classList.toggle('hidden')">➕ Ajouter un exercice</button>
+            </div>
+            <div id="customExList"></div>
           </div>
         </div>
         <div id="ft-messages" class="hidden">
@@ -924,6 +934,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!S.prog.badges) S.prog.badges = [];
   if (!S.prog.activity) S.prog.activity = [];
   if (!S.prog.casProgress) S.prog.casProgress = {}; // FIX #1
+  // B7: Load custom exercises into MODULES_DATA
+  const customExs = safeGet('mpb_custom_exs', []);
+  customExs.forEach(ex => { if (MODULES_DATA[ex.mod] && !MODULES_DATA[ex.mod].exercises.find(e=>e.id===ex.id)) MODULES_DATA[ex.mod].exercises.push(ex); });
   if (!S.prog.weekStart) { S.prog.weekStart = Date.now(); saveState(); } // FIX #15
   // FIX #14: auto-reset weekly on new week
   const weekMs = 7 * 24 * 60 * 60 * 1000;
@@ -981,17 +994,35 @@ function selRole(card) {
 }
 
 function loginAs(role) {
+  // B1: Try to match real credentials if filled
+  const emailEl = document.getElementById('lEmail');
+  const mdpEl = document.getElementById('lMdp');
+  const email = emailEl ? emailEl.value.trim() : '';
+  const mdp = mdpEl ? mdpEl.value : '';
+  let matchedUser = null;
+  if (email && mdp) {
+    matchedUser = S.users.find(u => u.email === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
+    if (!matchedUser && S.users.length > 0) {
+      const errEl = document.getElementById('lErr');
+      if (errEl) { errEl.textContent = '⚠️ Identifiants incorrects.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+  }
   S.role = role;
-  // FIX #5: Store proper demo user info
   const demoUser = role === 'formateur'
     ? { prenom: 'Formatrice', nom: '', initials: 'FO' }
-    : { prenom: 'Jean', nom: 'Dupont', initials: 'JD' };
+    : matchedUser
+      ? { prenom: matchedUser.prenom, nom: matchedUser.nom, initials: (matchedUser.prenom[0]+(matchedUser.nom?matchedUser.nom[0]:'')).toUpperCase() }
+      : { prenom: 'Jean', nom: 'Dupont', initials: 'JD' };
   S.currentUser = demoUser;
   sessionStorage.setItem('mpb_sess', JSON.stringify({ role, user: demoUser }));
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  // Clear any error
+  const errEl = document.getElementById('lErr');
+  if (errEl) errEl.classList.add('hidden');
   initApp(role, demoUser);
-  toast('✅ Connexion réussie ! Bienvenue sur Ma Plateforme Bureautique.');
+  toast('✅ Bienvenue ' + demoUser.prenom + ' !');
 }
 
 function doRegister(btn) {
@@ -1008,6 +1039,7 @@ function doRegister(btn) {
   const user = { prenom: pre, nom, email, role, createdAt: Date.now() };
   // Never store passwords in plain text — store hash simulation
   S.users.push({ ...user, mdp: btoa(mdp) });
+  if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
   err.classList.add('hidden');
   S.currentUser = { prenom: pre, nom, initials: (pre[0] + nom[0]).toUpperCase() };
@@ -1036,6 +1068,12 @@ function logout() {
   document.getElementById('modDetail')?.classList.add('hidden');
   document.getElementById('casDetail')?.classList.add('hidden');
   document.getElementById('testDetail')?.classList.add('hidden');
+  // B18: Reset upload zone
+  const upZone = document.getElementById('upZone');
+  if (upZone) upZone.innerHTML = '<div class="up-icon">📤</div><div class="up-title">Cliquez ou glissez votre fichier</div><div class="up-sub">Word · Excel · PowerPoint · Publisher</div><input type="file" id="fileIn" style="display:none" accept=".docx,.xlsx,.pptx,.pub,.doc,.xls,.ppt">';
+  // Re-attach file input listener after reset
+  const newFIn = document.getElementById('fileIn');
+  if (newFIn) newFIn.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
   // FIX #12: Clear search fields and filters
   const stagSearch = document.getElementById('stagSearch');
   if (stagSearch) stagSearch.value = '';
@@ -1067,8 +1105,8 @@ function initApp(role, user) {
   const nbLvl = document.getElementById('nbLvl');
 
   // FIX #5: Always use currentUser for display
-  setEl('nbInit', u ? (u.initials || ((u.prenom[0] || 'U') + (u.nom ? u.nom[0] : '')).toUpperCase()) : 'U');
-  setEl('nbName', u ? (u.prenom + (u.nom ? ' ' + u.nom[0] + '.' : '')) : 'Utilisateur');
+  setEl('nbInit', u ? esc(u.initials || ((u.prenom[0] || 'U') + (u.nom ? u.nom[0] : '')).toUpperCase()) : 'U');
+  setEl('nbName', u ? esc(u.prenom + (u.nom ? ' ' + u.nom[0] + '.' : '')) : 'Utilisateur');
 
   if (role === 'formateur') {
     sbS.classList.add('hidden'); sbF.classList.remove('hidden');
@@ -1079,7 +1117,7 @@ function initApp(role, user) {
     nbLvl.classList.remove('hidden');
     nbLvl.textContent = S.settings.niveauFr;
     nbLvl.className = 'nb-lvl l' + S.settings.niveauFr;
-    renderDashboard(); showPage('dashboard');
+    showPage('dashboard'); // B13: showPage already calls renderDashboard
   }
   updateBadgeCounter();
 }
@@ -1137,7 +1175,7 @@ function renderDashboard() {
   const nbEx = Object.values(p.exercises || {}).filter(Boolean).length;
 
   // Hero greeting
-  setEl('heroName', 'Bonjour ' + (u?.prenom || 'stagiaire') + ' 👋');
+  setEl('heroName', 'Bonjour ' + esc(u?.prenom || 'stagiaire') + ' 👋');
 
   // Stats
   setEl('dashStats', `
@@ -1179,6 +1217,26 @@ function renderDashboard() {
       ${!s.done ? `<button class="btn btn-primary btn-sm" onclick="showPage('${s.page}')">Continuer</button>` : '<span class="tag t-green">✓ Fait</span>'}
     </div>`).join(''));
 
+  // B8: Call to action for new users
+  const isNew = nbEx === 0 && p.word === 0;
+  if (isNew) {
+    const cta = document.getElementById('page-dashboard');
+    const existing = document.getElementById('dashCTA');
+    if (!existing && cta) {
+      const ctaHtml = `<div id="dashCTA" class="card" style="border:2px solid var(--accent);background:var(--accent-light)">
+        <div class="card-title" style="color:#065f46">🚀 Par où commencer ?</div>
+        <div style="font-size:14px;color:#065f46;margin-bottom:14px">Bienvenue ! Voici les 3 premières étapes pour démarrer votre apprentissage :</div>
+        <div class="steps">
+          <div class="st-item"><div class="st-circle" style="background:var(--accent)">1</div><div class="st-body"><div class="st-title">Configurez votre parcours</div><div class="st-desc">Choisissez votre niveau de français, votre formation et votre métier cible</div></div><button class="btn btn-success btn-sm" onclick="showPage('parcours')">Configurer →</button></div>
+          <div class="st-item"><div class="st-circle pend">2</div><div class="st-body"><div class="st-title">Commencez par Word A1</div><div class="st-desc">Ouvrez le module Word et faites votre premier exercice</div></div><button class="btn btn-outline btn-sm" onclick="showPage('modules')">Commencer →</button></div>
+          <div class="st-item"><div class="st-circle pend">3</div><div class="st-body"><div class="st-title">Testez votre niveau de français</div><div class="st-desc">15 questions pour adapter le contenu à votre niveau</div></div><button class="btn btn-ghost btn-sm" onclick="showPage('positionnement')">Tester →</button></div>
+        </div>
+      </div>`;
+      cta.querySelector('.hero').insertAdjacentHTML('afterend', ctaHtml);
+    }
+  } else {
+    document.getElementById('dashCTA')?.remove();
+  }
   // Activity
   const acts = p.activity || [];
   setEl('dashActivity', acts.length
@@ -1241,11 +1299,14 @@ function applySavedSettings() {
   const nbLvl = document.getElementById('nbLvl');
   if (nbLvl) { nbLvl.textContent = cfg.niveauFr; nbLvl.className = 'nb-lvl l' + cfg.niveauFr; }
   // FIX #5: Highlight selected level in lvlPicker
+  // B20: Use only onclick to identify correct level (avoids partial textContent match)
   document.querySelectorAll('#lvlPicker .lvl').forEach(el => {
-    const isSelected = el.textContent.replace(' ✓','').trim() === cfg.niveauFr || el.getAttribute('onclick')?.includes("'"+cfg.niveauFr+"'");
+    const lvlInOnclick = (el.getAttribute('onclick') || '').match(/'([A-C][12])'/);
+    const elLvl = lvlInOnclick ? lvlInOnclick[1] : '';
+    const isSelected = elLvl === cfg.niveauFr;
     el.style.outline = isSelected ? '2px solid #166534' : '';
     el.style.outlineOffset = isSelected ? '2px' : '';
-    el.textContent = isSelected ? cfg.niveauFr + ' ✓' : el.textContent.replace(' ✓','');
+    el.textContent = isSelected ? cfg.niveauFr + ' ✓' : elLvl;
   });
   // Restore radio buttons
   const formR = document.querySelector(`input[name="form"][value="${cfg.formation}"]`);
@@ -1290,6 +1351,7 @@ function renderQuizQ() {
       <span class="lvl l${q.lvl}">${q.lvl}</span>
     </div>
     <div class="pr-bar mb3"><div class="pr-fill fill-primary" style="width:${(i/total)*100}%"></div></div>
+    <button class="tts-btn mb2" onclick="ttsSpeak(this.dataset.t)" data-t="${q.q.replace(/"/g,'')}">🔊 Écouter la question</button>
     <div class="quiz-q">${q.q}</div>
     <div class="quiz-opts">
       ${q.opts.map((o, j) => `<div class="qopt" onclick="answerQuizPos(${j})"><div class="qopt-letter">${['A','B','C','D'][j]}</div><span>${o}</span></div>`).join('')}
@@ -1366,11 +1428,9 @@ function renderModules() {
 }
 
 function openMod(key) {
-  // FIX #13: Always reset filter when opening a new module
-  if (S.activeModule !== key) {
-    S.activeFilter = 'all';
-    document.querySelectorAll('#exTabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-  }
+  // B17: Always reset filter on any module open (same or different)
+  S.activeFilter = 'all';
+  document.querySelectorAll('#exTabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   S.activeModule = key;
   const m = MODULES_DATA[key];
   setEl('modDetailTitle', m.icon + ' ' + m.name + ' — Exercices');
@@ -1379,7 +1439,10 @@ function openMod(key) {
   setTimeout(() => document.getElementById('modDetail').scrollIntoView({ behavior: 'smooth' }), 50);
 }
 
-function closeModDetail() { document.getElementById('modDetail').classList.add('hidden'); }
+function closeModDetail() {
+  document.getElementById('modDetail').classList.add('hidden');
+  S.activeModule = null; // B16: clear state
+}
 
 function filterEx(lvl, btn) {
   S.activeFilter = lvl;
@@ -1409,7 +1472,7 @@ function renderExList() {
       <div class="ex-body">
         <div class="ex-name">${S.settings.simpleMode ? '👉 ' : ''}${ex.name}</div>
         <div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span>${statusTag}<span style="font-size:12px;color:var(--text3)">⏱ ${ex.time}</span>
-        <button class="tts-btn" style="padding:3px 9px;font-size:11px" onclick="event.stopPropagation();ttsSpeak('${ex.name.replace(/'/g,'')}')" title="Écouter">🔊</button></div>
+        <button class="tts-btn" style="padding:3px 9px;font-size:11px"title="Écouter">🔊</button></div>
       </div>
       ${clickable && !done ? `<button class="btn btn-primary btn-sm ex-open-btn">Commencer</button>` : ''}
     </div>`;
@@ -1472,10 +1535,12 @@ function openExModal(modKey, exId) {
       <div id="exqfb_${exId}" class="quiz-fb"></div>`;
   }
 
-  // FIX #8: Fallback for unknown exercise type
-  if (!body) {
-    body = `<div class="alert al-warn"><span>⚠️</span><div>Cet exercice n'est pas encore disponible. Contactez votre formatrice.</div></div>`;
+  // FIX #8 corrected: body always has content — check if only TTS+alert (no steps/quiz)
+  if (ex.type !== 'steps' && ex.type !== 'quiz') {
+    body += `<div class="alert al-warn"><span>⚠️</span><div>Type d'exercice non reconnu. Contactez votre formatrice.</div></div>`;
   }
+  // Add save reminder at bottom of all exercises
+  body += `<div class="alert al-warn mt3"><span>💾</span><div><b>Rappel :</b> Enregistrez votre fichier dans Documents → <code>NomRéférente_Groupe_${ex.name.replace(/['"]/g,'').substring(0,20)}</code></div></div>`;
 
   setEl('exModalBody', body);
 
@@ -1723,9 +1788,77 @@ function renderMetiers() {
 }
 
 function openMetierExos(key) {
-  const names = { secretariat:'Secrétariat', accueil:'Accueil', advf:'Aide à domicile', entretien:'Entretien', vente:'Vente', general:'Sans Projet Pro' };
-  const counts = { secretariat:12, accueil:9, advf:8, entretien:7, vente:11, general:10 };
-  toast(`💼 ${names[key]} — ${counts[key] || 8} exercices disponibles ! Accédez aux Modules pour commencer.`, 3500);
+  // B4: Show real exercises filtered by metier tag
+  const metierLabels = { secretariat:'Secrétariat', accueil:'Accueil', advf:'Aide à domicile (ADVF)', entretien:'Entretien', vente:'Vente', general:'Tous les modules' };
+  // Map metier to recommended modules + exercises
+  const metierExos = {
+    secretariat: [
+      {mod:'word', exIds:['w1','w2','w3','w6','w7','w8','w9'], label:'Word — Courriers, mise en page, publipostage'},
+      {mod:'excel', exIds:['e1','e2','e3','e4','e6'], label:'Excel — Tableaux, calculs, tris'},
+    ],
+    accueil: [
+      {mod:'word', exIds:['w1','w2','w3','w4','w6'], label:'Word — Fiches contact, courriers'},
+      {mod:'ppt', exIds:['p1','p2','p3','p4'], label:'PowerPoint — Présentations accueil'},
+    ],
+    advf: [
+      {mod:'word', exIds:['w1','w2','w3','w4','w6','w7'], label:'Word — Fiches de soins, transmissions'},
+      {mod:'pub', exIds:['pu1','pu2','pu3','pu4'], label:'Publisher — Flyers, affiches'},
+    ],
+    entretien: [
+      {mod:'word', exIds:['w1','w2','w3','w6'], label:'Word — Bons de commande, notes'},
+      {mod:'excel', exIds:['e1','e2','e3','e4'], label:'Excel — Suivi, planning'},
+    ],
+    vente: [
+      {mod:'excel', exIds:['e1','e2','e3','e4','e5','e6','e7'], label:'Excel — Stats, graphiques CA'},
+      {mod:'ppt', exIds:['p1','p2','p3','p4','p5'], label:'PowerPoint — Présentations catalogue'},
+    ],
+    general: [
+      {mod:'word', exIds:['w1','w2','w3','w4'], label:'Word — Bases'},
+      {mod:'excel', exIds:['e1','e2','e3'], label:'Excel — Bases'},
+      {mod:'ppt', exIds:['p1','p2'], label:'PowerPoint — Bases'},
+      {mod:'pub', exIds:['pu1','pu2'], label:'Publisher — Bases'},
+    ],
+  };
+  const exoGroups = metierExos[key] || metierExos.general;
+  const label = metierLabels[key] || key;
+  // Build the detail panel
+  const metierGrid = document.getElementById('metierGrid');
+  const existing = document.getElementById('metierDetail');
+  if (existing) existing.remove();
+  let html = `<div id="metierDetail" class="card mt3" style="border:2px solid var(--primary)">
+    <div class="flex jb mb3">
+      <div class="card-title" style="margin-bottom:0">💼 ${label}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('metierDetail').remove()">✕</button>
+    </div>`;
+  exoGroups.forEach(group => {
+    const m = MODULES_DATA[group.mod];
+    if (!m) return;
+    html += `<div class="mb3"><div style="font-weight:700;margin-bottom:8px">${m.icon} ${group.label}</div>`;
+    group.exIds.forEach(exId => {
+      const ex = m.exercises.find(e => e.id === exId);
+      if (!ex) return;
+      const done = !!S.prog.exercises[exId];
+      html += `<div class="ex-item ${done?'done':''}" data-mod="${group.mod}" data-ex="${exId}">
+        <div class="ex-num">${ex.num}.</div>
+        <div class="ex-body">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span>${done?'<span class="tag t-green">✓ Terminé</span>':'<span class="tag t-blue">▶ À faire</span>'}<span style="font-size:12px;color:var(--text3)">⏱ ${ex.time}</span></div>
+        </div>
+        ${!done?`<button class="btn btn-primary btn-sm exm-btn">Commencer</button>`:''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  metierGrid.insertAdjacentHTML('afterend', html);
+  // Attach listeners
+  document.querySelectorAll('#metierDetail .ex-item').forEach(item => {
+    item.addEventListener('click', () => openExModal(item.dataset.mod, item.dataset.ex));
+  });
+  document.querySelectorAll('#metierDetail .exm-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); const item = btn.closest('.ex-item'); openExModal(item.dataset.mod, item.dataset.ex); });
+  });
+  document.getElementById('metierDetail').scrollIntoView({behavior:'smooth'});
 }
 
 // ── TESTS ──────────────────────────────────────
@@ -1769,6 +1902,7 @@ function renderTestQ() {
   setEl('testQuizContent', `
     <div class="flex jb mb3"><span class="muted">Question ${i+1}/${total}</span><span class="lvl l${q.lvl}">${q.lvl}</span></div>
     <div class="pr-bar mb3"><div class="pr-fill fill-primary" style="width:${(i/total)*100}%"></div></div>
+    <button class="tts-btn mb2" onclick="ttsSpeak(this.dataset.t)" data-t="${q.q.replace(/"/g,'')}">🔊 Écouter</button>
     <div class="quiz-q">${q.q}</div>
     <div class="quiz-opts">
       ${q.opts.map((o, j) => `<div class="qopt" data-tidx="${j}" data-trep="${q.rep}"><div class="qopt-letter">${['A','B','C','D'][j]}</div><span>${o}</span></div>`).join('')}
@@ -1817,6 +1951,7 @@ function renderEnvoi() {
 
   const withComments = S.travaux.filter(t => t.comment);
   const corrEl = document.getElementById('corrComments');
+  if (corrEl) corrEl.innerHTML = ''; // B14: always clear first
   if (corrEl && withComments.length) {
     corrEl.innerHTML = '<div class="card-title" style="margin-bottom:10px">💬 Commentaires de correction</div>' +
       withComments.map(t => `<div class="alert al-ok mb2"><span>💬</span><div><b>${t.fichier}</b> — Note : ${t.note}<br><em>"${t.comment}"</em></div></div>`).join('');
@@ -1835,14 +1970,25 @@ function handleFile(f) {
   }
 }
 
+function validateFileName(fname) {
+  const base = fname.replace(/\.[^.]+$/, '');
+  return base.split('_').length >= 2;
+}
+
 function envoyerTravail() {
   const info = document.getElementById('fileInfo');
-  if (!info || info.classList.contains('hidden')) { toast('⚠️ Veuillez d\'abord sélectionner un fichier.'); return; }
+  if (!info || info.classList.contains('hidden')) { toast('\u26a0\ufe0f Veuillez d\'abord s\u00e9lectionner un fichier.'); return; }
+  const nomFichierCheck = info.querySelector('b')?.textContent || '';
+  if (!validateFileName(nomFichierCheck)) {
+    toast('\u26a0\ufe0f Nom incorrect. Utilisez : NomR\u00e9f\u00e9rente_Groupe_Exercice.docx', 5000);
+    return; }
   const module = document.getElementById('envoiMod')?.value || 'Word';
   const nomFichier = info.querySelector('b')?.textContent || 'fichier.docx';
   const d = new Date();
   const stagName = (S.currentUser?.prenom + ' ' + (S.currentUser?.nom||'')).trim(); // FIX #13
   S.travaux.push({ id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '' });
+  // B12: Keep max 100 travaux entries
+  if (S.travaux.length > 100) S.travaux = S.travaux.slice(-100);
   safeSet('mpb_travaux', S.travaux);
   if (!S.prog.badges.includes('envoi')) unlockBadge('envoi');
   S.prog.activity.push(d.toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' — 📤 Envoyé : ' + nomFichier);
@@ -1877,11 +2023,14 @@ function renderProgression() {
       <div class="pr-bar"><div class="pr-fill ${m.f}" style="width:${p[m.k]}%"></div></div>
     </div>`).join(''));
 
+  // Fix CECRL levels: based on real exercise completion
+  const totalExAll = Object.values(MODULES_DATA).reduce((a,m) => a + m.exercises.length, 0);
+  const doneExAll = Object.keys(p.exercises).filter(k => !k.includes('_steps') && p.exercises[k]).length;
   const lvlProgress = [
-    { n:'A1', pct: Math.min(100, p.word >= 20 ? 100 : Math.round(p.word / 20 * 100)) },
-    { n:'A2', pct: Math.min(100, p.word >= 40 ? 100 : Math.round(p.word / 40 * 75)) },
-    { n:'B1', pct: Math.min(100, Math.round((p.word + p.excel) / 200 * 60)) },
-    { n:'B2', pct: Math.min(100, Math.round((p.word + p.excel + p.ppt) / 300 * 40)) },
+    { n:'A1', pct: Math.min(100, Math.round((p.word > 0 ? Math.min(p.word, 40) / 40 * 100 : 0))) },
+    { n:'A2', pct: Math.min(100, p.word >= 40 ? Math.round(Math.min(p.word,70)/70*100) : Math.round(p.word/40*50)) },
+    { n:'B1', pct: Math.min(100, p.word >= 60 && p.excel >= 30 ? Math.round((p.word*0.4+p.excel*0.3+p.ppt*0.3)) : Math.round((p.word*0.4+p.excel*0.3+p.ppt*0.3)*0.5)) },
+    { n:'B2', pct: Math.min(100, Math.round((p.word+p.excel+p.ppt+p.pub)/4*0.6)) },
   ];
   setEl('progLvl', lvlProgress.map(l => `
     <div class="pr-row">
@@ -1905,14 +2054,24 @@ function renderProgression() {
 // ── FORMATEUR ──────────────────────────────────
 function renderFormateur() {
   const travCount = getFormTravaux().length;
+  // B6: Calculate real stats from DEMO_STAGIAIRES
+  const totalStag = DEMO_STAGIAIRES.length;
+  const groupes = [...new Set(DEMO_STAGIAIRES.map(s => s.groupe))].length;
+  const avgProg = Math.round(DEMO_STAGIAIRES.reduce((a,s) => a+s.prog, 0) / totalStag);
   setEl('formStats', `
-    <div class="sc"><div class="sv" style="color:var(--primary)">24</div><div class="sl">Stagiaires actifs</div></div>
-    <div class="sc"><div class="sv" style="color:var(--accent)">3</div><div class="sl">Groupes</div></div>
+    <div class="sc"><div class="sv" style="color:var(--primary)">${totalStag}</div><div class="sl">Stagiaires actifs</div></div>
+    <div class="sc"><div class="sv" style="color:var(--accent)">${groupes}</div><div class="sl">Groupes</div></div>
     <div class="sc"><div class="sv" style="color:var(--warn)">${travCount}</div><div class="sl">Travaux à corriger</div></div>
-    <div class="sc"><div class="sv" style="color:var(--purple)">68%</div><div class="sl">Progression moy.</div></div>`);
+    <div class="sc"><div class="sv" style="color:var(--purple)">${avgProg}%</div><div class="sl">Progression moy.</div></div>`);
   const trBadgeEl = document.getElementById('trBadge');
   if (trBadgeEl) trBadgeEl.textContent = travCount;
   renderStagTable(); renderTravTable(); renderDiffStats(); renderGrpProg(); renderMsgs();
+}
+
+function fTabMsg() {
+  const btn = document.querySelector('#formTabs .tab-btn:nth-child(5)');
+  if (btn) fTab('messages', btn);
+  closeFicheModal();
 }
 
 function fTab(tab, btn) {
@@ -1921,6 +2080,12 @@ function fTab(tab, btn) {
   ['stagiaires','travaux','stats','contenus','messages'].forEach(t => {
     document.getElementById('ft-' + t)?.classList.toggle('hidden', t !== tab);
   });
+  // B15: Re-render data on tab switch to avoid stale content
+  if (tab === 'travaux') renderTravTable();
+  if (tab === 'stagiaires') renderStagTable();
+  if (tab === 'stats') { renderDiffStats(); renderGrpProg(); }
+  if (tab === 'messages') renderMsgs();
+  if (tab === 'contenus') renderCustomExList();
 }
 
 function renderStagTable() {
@@ -1961,9 +2126,9 @@ function getFormTravaux() {
     .map(t => ({ id: t.id, stag: t.stag, fichier: t.fichier, module: t.module, date: t.date }));
   // Merge: real submissions first, then demo
   const all = [...fromLS, ...demo];
-  // Deduplicate by fichier
+  // B10: Deduplicate by id (not fichier — two students can submit same filename)
   const seen = new Set();
-  return all.filter(t => { if (seen.has(t.fichier)) return false; seen.add(t.fichier); return true; });
+  return all.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
 }
 
 function renderTravTable() {
@@ -2010,7 +2175,21 @@ function ouvrirCorrection(id) {
 
 function saveCorrAndClose(id) {
   const note = document.getElementById('corrNote')?.value || '';
-  toast('✅ Correction enregistrée — Note : ' + note);
+  const comment = document.getElementById('corrComment')?.value || '';
+  // B2+B3: Save correction into S.travaux so stagiaire can see it
+  const idx = S.travaux.findIndex(t => t.id === id || String(t.id) === String(id));
+  if (idx >= 0) {
+    S.travaux[idx].note = note;
+    S.travaux[idx].comment = comment;
+    S.travaux[idx].statut = 'corrige';
+    safeSet('mpb_travaux', S.travaux);
+  }
+  // Also update FORM_TRAVAUX display — remove from pending list
+  const row = document.getElementById('trow_' + id);
+  if (row) {
+    row.cells[row.cells.length-1].innerHTML = '<span class="tag t-green">✓ Corrigé — ' + note + '</span>';
+  }
+  toast('✅ Correction enregistrée — Note : ' + note + (comment ? ' · Commentaire envoyé au stagiaire' : ''));
   closeFicheModal();
 }
 
@@ -2074,6 +2253,48 @@ function renderMsgs() {
     : '<div class="muted">Aucun message envoyé.</div>');
 }
 
+function saveContenu() {
+  // B7: Save a custom exercise
+  const mod = document.getElementById('cfMod')?.value;
+  const titre = document.getElementById('cfTitre')?.value?.trim();
+  const niv = document.getElementById('cfNiv')?.value;
+  const duree = document.getElementById('cfDuree')?.value?.trim() || '30 min';
+  const stepsRaw = document.getElementById('cfSteps')?.value?.trim();
+  if (!titre || !stepsRaw) { toast('⚠️ Remplissez au moins le titre et les étapes.'); return; }
+  const steps = stepsRaw.split('\n').map(s=>s.replace(/^(Étape\s*\d+\s*:\s*)/i,'')).filter(Boolean);
+  const customExs = safeGet('mpb_custom_exs', []);
+  const newEx = { id:'cx'+Date.now(), num: (MODULES_DATA[mod]?.exercises?.length||0)+customExs.filter(e=>e.mod===mod).length+1, name:titre, lvl:niv, time:duree, type:'steps', steps, mod, custom:true };
+  customExs.push(newEx);
+  safeSet('mpb_custom_exs', customExs);
+  // Add to MODULES_DATA in memory
+  if (MODULES_DATA[mod]) MODULES_DATA[mod].exercises.push(newEx);
+  document.getElementById('contenuForm').classList.add('hidden');
+  ['cfTitre','cfDuree','cfSteps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderCustomExList();
+  toast('✅ Exercice ajouté à ' + MODULES_DATA[mod]?.name + ' — niveau ' + niv);
+}
+
+function renderCustomExList() {
+  const customExs = safeGet('mpb_custom_exs', []);
+  const el = document.getElementById('customExList');
+  if (!el) return;
+  if (!customExs.length) { el.innerHTML = '<div class="muted">Aucun exercice personnalis\u00e9 pour l\'instant.</div>'; return; }
+  el.innerHTML = '<div class="card-title mt3">Exercices personnalisés</div>' +
+    customExs.map((ex,i) => `<div class="ex-item"><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span><span class="tag t-blue">${MODULES_DATA[ex.mod]?.name||ex.mod}</span></div></div><button class="btn btn-ghost btn-sm" onclick="deleteCustomEx(${i})">🗑️</button></div>`).join('');
+}
+
+function deleteCustomEx(idx) {
+  const customExs = safeGet('mpb_custom_exs', []);
+  const ex = customExs[idx];
+  if (ex && MODULES_DATA[ex.mod]) {
+    MODULES_DATA[ex.mod].exercises = MODULES_DATA[ex.mod].exercises.filter(e => e.id !== ex.id);
+  }
+  customExs.splice(idx, 1);
+  safeSet('mpb_custom_exs', customExs);
+  renderCustomExList();
+  toast('🗑️ Exercice supprimé.');
+}
+
 function sendMsg() {
   const to = document.getElementById('msgTo')?.value || '';
   const text = document.getElementById('msgText')?.value || '';
@@ -2092,7 +2313,9 @@ function exportPDF() { toast('📄 Rapport PDF généré !'); }
 function ttsSpeak(text) {
   if (!window.speechSynthesis) { toast('⚠️ Synthèse vocale non disponible sur ce navigateur (utilisez Chrome ou Edge).'); return; }
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
+  // B11: Truncate very long texts to avoid Chrome speechSynthesis silent failure
+  const safeText = text.length > 500 ? text.substring(0, 500) + '… (texte tronqué)' : text;
+  const u = new SpeechSynthesisUtterance(safeText);
   u.lang = 'fr-FR'; u.rate = 0.88; u.pitch = 1;
   // Try to pick a French voice
   const voices = speechSynthesis.getVoices();
@@ -2121,6 +2344,10 @@ function confetti() {
 // ── UTILS ──────────────────────────────────────
 function val(id) { return (document.getElementById(id)?.value || '').trim(); }
 function setEl(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+// B19: Sanitize user-provided strings before innerHTML injection
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
 function saveState() { safeSet('mpb_prog', S.prog); }
 
 let tTimer; let tQueue = [];
