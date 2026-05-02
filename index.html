@@ -62,7 +62,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 /* ── SIDEBAR ──────────────────────────────────── */
 .sidebar{width:var(--sb);background:var(--surface);border-right:1px solid var(--border);padding:16px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:var(--nb);height:calc(100vh - var(--nb))}
 .sb-section{margin-bottom:20px}
-.sb-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:0 10px;margin-bottom:6px}
+.sb-label{font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;padding:0 10px;margin-bottom:6px}
 .nav-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);transition:all .15s;margin-bottom:2px;user-select:none}
 .nav-link:hover{background:var(--surface2);color:var(--primary)}
 .nav-link.active{background:var(--primary-xlight);color:var(--primary)}
@@ -97,7 +97,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 .btn-outline:hover{background:var(--primary-xlight)}
 .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
 .btn-ghost:hover{background:var(--surface3)}
-.btn-sm{padding:7px 14px;font-size:13px}
+.btn-sm{padding:9px 16px;font-size:13px}
 .btn-lg{padding:14px 28px;font-size:16px;border-radius:var(--r)}
 .btn-full{width:100%;justify-content:center}
 
@@ -215,7 +215,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15
 /* ── TABLE ────────────────────────────────────── */
 .tw-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
-thead th{text-align:left;padding:9px 14px;font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+thead th{text-align:left;padding:9px 14px;font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
 tbody td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--surface2)}
@@ -388,6 +388,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     <button class="mob-btn" onclick="toggleSidebar()" aria-label="Ouvrir le menu">☰</button>
     <div class="nb-brand" onclick="goHome()"><div class="nb-logo">B</div><span>Ma Plateforme Bureautique</span></div>
     <div class="nb-spacer"></div>
+    <span id="nbCurrentPage" style="font-size:12px;color:var(--text3);display:none"></span>
     <div class="nb-actions">
       <span id="nbLvl" class="nb-lvl lB1">B1</span>
       <div class="user-pill" onclick="logout()" role="button" aria-label="Se déconnecter" tabindex="0">
@@ -595,6 +596,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div class="ph flex jb fwrap gap2">
           <div><div class="ph-title">📊 Progression & Badges</div><div class="ph-sub">Votre avancement détaillé</div></div>
           <button class="btn btn-ghost" onclick="window.print()">🖨️ Imprimer</button>
+      <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetProgression()">🗑️ Réinitialiser</button>
         </div>
         <div class="sg" id="progStats"></div>
         <div class="g2">
@@ -628,7 +630,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <div class="card-title" style="margin-bottom:0">👥 Stagiaires</div>
               <div class="flex gap2 fwrap">
                 <input class="fi" id="stagSearch" style="width:160px" placeholder="🔍 Rechercher…" oninput="renderStagTable()">
-                <select class="fs" id="stagGrp" style="width:auto" onchange="renderStagTable()" id="stagGrpSel"></select>
+                <select class="fs" id="stagGrp" style="width:auto" onchange="renderStagTable()" id="stagGrp"></select>
                 <select class="fs" id="stagNiv" style="width:auto" onchange="renderStagTable()"><option value="all">Tous niveaux</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option></select>
               </div>
             </div>
@@ -636,7 +638,13 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           </div>
         </div>
         <div id="ft-travaux" class="hidden">
-          <div class="card"><div class="card-title">📝 Travaux à corriger</div><div class="tw-wrap"><table><thead><tr><th>Stagiaire</th><th>Fichier</th><th>Module</th><th>Date</th><th>Actions</th></tr></thead><tbody id="travBody"></tbody></table></div></div>
+          <div class="card">
+  <div class="flex jb fwrap gap2 mb3">
+    <div class="card-title" style="margin-bottom:0">📝 Travaux à corriger</div>
+    <input class="fi" id="travSearch" style="width:180px" placeholder="🔍 Rechercher stagiaire…" oninput="renderTravTable()">
+  </div>
+  <div class="tw-wrap"><table><thead><tr><th>Stagiaire</th><th>Fichier</th><th>Module</th><th>Date</th><th>Actions</th></tr></thead><tbody id="travBody"></tbody></table></div>
+</div>
         </div>
         <div id="ft-stats" class="hidden">
           <div class="g2">
@@ -887,18 +895,22 @@ const CAS_PRATIQUES = [
 
 const QUIZ_DATA = [
   // qIdx 0 — Word mise en forme
-  {q:'Pour mettre un texte en gras dans Word, vous sélectionnez le texte puis vous appuyez sur :',opts:['Ctrl + I','Ctrl + G','Ctrl + U','Ctrl + B'],rep:1},
+  {q:'Pour mettre un texte en gras dans Word, vous sélectionnez le texte puis vous appuyez sur :',opts:['Ctrl + I','Ctrl + G','Ctrl + U','Ctrl + B'],rep:1,
+   expl:'Ctrl+B (Bold = Gras en anglais) met le texte en gras. Ctrl+I = Italique, Ctrl+U = Souligné.'},
   // qIdx 1 — Word tableau
-  {q:'Pour créer un tableau dans Word, vous utilisez quel onglet ?',opts:['Accueil','Mise en page','Insertion','Références'],rep:2},
+  {q:'Pour créer un tableau dans Word, vous utilisez quel onglet ?',opts:['Accueil','Mise en page','Insertion','Références'],rep:2,
+   expl:"L'onglet Insertion contient tous les éléments à insérer : tableaux, images, formes..."},
   // qIdx 2 — Excel saisie
-  {q:'Dans Excel, pour passer à la cellule suivante (à droite) après la saisie, vous appuyez sur :',opts:['Entrée','Espace','Tab','Flèche vers le haut'],rep:2},
+  {q:'Dans Excel, pour passer à la cellule suivante (à droite) après la saisie, vous appuyez sur :',opts:['Entrée','Espace','Tab','Flèche vers le haut'],rep:2,
+   expl:'Tab déplace vers la droite. Entrée déplace vers le bas. Utilisez Tab pour remplir une ligne rapidement.'},
   // qIdx 3 — PPT images
-  {q:'Dans PowerPoint, quelle est la bonne façon d\'insérer une image ?',opts:['Copier-coller depuis Internet','Insertion → Images en ligne','Insertion → Images → Cet appareil','Glisser depuis le navigateur web'],rep:2},
+  {q:"Dans PowerPoint, quelle est la bonne façon d'insérer une image ?",opts:['Copier-coller depuis Internet','Insertion → Images en ligne','Insertion → Images → Cet appareil','Glisser depuis le navigateur web'],rep:2,
+   expl:"⚠️ Toujours utiliser 'Cet appareil' — les images en ligne nécessitent une connexion et peuvent disparaître."},
 ];
 
 const QUIZ_POSITIONNEMENT = [
-  {q:'Qu\'est-ce que le bouton "Gras" dans Word fait à votre texte ?',opts:['Il efface le texte','Il rend le texte plus épais et foncé','Il souligne le texte','Il change la couleur'],rep:1,lvl:'A1'},
-  {q:'Pour enregistrer un document Word rapidement, vous utilisez :',opts:['Ctrl + C','Ctrl + V','Ctrl + S','Ctrl + P'],rep:2,lvl:'A1'},
+  {q:'Qu\'est-ce que le bouton "Gras" dans Word fait à votre texte ?',opts:['Il efface le texte','Il rend le texte plus épais et foncé','Il souligne le texte','Il change la couleur'],rep:1,lvl:'A1',expl:'Le bouton Gras (G) dans la barre d\'outils rend le texte plus épais. Raccourci : Ctrl+B.'},
+  {q:'Pour enregistrer un document Word rapidement, vous utilisez :',opts:['Ctrl + C','Ctrl + V','Ctrl + S','Ctrl + P'],rep:2,lvl:'A1',expl:'Ctrl+S = Save (Enregistrer). Ctrl+C = Copier, Ctrl+V = Coller, Ctrl+P = Imprimer.'},
   {q:'Dans Excel, que désigne la cellule "B3" ?',opts:['2e colonne, 3e ligne','3e colonne, 2e ligne','Colonne B, ligne 3','Ligne B, colonne 3'],rep:2,lvl:'A2'},
   {q:'Quelle formule Excel calcule la somme des cellules B1 à B5 ?',opts:['=TOTAL(B1:B5)','=SOMME(B1:B5)','=AJOUTER(B1,B5)','=CALCUL(B1:B5)'],rep:1,lvl:'A2'},
   {q:'Dans PowerPoint, comment ajouter une nouvelle diapositive ?',opts:['Fichier → Nouveau','Accueil → Nouvelle diapositive','Insertion → Page','Ctrl + N'],rep:1,lvl:'B1'},
@@ -1177,6 +1189,10 @@ function showPage(id) {
   document.getElementById('sbOverlay').style.display = 'none';
   document.getElementById('mainScroll').scrollTop = 0;
   S.currentPage = id; // FIX #2e
+  // FIX #21: Update page indicator in navbar
+  const pageLabels = {dashboard:'🏠 Tableau de bord',parcours:'🗺️ Mon parcours',positionnement:'📝 Test niveau',modules:'📚 Modules',cas:'🧩 Cas pratiques',metiers:'💼 Métiers',tests:'📝 Tests',envoi:'📤 Envoyer travaux',progression:'📊 Progression',formateur:'👨‍🏫 Formateur'};
+  const nbCP = document.getElementById('nbCurrentPage');
+  if (nbCP) { nbCP.textContent = pageLabels[id] || ''; nbCP.style.display = id === 'dashboard' ? 'none' : 'inline'; }
   // Lazy renders
   if (id === 'dashboard') renderDashboard();
   if (id === 'modules') renderModules();
@@ -1417,8 +1433,9 @@ function renderQuizQ() {
     </div>
     <div id="qfb" class="quiz-fb"></div>
     <div class="quiz-nav">
+      <button class="btn btn-ghost btn-sm" style="${i===0?'visibility:hidden':''}" onclick="if(S.posQuizIdx>0){S.posQuizIdx--;S.posAnswers.pop();renderQuizQ()}">← Précédente</button>
       <span class="quiz-prog">Question ${i+1} / ${total}</span>
-      <button class="btn btn-primary hidden" id="qNext" onclick="S.posQuizIdx++;renderQuizQ()">Question suivante →</button>
+      <button class="btn btn-primary hidden" id="qNext" onclick="S.posQuizIdx++;renderQuizQ()">Suivante →</button>
     </div>`);
 }
 function answerQuizPos(chosen) {
@@ -1434,7 +1451,9 @@ function answerQuizPos(chosen) {
     fb.className = 'quiz-fb show';
     fb.style.background = chosen === q.rep ? 'var(--accent-light)' : 'var(--danger-light)';
     fb.style.color = chosen === q.rep ? '#064e3b' : '#7f1d1d';
-    fb.textContent = chosen === q.rep ? '✅ Bonne réponse !' : '❌ Incorrect. Réponse : ' + q.opts[q.rep];
+    fb.innerHTML = chosen === q.rep 
+      ? `✅ Bonne réponse !${q.expl ? '<div style="margin-top:6px;font-size:13px;opacity:.9">💡 '+q.expl+'</div>' : ''}` 
+      : `❌ Incorrect. Bonne réponse : <b>${q.opts[q.rep]}</b>${q.expl ? '<div style="margin-top:6px;font-size:13px;opacity:.9">💡 '+q.expl+'</div>' : ''}`;
   }
   document.getElementById('qNext')?.classList.remove('hidden');
 }
@@ -1448,10 +1467,10 @@ function showQuizResult() {
     <div class="tc" style="padding:20px 0">
       <div style="font-size:52px;margin-bottom:14px">${pct >= 80 ? '🏆' : pct >= 60 ? '✅' : '📚'}</div>
       <div style="font-size:24px;font-weight:900;margin-bottom:8px">${score} / ${total} — ${pct}%</div>
-      <div style="font-size:17px;margin-bottom:20px">Niveau estimé : <span class="lvl l${lvl}" style="font-size:15px;padding:6px 16px">${lvl}</span></div>
-      <div class="alert al-info" style="text-align:left;max-width:420px;margin:0 auto 20px"><span>ℹ️</span><div>Estimation basée sur vos réponses. Votre formatrice validera votre niveau lors d'un entretien individuel.</div></div>
+      <div style="font-size:17px;margin-bottom:16px">Niveau estimé : <span class="lvl l${lvl}" style="font-size:15px;padding:6px 16px">${lvl}</span></div>
+      <div class="alert al-ok" style="text-align:left;max-width:420px;margin:0 auto 16px"><span>🎯</span><div><b>Résultat :</b> ${score}/${total} bonnes réponses. Niveau estimé <b>${lvl}</b>.<br>Votre formatrice validera lors d'un entretien individuel.</div></div>
       <div class="flex gap2 fwrap" style="justify-content:center">
-        <button class="btn btn-primary" onclick="applyTestLevel('${lvl}')">✅ Appliquer le niveau ${lvl}</button>
+        <button class="btn btn-primary btn-lg" onclick="applyTestLevel('${lvl}')">✅ Valider le niveau ${lvl}</button>
         <button class="btn btn-ghost" onclick="showPage('parcours')">← Retour au parcours</button>
         <button class="btn btn-outline" onclick="startQuizPositionnement()">🔄 Recommencer</button>
       </div>
@@ -1677,7 +1696,10 @@ function answerExQuiz(el, chosen, correct, exId, modKey) {
     fb.className = 'quiz-fb show';
     fb.style.background = chosen === correct ? 'var(--accent-light)' : 'var(--danger-light)';
     fb.style.color = chosen === correct ? '#064e3b' : '#7f1d1d';
-    fb.textContent = chosen === correct ? '✅ Bonne réponse ! Exercice complété.' : '❌ Incorrect. Bonne réponse : ' + document.querySelectorAll('#exModal .qopt')[correct].querySelector('span').textContent;
+    const expl = q.expl ? `<div style="margin-top:6px;font-size:13px;opacity:.9">💡 ${q.expl}</div>` : '';
+    fb.innerHTML = chosen === correct 
+      ? `✅ Bonne réponse ! Exercice complété.${expl}` 
+      : `❌ Incorrect. Bonne réponse : <b>${document.querySelectorAll('#exModal .qopt')[correct].querySelector('span').textContent}</b>${expl}`;
   }
   if (chosen === correct) setTimeout(() => completeExercise(exId, modKey), 1200);
 }
@@ -1685,7 +1707,7 @@ function answerExQuiz(el, chosen, correct, exId, modKey) {
 // FIX #4 & #9: completeExercise correctly writes to S.prog[modKey]
 function completeExercise(exId, modKey) {
   if (S.prog.exercises[exId]) return; // Already done
-  S.prog.exercises[exId] = true;
+  S.prog.exercises[exId] = new Date().toLocaleDateString('fr-FR'); // FIX #15: store date
 
   // FIX #4: Guard against invalid modKey
   const m = MODULES_DATA[modKey];
@@ -1775,7 +1797,7 @@ function renderCas() {
           ${cp.featured ? '<span class="tag t-blue">Recommandé</span>' : ''}
         </div>
         <div class="pr-bar"><div class="pr-fill fill-primary" style="width:${progPct}%"></div></div>
-        <div class="muted mt2">${progPct > 0 ? `En cours · ${doneCnt}/${cp.etapes.length} étapes` : cp.etapes.length + ' étapes · Non commencé'}</div>
+        <div class="muted mt2">${progPct > 0 ? `En cours · ${doneCnt}/${cp.etapes.length} étapes` : cp.etapes.length + ' étapes'}${cp.featured ? ' · <b style="color:var(--primary)">Recommandé</b>' : ''}</div>
       </div>
     </div>`;
   }).join(''));
@@ -2040,7 +2062,7 @@ function renderTestQ() {
       document.querySelectorAll('#testQuizContent .qopt')[correct].classList.add('correct');
       S.testAnswers.push(chosen === correct); // FIX #3
       const fb = document.getElementById('testfb');
-      if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; fb.textContent=chosen===correct?'✅ Correct !':'❌ ' + QUIZ_POSITIONNEMENT[S.quizIdx].opts[correct]; }
+      if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; fb.textContent=chosen===correct?'✅ Correct !':'❌ ' + QUIZ_POSITIONNEMENT[S.testQuizIdx].opts[correct]; }
       document.getElementById('testNext')?.classList.remove('hidden');
     });
   });
@@ -2055,13 +2077,18 @@ function showTestResult(total) {
       <div style="font-size:52px;margin-bottom:12px">${pct >= 80 ? '🏆' : pct >= 60 ? '✅' : '📚'}</div>
       <div style="font-size:24px;font-weight:900;margin-bottom:6px">${score} / ${total}</div>
       <div style="font-size:17px;font-weight:700;margin-bottom:18px">${pct}% — ${mention}</div>
-      <button class="btn btn-outline" onclick="document.getElementById('testDetail').classList.add('hidden')">← Retour aux tests</button>
+      ${pct < 80 ? `<div class="alert al-info" style="text-align:left;max-width:360px;margin:0 auto 16px"><span>💡</span><div><b>Points à retravailler :</b> Pratiquez les exercices de niveau A1 et A2 dans les modules Word et Excel.</div></div>` : ''}
+      <div class="flex gap2 fwrap" style="justify-content:center">
+        ${pct < 100 ? `<button class="btn btn-primary" onclick="document.getElementById('testDetail').classList.add('hidden');showPage('modules')">📚 Travailler les exercices</button>` : ''}
+        <button class="btn btn-outline" onclick="document.getElementById('testDetail').classList.add('hidden')">← Retour aux tests</button>
+      </div>
     </div>`);
   if (pct >= 60) confetti();
 }
 
 // ── ENVOI ──────────────────────────────────────
 function renderEnvoi() {
+  updateEnvoiExSelect(); // FIX #2: populate on render
   setEl('envoiHist', S.travaux.map(t => `
     <tr>
       <td style="font-size:13px">${t.fichier}</td>
@@ -2133,6 +2160,21 @@ function envoyerTravail() {
 }
 
 // ── PROGRESSION ────────────────────────────────
+function resetProgression() {
+  if (!window.confirm('Réinitialiser toute votre progression ? Vos badges, exercices et cas pratiques seront remis à zéro. Cette action est irréversible.')) return;
+  S.prog = { word:0, excel:0, ppt:0, pub:0, exercises:{}, badges:[], activity:[], weekly:0, weekStart:Date.now(), casProgress:{} };
+  // Reset cas pratiques
+  CAS_PRATIQUES.forEach(cp => cp.etapes.forEach(e => { e.done = false; }));
+  saveState();
+  // Clear step data
+  Object.keys(localStorage).filter(k => k.startsWith('mpb_steps_')).forEach(k => localStorage.removeItem(k));
+  unlockBadge('first'); // Re-award first badge
+  renderProgression();
+  renderDashboard();
+  toast('🔄 Progression réinitialisée. Bonne continuation !', 4000);
+  confetti();
+}
+
 function renderProgression() {
   const p = S.prog, cfg = S.settings;
   const global = Math.round((p.word + p.excel + p.ppt + p.pub) / 4);
@@ -2175,13 +2217,13 @@ function renderProgression() {
   const doneExList = [];
   Object.entries(MODULES_DATA).forEach(([mk, m]) => {
     m.exercises.forEach(e => {
-      if (p.exercises[e.id]) doneExList.push({ mod: m.name, modIcon: m.icon, name: e.name, lvl: e.lvl });
+      if (p.exercises[e.id] && p.exercises[e.id] !== '_steps') doneExList.push({ mod: m.name, modIcon: m.icon, name: e.name, lvl: e.lvl, date: typeof p.exercises[e.id]==='string' ? p.exercises[e.id] : '' });
     });
   });
   const doneHtml = doneExList.length
     ? '<div style="display:flex;flex-wrap:wrap;gap:8px">' + doneExList.map(e =>
-        `<div style="padding:6px 12px;background:var(--accent-light);border-radius:8px;font-size:13px;color:#065f46">
-          ${e.modIcon} <b>${e.name}</b> <span class="lvl l${e.lvl}">${e.lvl}</span>
+        `<div style="padding:6px 12px;background:var(--accent-light);border-radius:8px;font-size:13px;color:#065f46;display:flex;align-items:center;gap:6px">
+          ${e.modIcon} <b>${e.name}</b> <span class="lvl l${e.lvl}">${e.lvl}</span>${e.date?`<span style="font-size:11px;opacity:.7">${e.date}</span>`:''}
         </div>`).join('') + '</div>'
     : '<div class="muted">Aucun exercice compl\u00e9t\u00e9 pour l\'instant.</div>';
 
@@ -2248,7 +2290,7 @@ function renderStagTable() {
   const grp = document.getElementById('stagGrp')?.value || 'all';
   const niv = document.getElementById('stagNiv')?.value || 'all';
   // FIX #33: Populate dynamic group filter
-  const grpSel = document.getElementById('stagGrpSel') || document.getElementById('stagGrp');
+  const grpSel = document.getElementById('stagGrp');
   if (grpSel) {
     const groups = ['all', ...new Set(DEMO_STAGIAIRES.map(s=>s.groupe).sort())];
     const curGrp = grpSel.value || 'all';
@@ -2306,7 +2348,8 @@ function getFormTravaux() {
 }
 
 function renderTravTable() {
-  const FORM_TRAVAUX = getFormTravaux();
+  const searchTrav = document.getElementById('travSearch')?.value?.toLowerCase() || '';
+  const FORM_TRAVAUX = getFormTravaux().filter(t => !searchTrav || t.stag.toLowerCase().includes(searchTrav) || t.fichier.toLowerCase().includes(searchTrav));
   setEl('travBody', FORM_TRAVAUX.map(t => `
     <tr id="trow_${t.id}">
       <td style="font-weight:700">${t.stag}</td>
@@ -2406,7 +2449,8 @@ function openFiche(id) {
       ${s.detail.exFaits >= 1 ? '<div class="bdg earned"><div class="bdg-icon">🌟</div><div class="bdg-name">1ère connexion</div></div>' : ''}
     </div>
 <div class="flex gap2 mt4 fwrap">
-      <button class="btn btn-primary" onclick="ouvrirCorrection(1)">✏️ Corriger un travail</button>
+      <button class="btn btn-primary" onclick="ouvrirCorrectionForStag(${s.id})">✏️ Corriger un travail</button>
+      <button class="btn btn-outline" onclick="fTabMsg();closeFicheModal()">💬 Envoyer message</button>
       <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimer fiche</button>
       <button class="btn btn-ghost" onclick="closeFicheModal()">Fermer</button>
     </div>`);
@@ -2474,7 +2518,10 @@ function renderMsgs() {
 }
 
 function saveContenu() {
-  // B7: Save a custom exercise
+  // FIX #8: Check if we're editing an existing exercise
+  const form = document.getElementById('contenuForm');
+  const editIdx = form?.dataset.editIdx !== undefined && form?.dataset.editIdx !== '' 
+    ? parseInt(form.dataset.editIdx) : -1;
   const mod = document.getElementById('cfMod')?.value;
   const titre = document.getElementById('cfTitre')?.value?.trim();
   const niv = document.getElementById('cfNiv')?.value;
@@ -2485,10 +2532,28 @@ function saveContenu() {
   const customExs = safeGet('mpb_custom_exs', []);
   const newEx = { id:'cx'+Date.now(), num: (MODULES_DATA[mod]?.exercises?.length||0)+customExs.filter(e=>e.mod===mod).length+1, name:titre, lvl:niv, time:duree, type:'steps', steps, mod, custom:true };
   customExs.push(newEx);
+  // FIX #8: Replace if editing, push if new
+  if (editIdx >= 0 && editIdx < customExs.length) {
+    const oldEx = customExs[editIdx];
+    if (MODULES_DATA[oldEx.mod]) {
+      MODULES_DATA[oldEx.mod].exercises = MODULES_DATA[oldEx.mod].exercises.filter(e => e.id !== oldEx.id);
+    }
+    customExs[editIdx] = newEx;
+  } else {
+    customExs.push(newEx);
+  }
   safeSet('mpb_custom_exs', customExs);
   // Add to MODULES_DATA in memory
-  if (MODULES_DATA[mod]) MODULES_DATA[mod].exercises.push(newEx);
-  document.getElementById('contenuForm').classList.add('hidden');
+  if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e=>e.id===newEx.id)) {
+    MODULES_DATA[mod].exercises.push(newEx);
+  }
+  const formEl = document.getElementById('contenuForm');
+  if (formEl) { 
+    formEl.classList.add('hidden');
+    delete formEl.dataset.editIdx;
+    const saveBtn = formEl.querySelector('.btn-primary');
+    if (saveBtn) saveBtn.textContent = '💾 Enregistrer';
+  }
   ['cfTitre','cfDuree','cfSteps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderCustomExList();
   toast('✅ Exercice ajouté à ' + MODULES_DATA[mod]?.name + ' — niveau ' + niv);
@@ -2529,6 +2594,7 @@ function editCustomEx(idx) {
 }
 
 function deleteCustomEx(idx) {
+  if (!window.confirm('Supprimer cet exercice personnalisé ? Cette action est irréversible.')) return;
   const customExs = safeGet('mpb_custom_exs', []);
   const ex = customExs[idx];
   if (ex && MODULES_DATA[ex.mod]) {
