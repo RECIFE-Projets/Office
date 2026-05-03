@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Ma Plateforme Bureautique — Pack Office A1 à C2">
+  <meta property="og:title" content="Ma Plateforme Bureautique">
+  <meta property="og:description" content="Formation Pack Office Word, Excel, PowerPoint, Publisher — Niveaux A1 à C2">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#1a5ec8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Ma Plateforme Bureautique</title>
 <style>
 /* =====================================================
@@ -323,6 +328,12 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 /* ── MOBILE ───────────────────────────────────── */
 .mob-btn{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2);padding:4px 8px}
 @media(max-width:1024px){.sg{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:repeat(2,1fr)}}
+@media print{
+  .sidebar,.navbar,.toast,.confetti-piece,.a11y-bar,.btn,button,.modal-bg{display:none!important}
+  .main-content{margin:0!important;padding:0!important}
+  body{background:#fff!important;color:#000!important}
+  .card{box-shadow:none!important;border:1px solid #ccc!important}
+}
 @media(max-width:768px){
   .sidebar{display:none;position:fixed;top:var(--nb);left:0;height:calc(100vh - var(--nb));z-index:150;box-shadow:var(--shadow-lg);width:260px}
   .sidebar.open{display:block}.mob-btn{display:block}
@@ -624,7 +635,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="tab-btn" onclick="fTab('contenus',this)">🧱 Contenus</button>
           <button class="tab-btn" onclick="fTab('messages',this)">💬 Messages</button>
         </div>
-        <div id="ft-stagiaires">
+        <div id="formAlertZone"></div>
+<div id="ft-stagiaires">
           <div class="card">
             <div class="flex jb fwrap gap2 mb3">
               <div class="card-title" style="margin-bottom:0">👥 Stagiaires</div>
@@ -783,8 +795,7 @@ const DEMO_STAGIAIRES = [
   {id:3,prenom:'Sophie',nom:'Martin',init:'SM',formation:'Sav. Ess.',ftag:'t-blue',niveau:'B2',lclass:'lB2',metier:'ADVF',prog:78,acces:'23/04/2026',groupe:'Groupe 1',detail:{word:90,excel:70,ppt:65,pub:30,temps:'8h20',exFaits:34}},
   {id:4,prenom:'Fatou',nom:'Koné',init:'FK',formation:'#AVENIR',ftag:'t-purple',niveau:'A1',lclass:'lA1',metier:'Sans Projet',prog:12,acces:'20/04/2026',groupe:'Groupe 1',detail:{word:18,excel:5,ppt:0,pub:0,temps:'45min',exFaits:3}},
   {id:5,prenom:'Karim',nom:'Ouellet',init:'KO',formation:'Sav. Ess.',ftag:'t-blue',niveau:'B2',lclass:'lB2',metier:'Vente',prog:85,acces:'23/04/2026',groupe:'Groupe 2',detail:{word:95,excel:85,ppt:75,pub:40,temps:'12h',exFaits:48}},
-  {id:6,prenom:'Léa',nom:'Renard',init:'LR',formation:'#AVENIR',ftag:'t-purple',niveau:'B1',lclass:'lB1',metier:'Accueil',prog:55,acces:'22/04/2026',groupe:'Groupe 3',detail:{word:70,excel:50,ppt:40,pub:10,temps:'5h40',exFaits:22}},
-];
+  {id:6,prenom:'Léa',nom:'Renard',init:'LR',formation:'#AVENIR',ftag:'t-purple',niveau:'B1',lclass:'lB1',metier:'Accueil',prog:55,acces:'22/04/2026',groupe:'Groupe 3',detail:{word:70,excel:50,ppt:40,pub:10,temps:'5h40',exFaits:22}}];
 
 const BADGES_DEF = [
   {id:'first',icon:'🌟',name:'1ère connexion'},
@@ -799,8 +810,7 @@ const BADGES_DEF = [
   {id:'positionnement',icon:'🎯',name:'Test passé'},
   {id:'envoi',icon:'📤',name:'1er envoi'},
   {id:'pack',icon:'🏆',name:'Pack complet'},
-  {id:'medaille_c2',icon:'🥇',name:'Médaille C2'},
-];
+  {id:'medaille_c2',icon:'🥇',name:'Médaille C2'}];
 
 const MODULES_DATA = {
   word:{icon:'📄',name:'Word 2019',colorClass:'mod-top-word',fillClass:'fill-word',tag:'t-blue',
@@ -814,8 +824,24 @@ const MODULES_DATA = {
       {id:'w6',num:6,name:'Mise en page et marges',lvl:'B1',time:'30 min',type:'steps',steps:['Onglet Mise en page → Marges → Normales (2,5 cm)','Orientation : Portrait (vertical) ou Paysage (horizontal)','Taille de papier : A4','Fichier → Imprimer pour prévisualiser','Ajustez selon le rendu souhaité']},
       {id:'w7',num:7,name:'En-tête, pied de page, numérotation',lvl:'B1',time:'30 min',type:'steps',steps:['Insertion → En-tête → choisir un modèle','Tapez votre nom ou le titre du document','Insertion → Pied de page → même démarche','Insertion → Numéro de page → Bas de page → centré','Double-cliquez hors zone pour quitter l\'en-tête']},
       {id:'w8',num:8,name:'Styles et table des matières',lvl:'B2',time:'45 min',type:'steps',steps:['Sélectionnez un titre → style Titre 1 (onglet Accueil)','Sous-titres → style Titre 2','Références → Table des matières → Automatique 1','La table se génère automatiquement !','Clic droit sur la table → Mettre à jour pour actualiser']},
-      {id:'w9',num:9,name:'Publipostage de base',lvl:'C1',time:'55 min',type:'steps',steps:['Publipostage → Démarrer la fusion et le publipostage','Lettres → Sélection des destinataires → Créer une liste','Remplissez le tableau (Prénom, Nom, Adresse)','Insérer un champ de fusion → choisissez Prénom etc.','Terminer et fusionner → Modifier les documents individuels']},
-    ]},
+      {id:'w9',num:9,name:'Publipostage de base',lvl:'C1',time:'55 min',type:'steps',steps:[
+        'Ouvrir Word — Créer un nouveau document de lettre type',
+        '⚠️ Onglet Publipostage → Démarrer la fusion et le publipostage → Lettres',
+        'Sélectionner les destinataires → Utiliser une liste existante (fichier Excel)',
+        'Insérer les champs de fusion : Prénom, Nom, Adresse',
+        '⚠️ Enregistrer le document maître sous : NomRéférente_Groupe_Publipostage.docx',
+        'Aperçu des résultats → vérifier que chaque lettre est correcte',
+        'Terminer et fusionner → Modifier les documents individuels',
+        'Vérifier les 3 premières lettres fusionnées']},
+      {id:'w10',num:10,name:'Macro et automatisation simple',lvl:'C2',time:'65 min',type:'steps',steps:[
+        'Ouvrir Word — document existant avec des données répétitives',
+        '⚠️ Onglet Développeur → si absent : Fichier → Options → Personnaliser le ruban → cocher Développeur',
+        'Développeur → Enregistrer une macro → nommer "MiseEnForme"',
+        'Effectuer les actions : gras, couleur, taille 14 sur une sélection de texte',
+        'Arrêter l\'enregistrement de la macro',
+        '⚠️ Enregistrer sous format .docm (Word avec macros)',
+        'Tester la macro sur un nouveau paragraphe',
+        '⚠️ Enregistrer sous : NomRéférente_Groupe_Macro.docm']}]},
   excel:{icon:'📊',name:'Excel 2019',colorClass:'mod-top-excel',fillClass:'fill-excel',tag:'t-green',
     desc:'Tableur : saisir des données, créer des tableaux et effectuer des calculs.',
     exercises:[
@@ -825,8 +851,28 @@ const MODULES_DATA = {
       {id:'e4',num:4,name:'Mise en forme des cellules',lvl:'A2',time:'25 min',type:'steps',steps:['Sélectionnez les cellules à mettre en forme','Gras, couleur de police : onglet Accueil','Bordures : cliquez sur l\'icône quadrillage → Toutes les bordures','Centrer : icône d\'alignement centré','Format nombre : € pour euros, % pour pourcentage']},
       {id:'e5',num:5,name:'Créer un graphique',lvl:'B1',time:'35 min',type:'steps',steps:['Sélectionnez vos données avec les en-têtes','Onglet Insertion → Graphiques recommandés','Choisissez Histogramme groupé → OK','Cliquez sur Titre du graphique pour le modifier','Déplacez le graphique en le glissant']},
       {id:'e6',num:6,name:'Filtres et tris',lvl:'B1',time:'30 min',type:'steps',steps:['Cliquez dans votre tableau de données','Accueil → Trier et filtrer → Filtrer','Des flèches ▼ apparaissent sur les en-têtes','Cliquez une flèche → cochez les valeurs à afficher','Pour trier : cliquez la flèche → Trier de A à Z']},
-      {id:'e7',num:7,name:'Formules SI et NB.SI',lvl:'B2',time:'45 min',type:'steps',steps:['Formule SI : =SI(A1>10,"Grand","Petit")','Lecture : si A1 est supérieur à 10, affiche "Grand", sinon "Petit"','NB.SI : =NB.SI(A1:A10,"Oui") → compte les cellules avec "Oui"','SOMME.SI : additionne les valeurs selon un critère','Combinez : =SI(NB.SI(A1:A10,"Oui")>5,"Majorité","Minorité")']},
-    ]},
+      {id:'e7',num:7,name:'Formules SI et NB.SI',lvl:'B2',time:'45 min',type:'steps',steps:[
+        'Ouvrir le fichier fourni par la formatrice',
+        'Dans la cellule C2, saisir : =SI(B2>10;"Oui";"Non")',
+        'Observer le résultat et étendre la formule sur C3:C10',
+        'Dans D12, saisir : =NB.SI(B2:B10;">10") pour compter les valeurs > 10',
+        '⚠️ Enregistrer sous : NomRéférente_Groupe_FormuleSI.xlsx']},
+      {id:'e8',num:8,name:'Tableau croisé dynamique (TCD)',lvl:'C1',time:'60 min',type:'steps',steps:[
+        'Ouvrir Excel — ouvrir le fichier de données fourni',
+        'Cliquer dans les données → Insertion → Tableau croisé dynamique',
+        '⚠️ Choisir "Nouvelle feuille de calcul" → OK',
+        'Glisser "Catégorie" dans Lignes, "Montant" dans Valeurs',
+        'Observer le total par catégorie automatiquement calculé',
+        'Ajouter "Mois" dans Colonnes pour voir l\'évolution',
+        '⚠️ Enregistrer sous : NomRéférente_Groupe_TCD.xlsx']},
+      {id:'e9',num:9,name:'Graphique croisé dynamique',lvl:'C2',time:'70 min',type:'steps',steps:[
+        'Ouvrir le fichier TCD créé au module précédent',
+        'Cliquer dans le TCD → Analyse du tableau croisé → Graphique croisé',
+        'Choisir le type "Histogramme groupé"',
+        'Modifier le titre du graphique : "Analyse des ventes par catégorie"',
+        '⚠️ Personnaliser les couleurs via Création → Styles de graphique',
+        'Copier le graphique dans un nouveau document Word',
+        '⚠️ Enregistrer l\'ensemble sous : NomRéférente_Groupe_AnalyseTCD.xlsx']}]},
   ppt:{icon:'📽️',name:'PowerPoint 2019',colorClass:'mod-top-ppt',fillClass:'fill-ppt',tag:'t-orange',
     desc:'Présentation : créer des diaporamas clairs et professionnels.',
     exercises:[
@@ -835,8 +881,7 @@ const MODULES_DATA = {
       {id:'p3',num:3,name:'⚠️ Texte et images',lvl:'A2',time:'25 min',type:'quiz',qIdx:3},
       {id:'p4',num:4,name:'Thèmes et mise en forme',lvl:'A2',time:'28 min',type:'steps',steps:['Onglet Conception → parcourez les thèmes disponibles','Cliquez sur un thème pour l\'appliquer à toutes les slides','Variantes : modifiez la couleur du même thème','Pour changer une police : Accueil → sélectionnez le texte → Police','Fond personnalisé : Conception → Mettre en forme l\'arrière-plan']},
       {id:'p5',num:5,name:'Transitions et animations',lvl:'B1',time:'35 min',type:'steps',steps:['Sélectionnez une diapositive → onglet Transitions','Choisissez un effet (Fondu recommandé pour rester professionnel)','"Appliquer à toutes" pour cohérence visuelle','Animations : sélectionnez un objet → onglet Animations','Apparition → Fondu ou Glissement : effets discrets recommandés']},
-      {id:'p6',num:6,name:'Mode présentateur et diaporama',lvl:'B1',time:'30 min',type:'steps',steps:['F5 pour lancer le diaporama depuis le début','Clic gauche ou touche Espace : diapositive suivante','Flèche gauche ← : revenir en arrière','Touche Échap pour quitter le diaporama','Diaporama → Mode Présentateur pour voir vos notes']},
-    ]},
+      {id:'p6',num:6,name:'Mode présentateur et diaporama',lvl:'B1',time:'30 min',type:'steps',steps:['F5 pour lancer le diaporama depuis le début','Clic gauche ou touche Espace : diapositive suivante','Flèche gauche ← : revenir en arrière','Touche Échap pour quitter le diaporama','Diaporama → Mode Présentateur pour voir vos notes']}]},
   pub:{icon:'🖨️',name:'Publisher 2019',colorClass:'mod-top-pub',fillClass:'fill-pub',tag:'t-purple',
     desc:'PAO : créer des flyers, affiches et brochures illustrées.',
     exercises:[
@@ -844,12 +889,11 @@ const MODULES_DATA = {
       {id:'pu2',num:2,name:'Créer un flyer simple',lvl:'A2',time:'28 min',type:'steps',steps:['Fichier → Nouveau → Flyers → choisissez un modèle','Double-cliquez sur le titre → tapez votre texte','Modifiez le corps du texte avec vos informations','Insertion → Images → Cet appareil (jamais en ligne !)','Ajustez la taille en tirant les poignées des coins']},
       {id:'pu3',num:3,name:'Images et formes',lvl:'A2',time:'30 min',type:'steps',steps:['Insertion → Images → Cet appareil (TOUJOURS depuis votre ordi !)','Maintenez Maj en redimensionnant pour garder les proportions','Insertion → Formes → choisissez Rectangle, Flèche…','Format Forme → couleur de remplissage et contour','Superposez les éléments : clic droit → Amener au premier plan']},
       {id:'pu4',num:4,name:'Mise en page d\'une affiche',lvl:'B1',time:'40 min',type:'steps',steps:['Mise en page → Format de page → A4 Portrait','Insertion → Zone de texte → dessinez la zone souhaitée','Organisez les éléments : titre en haut, image au centre','Grouper : sélectionnez plusieurs éléments → Format → Grouper','Aperçu avant impression : Fichier → Imprimer']},
-      {id:'pu5',num:5,name:'Brochure 3 volets',lvl:'B2',time:'50 min',type:'steps',steps:['Fichier → Nouveau → Brochures → 3 volets','Volet couverture (droite) : titre + image principale','Volet intérieur gauche : coordonnées et contact','Volet central : contenu principal avec texte et images','Volet dos : sous-titre ou logo']},
-    ]},
+      {id:'pu5',num:5,name:'Brochure 3 volets',lvl:'B2',time:'50 min',type:'steps',steps:['Fichier → Nouveau → Brochures → 3 volets','Volet couverture (droite) : titre + image principale','Volet intérieur gauche : coordonnées et contact','Volet central : contenu principal avec texte et images','Volet dos : sous-titre ou logo']}]},
 };
 
 const CAS_PRATIQUES = [
-  {id:'lettre',icon:'📄',bg:'var(--primary-xlight)',lvl:'A2',tags:['t-blue','t-purple'],tagNames:['Word','Secrétariat'],name:'Lettre de candidature',desc:'Rédiger une lettre professionnelle avec Word 2019.',prog:0,steps:8,
+  {id:'lettre',icon:'📄',bg:'var(--primary-xlight)',lvl:'A2',tags:['t-blue','t-purple'],tagNames:['Word','Secrétariat'],name:'Lettre de candidature',desc:'Rédiger une lettre professionnelle avec Word 2019.',prog:0,steps:30,
    etapes:[
      {num:1,title:'Ouvrir Word — Document vierge',desc:'Démarrer → Word 2019 → cliquez sur Document vierge',done:false,tip:null},
      {num:2,title:'Configurer la mise en page',desc:'Onglet Mise en page → Marges → Normales. Police Calibri 12pt. Interligne 1,5.',done:false,tip:null},
@@ -858,18 +902,16 @@ const CAS_PRATIQUES = [
      {num:5,title:'Date et objet',desc:'Ville, le JJ/MM/AAAA // Objet : Candidature au poste de …',done:false,tip:null},
      {num:6,title:'Corps de la lettre',desc:'Madame, Monsieur, // Je me permets de vous adresser ma candidature…',done:false,tip:'📌 Laissez une ligne vide entre chaque paragraphe'},
      {num:7,title:'Formule de politesse et signature',desc:'Veuillez agréer… // Signature : Prénom Nom',done:false,tip:null},
-     {num:8,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_Lettre.docx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier avant de valider'},
-   ]},
-  {id:'planning',icon:'📊',bg:'var(--accent-light)',lvl:'A1',tags:['t-green','t-gray'],tagNames:['Excel','Tous métiers'],name:'Planning hebdomadaire',desc:'Créer un tableau Excel avec les jours et tâches de la semaine.',prog:0,steps:6,
+     {num:8,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_Lettre.docx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier avant de valider'}]},
+  {id:'planning',icon:'📊',bg:'var(--accent-light)',lvl:'A1',tags:['t-green','t-gray'],tagNames:['Excel','Tous métiers'],name:'Planning hebdomadaire',desc:'Créer un tableau Excel avec les jours et tâches de la semaine.',prog:0,steps:22,
    etapes:[
      {num:1,title:'Ouvrir Excel — Classeur vierge',desc:'Démarrer → Excel 2019 → Classeur vierge',done:false,tip:null},
      {num:2,title:'Saisir les jours de la semaine',desc:'Cellule B1 : Lundi → C1 : Mardi → D1 : Mercredi → E1 : Jeudi → F1 : Vendredi',done:false,tip:'📌 Appuyez sur Tab pour passer à la cellule suivante'},
      {num:3,title:'Saisir les créneaux horaires',desc:'A2 : 8h-10h → A3 : 10h-12h → A4 : 14h-16h → A5 : 16h-18h',done:false,tip:null},
      {num:4,title:'Remplir le planning',desc:'Cliquez sur chaque cellule et tapez votre activité (ex : Formation Word)',done:false,tip:'📌 Entrée pour valider, Tab pour la cellule suivante'},
      {num:5,title:'Mettre en forme le tableau',desc:'Sélectionnez tout → Accueil → Mettre sous forme de tableau → choisissez un style',done:false,tip:null},
-     {num:6,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_Planning.xlsx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'},
-   ]},
-  {id:'presentation',icon:'📽️',bg:'var(--warn-light)',lvl:'B1',tags:['t-orange','t-blue'],tagNames:['PowerPoint','Recommandé'],name:'Présentation de mon métier',desc:'Créer un diaporama PowerPoint pour se présenter à un employeur.',prog:40,steps:10,featured:true,
+     {num:6,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_Planning.xlsx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'}]},
+  {id:'presentation',icon:'📽️',bg:'var(--warn-light)',lvl:'B1',tags:['t-orange','t-blue'],tagNames:['PowerPoint','Recommandé'],name:'Présentation de mon métier',desc:'Créer un diaporama PowerPoint pour se présenter à un employeur.',prog:40,steps:16,featured:true,
    etapes:[
      {num:1,title:'Ouvrir PowerPoint 2019',desc:'Démarrer → PowerPoint → Nouvelle présentation vierge',done:true,tip:null},
      {num:2,title:'Choisir un thème professionnel',desc:'Onglet Conception → choisissez un thème sobre → cliquez pour appliquer',done:true,tip:null},
@@ -880,8 +922,7 @@ const CAS_PRATIQUES = [
      {num:7,title:'Ajouter des transitions',desc:'Onglet Transitions → Fondu → Appliquer à toutes',done:false,tip:null},
      {num:8,title:'Vérifier l\'orthographe',desc:'F7 ou Révision → Vérifier l\'orthographe et la grammaire',done:false,tip:null},
      {num:9,title:'Tester le diaporama',desc:'F5 → vérifiez chaque diapositive → Échap pour arrêter',done:false,tip:null},
-     {num:10,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_PPT_Metier.pptx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'},
-   ]},
+     {num:10,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_PPT_Metier.pptx',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'}]},
   {id:'flyer',icon:'🖨️',bg:'var(--purple-light)',lvl:'B2',tags:['t-purple','t-orange'],tagNames:['Publisher','ADVF'],name:'Flyer Aide à domicile',desc:'Créer un flyer illustré avec Publisher pour un service ADVF.',prog:0,steps:6,
    etapes:[
      {num:1,title:'Ouvrir Publisher — Modèle Flyer',desc:'Démarrer → Publisher → Flyers → choisissez un modèle coloré',done:false,tip:null},
@@ -889,9 +930,7 @@ const CAS_PRATIQUES = [
      {num:3,title:'⚠️ Remplacer l\'image',desc:'Clic droit sur l\'image → Modifier l\'image → Depuis un fichier (JAMAIS en ligne !)',done:false,tip:'⚠️ Téléchargez d\'abord votre image sur l\'ordinateur.'},
      {num:4,title:'Ajouter le texte descriptif',desc:'Cliquez sur la zone de texte → décrivez les services proposés (aide à la toilette, repas, accompagnements)',done:false,tip:null},
      {num:5,title:'Ajouter les coordonnées',desc:'Zone contact : téléphone, adresse, e-mail, site web si disponible',done:false,tip:null},
-     {num:6,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_FlyerADVF.pub',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'},
-   ]},
-];
+     {num:6,title:'⚠️ Enregistrer',desc:'Ctrl+S → Documents → NomRéférente_Groupe_FlyerADVF.pub',done:false,tip:'⚠️ OBLIGATOIRE — Vérifiez le nom du fichier'}]}];
 
 const QUIZ_DATA = [
   // qIdx 0 — Word mise en forme
@@ -905,8 +944,7 @@ const QUIZ_DATA = [
    expl:'Tab déplace vers la droite. Entrée déplace vers le bas. Utilisez Tab pour remplir une ligne rapidement.'},
   // qIdx 3 — PPT images
   {q:"Dans PowerPoint, quelle est la bonne façon d'insérer une image ?",opts:['Copier-coller depuis Internet','Insertion → Images en ligne','Insertion → Images → Cet appareil','Glisser depuis le navigateur web'],rep:2,
-   expl:"⚠️ Toujours utiliser 'Cet appareil' — les images en ligne nécessitent une connexion et peuvent disparaître."},
-];
+   expl:"⚠️ Toujours utiliser 'Cet appareil' — les images en ligne nécessitent une connexion et peuvent disparaître."}];
 
 const QUIZ_POSITIONNEMENT = [
   {q:'Qu\'est-ce que le bouton "Gras" dans Word fait à votre texte ?',opts:['Il efface le texte','Il rend le texte plus épais et foncé','Il souligne le texte','Il change la couleur'],rep:1,lvl:'A1',expl:'Le bouton Gras (G) dans la barre d\'outils rend le texte plus épais. Raccourci : Ctrl+B.'},
@@ -923,8 +961,7 @@ const QUIZ_POSITIONNEMENT = [
   {q:'Le publipostage dans Word permet de :',opts:['Publier sur internet','Envoyer des e-mails','Créer des documents personnalisés en série','Imprimer en couleur'],rep:2,lvl:'B2'},
   {q:'Dans Publisher, pour garder les proportions d\'une image, maintenez :',opts:['Ctrl','Alt','Maj','Entrée'],rep:2,lvl:'B1'},
   {q:'Que fait =SI(A1>10,"Grand","Petit") dans Excel ?',opts:['Additionne A1 et 10','Affiche "Grand" si A1>10 sinon "Petit"','Compare deux colonnes','Trie les données'],rep:1,lvl:'B2'},
-  {q:'Pour insérer une table des matières automatique dans Word :',opts:['Insérer → Table des matières','Accueil → Table','Références → Table des matières (après styles Titre)','Mise en page → Table'],rep:2,lvl:'C1'},
-];
+  {q:'Pour insérer une table des matières automatique dans Word :',opts:['Insérer → Table des matières','Accueil → Table','Références → Table des matières (après styles Titre)','Mise en page → Table'],rep:2,lvl:'C1'}];
 
 // ── INIT ──────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1188,7 +1225,8 @@ function showPage(id) {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sbOverlay').style.display = 'none';
   document.getElementById('mainScroll').scrollTop = 0;
-  S.currentPage = id; // FIX #2e
+  S.currentPage = id;
+  if (id !== 'modules') S.activeModule = null; // B5: reset when leaving modules
   // FIX #21: Update page indicator in navbar
   const pageLabels = {dashboard:'🏠 Tableau de bord',parcours:'🗺️ Mon parcours',positionnement:'📝 Test niveau',modules:'📚 Modules',cas:'🧩 Cas pratiques',metiers:'💼 Métiers',tests:'📝 Tests',envoi:'📤 Envoyer travaux',progression:'📊 Progression',formateur:'👨‍🏫 Formateur'};
   const nbCP = document.getElementById('nbCurrentPage');
@@ -1214,6 +1252,8 @@ function toggleSidebar() {
 
 // ── DASHBOARD ─────────────────────────────────
 function renderDashboard() {
+
+  try {
   const p = S.prog, cfg = S.settings;
   const u = S.currentUser;
   const global = Math.round((p.word + p.excel + p.ppt + p.pub) / 4);
@@ -1237,8 +1277,7 @@ function renderDashboard() {
     {k:'word',n:'📄 Word 2019',f:'fill-word',ik:'d-pw'},
     {k:'excel',n:'📊 Excel 2019',f:'fill-excel',ik:'d-pe'},
     {k:'ppt',n:'📽️ PowerPoint',f:'fill-ppt',ik:'d-pp'},
-    {k:'pub',n:'🖨️ Publisher',f:'fill-pub',ik:'d-pu'},
-  ];
+    {k:'pub',n:'🖨️ Publisher',f:'fill-pub',ik:'d-pu'}];
   setEl('dashProgBars', modBars.map(m => `
     <div class="pr-row">
       <div class="pr-top"><span class="pr-name">${m.n}</span><span class="pr-pct">${p[m.k]}%</span></div>
@@ -1256,8 +1295,7 @@ function renderDashboard() {
   const steps = [
     { done: p.word >= 20, title: 'Valider Word A1 — Bases', desc: 'Complétez les 2 premiers exercices Word', page: 'modules' },
     { done: p.excel >= 10, title: 'Commencer Excel A1', desc: 'Découvrez le tableur', page: 'modules' },
-    { done: p.badges.includes('envoi'), title: 'Envoyer un premier travail', desc: 'Déposez un fichier à votre formatrice', page: 'envoi' },
-  ];
+    { done: p.badges.includes('envoi'), title: 'Envoyer un premier travail', desc: 'Déposez un fichier à votre formatrice', page: 'envoi' }];
   setEl('dashSteps', steps.map((s, i) => `
     <div class="st-item">
       <div class="st-circle ${s.done ? 'done' : 'pend'}">${s.done ? '✓' : i + 1}</div>
@@ -1270,9 +1308,8 @@ function renderDashboard() {
   const ctaExisting = document.getElementById('dashCTA');
   const steps7 = [
     { done: !!S.settings.niveauFr, title: 'Définir votre niveau', desc: 'Faites le test de positionnement ou choisissez votre niveau', action: "showPage('parcours')", btn: '📝 Configurer', color: 'var(--accent)' },
-    { done: p.word > 0, title: 'Commencer Word A1', desc: 'Faites votre premier exercice Word', action: "openMod('word');showPage('modules')", btn: '▶ Commencer', color: 'var(--primary)' },
-    { done: p.badges.includes('envoi'), title: 'Envoyer un travail', desc: 'Déposez un fichier à votre formatrice', action: "showPage('envoi')", btn: '📤 Envoyer', color: 'var(--warn)' },
-  ];
+    { done: p.word > 0, title: 'Premier exercice Word', desc: 'Ouvrir Word, créer un document vierge et enregistrer votre fichier', action: "showPage('modules');setTimeout(()=>{openMod('word');renderExList();},300)", btn: '▶ Commencer W1', color: 'var(--primary)' },
+    { done: p.badges.includes('envoi'), title: 'Envoyer un travail', desc: 'Déposez un fichier à votre formatrice', action: "showPage('envoi')", btn: '📤 Envoyer', color: 'var(--warn)' }];
   if (steps7.some(s => !s.done)) {
     const ctaHtml = `<div id="dashCTA" class="card" style="border:2px solid var(--accent);background:var(--accent-light)">
       <div class="card-title" style="color:#065f46">🚀 ${p.word > 0 ? 'Continuez votre progression' : 'Par où commencer ?'}</div>
@@ -1280,7 +1317,7 @@ function renderDashboard() {
         ${steps7.map((s,i) => `<div class="st-item">
           <div class="st-circle ${s.done?'done':'pend'}" style="${s.done?'':'background:var(--surface3);color:var(--text3)'}">${s.done?'✓':i+1}</div>
           <div class="st-body"><div class="st-title">${s.title}</div><div class="st-desc">${s.desc}</div></div>
-          ${!s.done ? `<button class="btn btn-sm" style="background:${s.color};color:#fff" onclick="${s.action}">${s.btn}</button>` : '<span class="tag t-green">✓ Fait</span>'}
+          ${!s.done ? `<button class="btn btn-sm" style="background:${s.color};color:#fff;min-width:100px" onclick="${s.action}">${s.btn}</button>` : '<span class="tag t-green" style="padding:6px 12px">✓ Terminé</span>'}
         </div>`).join('')}
       </div>
     </div>`;
@@ -1296,6 +1333,13 @@ function renderDashboard() {
     : '<div class="muted">Aucune activité récente. Commencez un exercice !</div>');
 
   updateBadgeCounter();
+  // Update msg badge in navbar
+  const navMsgBadge = document.getElementById('nbMsgBadge');
+  if (navMsgBadge) {
+    const allMyMsgs = S.msgs.filter(m => m.to === myName || m.to === 'Tous les stagiaires');
+    if (allMyMsgs.length > 0) { navMsgBadge.textContent = allMyMsgs.length; navMsgBadge.classList.remove('hidden'); }
+    else navMsgBadge.classList.add('hidden');
+  }
   // FIX #49: Messages reçus par le stagiaire (u est déclaré dans cette fonction)
   const myName = u ? (u.prenom + ' ' + (u.nom||'')).trim() : 'Jean Dupont';
   const myMsgs = S.msgs.filter(m => m.to === myName || m.to === 'Tous les stagiaires');
@@ -1310,6 +1354,7 @@ function renderDashboard() {
         <div style="font-size:14px;margin-top:4px">💬 ${esc(m.text)}</div>
       </div>`).join(''));
   } else if (msgsCard49) msgsCard49.style.display = 'none';
+  } catch(e) { console.error('renderDashboard error:', e); }
 }
 
 // FIX #6: Badge counter always synced
@@ -1489,6 +1534,8 @@ function applyTestLevel(lvl) {
 function getLvlFromPct(p) { return p < 20 ? 'A1' : p < 40 ? 'A2' : p < 60 ? 'B1' : p < 80 ? 'B2' : 'C1'; }
 
 function renderModules() {
+
+  try {
   const p = S.prog;
   const progMap = { word: p.word, excel: p.excel, ppt: p.ppt, pub: p.pub };
   setEl('modGrid', Object.entries(MODULES_DATA).map(([k, m]) => `
@@ -1505,6 +1552,7 @@ function renderModules() {
         </div>
       </div>
     </div>`).join(''));
+  } catch(e) { console.error('renderModules error:', e); }
 }
 
 function openMod(key) {
@@ -1534,6 +1582,8 @@ function filterEx(lvl, btn) {
 }
 
 function renderExList() {
+
+  try {
   if (!S.activeModule) return;
   const m = MODULES_DATA[S.activeModule];
   const lvlOrder = { A1:0, A2:1, B1:2, B2:3, C1:4, C2:5 };
@@ -1571,6 +1621,7 @@ function renderExList() {
       openExModal(item.dataset.mod, item.dataset.ex);
     });
   });
+  } catch(e) { console.error('renderExList error:', e); }
 }
 
 // ── EXERCISE MODAL ─────────────────────────────
@@ -1585,6 +1636,8 @@ function shuffleOpts(opts, rep) {
 }
 
 function openExModal(modKey, exId) {
+  try {
+
   const m = MODULES_DATA[modKey];
   if (!m) return;
   const ex = m.exercises.find(e => e.id === exId);
@@ -1667,9 +1720,8 @@ function openExModal(modKey, exId) {
   }
 
   document.getElementById('exModal').classList.remove('hidden');
-}
-
-function closeExModal() { document.getElementById('exModal').classList.add('hidden'); }
+  } catch(e) { console.error('openExModal error:', e); toast('⚠️ Une erreur est survenue. Actualisez la page.'); }
+}function closeExModal() { document.getElementById('exModal').classList.add('hidden'); }
 
 function validateStep(exId, modKey, stepIdx, total) {
   const circ = document.getElementById(`stc_${exId}_${stepIdx}`);
@@ -1696,18 +1748,20 @@ function answerExQuiz(el, chosen, correct, exId, modKey) {
     fb.className = 'quiz-fb show';
     fb.style.background = chosen === correct ? 'var(--accent-light)' : 'var(--danger-light)';
     fb.style.color = chosen === correct ? '#064e3b' : '#7f1d1d';
-    const expl = q.expl ? `<div style="margin-top:6px;font-size:13px;opacity:.9">💡 ${q.expl}</div>` : '';
+    const qData = QUIZ_DATA[ex.qIdx] || {};
+    const expl = qData.expl ? `<div style="margin-top:8px;font-size:13px;background:rgba(255,255,255,.15);border-radius:6px;padding:8px">💡 ${qData.expl}</div>` : '';
     fb.innerHTML = chosen === correct 
-      ? `✅ Bonne réponse ! Exercice complété.${expl}` 
-      : `❌ Incorrect. Bonne réponse : <b>${document.querySelectorAll('#exModal .qopt')[correct].querySelector('span').textContent}</b>${expl}`;
+      ? `✅ Bonne réponse !${expl}` 
+      : `❌ Incorrect — Bonne réponse : <b>${document.querySelectorAll('#exModal .qopt')[correct]?.querySelector('span')?.textContent||''}</b>${expl}`;
   }
   if (chosen === correct) setTimeout(() => completeExercise(exId, modKey), 1200);
 }
 
 // FIX #4 & #9: completeExercise correctly writes to S.prog[modKey]
 function completeExercise(exId, modKey) {
-  if (S.prog.exercises[exId]) return; // Already done
-  S.prog.exercises[exId] = new Date().toLocaleDateString('fr-FR'); // FIX #15: store date
+  if (S.prog.exercises[exId] && S.prog.exercises[exId] !== true) return; // Already done
+  S.prog.exercises[exId] = new Date().toLocaleDateString('fr-FR');
+  delete S.prog.exercises[exId + '_steps']; // Clean up partial progress
 
   // FIX #4: Guard against invalid modKey
   const m = MODULES_DATA[modKey];
@@ -1753,6 +1807,12 @@ function completeExercise(exId, modKey) {
 
 function checkBadges(modKey) {
   const p = S.prog;
+  // Compute level distribution for badge conditions
+  const exByLvlCB = {}, doneByLvl = {};
+  Object.values(MODULES_DATA).forEach(m => m.exercises.forEach(e => {
+    exByLvlCB[e.lvl] = (exByLvlCB[e.lvl]||0) + 1;
+    if (p.exercises[e.id]) doneByLvl[e.lvl] = (doneByLvl[e.lvl]||0) + 1;
+  }));
   const nbEx = Object.values(p.exercises || {}).filter(Boolean).length;
   if (modKey === 'word' && nbEx >= 1 && !p.badges.includes('word_a1')) unlockBadge('word_a1');
   if (nbEx >= 1 && !p.badges.includes('premier_doc')) unlockBadge('premier_doc');
@@ -1763,8 +1823,10 @@ function checkBadges(modKey) {
   if (p.ppt >= 10 && !p.badges.includes('ppt_a1')) unlockBadge('ppt_a1');
   if (p.word >= 100 && p.excel >= 100 && p.ppt >= 100 && p.pub >= 100 && !p.badges.includes('pack')) unlockBadge('pack');
   // FIX #28: Medal C2 — unlock when pack badge earned AND C1 level exercises done
-  if (p.badges.includes('pack') && (doneByLvl['C1']||0) >= 1
-      && !p.badges.includes('medaille_c2')) unlockBadge('medaille_c2');
+  // Badge médaille C2: au moins un exercice C2 complété
+  if ((doneByLvl['C2']||0) >= 1 && !p.badges.includes('medaille_c2')) unlockBadge('medaille_c2');
+  // Badge pack: tous modules >= 80%
+  if (p.badges.includes('pack') && !p.badges.includes('medaille_c2') && (doneByLvl['C2']||0) >= 1) unlockBadge('medaille_c2');
 }
 
 function unlockBadge(id) {
@@ -1778,6 +1840,8 @@ function unlockBadge(id) {
 
 // ── CAS PRATIQUES ──────────────────────────────
 function renderCas() {
+
+  try {
   // FIX #1: Restore all cas progress before rendering cards
   CAS_PRATIQUES.forEach(cp => {
     const saved = (S.prog.casProgress || {})[cp.id] || [];
@@ -1801,9 +1865,12 @@ function renderCas() {
       </div>
     </div>`;
   }).join(''));
+  } catch(e) { console.error('renderCas error:', e); }
 }
 
 function openCas(id) {
+  try {
+
   const cp = CAS_PRATIQUES.find(c => c.id === id);
   if (!cp) return;
   // FIX #1: Restore cas progress from localStorage
@@ -1856,6 +1923,7 @@ function openCas(id) {
   });
 
   detailEl.scrollIntoView({ behavior: 'smooth' });
+  } catch(e) { console.error('openCas error:', e); }
 }
 
 // FIX #16: Save cas pratique progress
@@ -1873,7 +1941,6 @@ function undoCasStep(cpId, num) {
   openCas(cpId); // Re-render the cas detail
   toast('↩ Étape ' + num + ' annulée.');
 }
-
 function validateCasStep(cpId, num) {
   const cp = CAS_PRATIQUES.find(c => c.id === cpId);
   if (!cp) return;
@@ -1909,14 +1976,15 @@ function validateCasStep(cpId, num) {
 
 // ── MÉTIERS ────────────────────────────────────
 function renderMetiers() {
+
+  try {
   const metiers = [
     { icon:'🖊️', name:'Secrétariat', desc:'Courriers, classement, comptes-rendus', tags:['Word','Excel'], tclass:['t-blue','t-green'], key:'secretariat' },
     { icon:'🙋', name:'Accueil', desc:'Planning, fiches contact, communication', tags:['Word','PowerPoint'], tclass:['t-blue','t-orange'], key:'accueil' },
     { icon:'🏠', name:'Aide à domicile (ADVF)', desc:'Fiches soins, planning, transmissions', tags:['Word','Publisher'], tclass:['t-blue','t-purple'], key:'advf' },
     { icon:'🧹', name:'Entretien', desc:'Bons de commande, fiches de suivi', tags:['Word','Excel'], tclass:['t-blue','t-green'], key:'entretien' },
     { icon:'🛒', name:'Vente', desc:'Catalogues, fiches produit, statistiques', tags:['Excel','PowerPoint'], tclass:['t-green','t-orange'], key:'vente' },
-    { icon:'🌐', name:'Sans Projet Pro', desc:'Compétences transversales — tous métiers', tags:['Tous modules'], tclass:['t-blue'], key:'general' },
-  ];
+    { icon:'🌐', name:'Sans Projet Pro', desc:'Compétences transversales — tous métiers', tags:['Tous modules'], tclass:['t-blue'], key:'general' }];
   setEl('metierGrid', metiers.map(m => `
     <div class="mod-card" onclick="openMetierExos('${m.key}')">
       <div class="mod-top" style="background:var(--border)"></div>
@@ -1929,6 +1997,7 @@ function renderMetiers() {
         </div>
       </div>
     </div>`).join(''));
+  } catch(e) { console.error('renderMetiers error:', e); }
 }
 
 function openMetierExos(key) {
@@ -1938,30 +2007,24 @@ function openMetierExos(key) {
   const metierExos = {
     secretariat: [
       {mod:'word', exIds:['w1','w2','w3','w6','w7','w8','w9'], label:'Word — Courriers, mise en page, publipostage'},
-      {mod:'excel', exIds:['e1','e2','e3','e4','e6'], label:'Excel — Tableaux, calculs, tris'},
-    ],
+      {mod:'excel', exIds:['e1','e2','e3','e4','e6'], label:'Excel — Tableaux, calculs, tris'}],
     accueil: [
       {mod:'word', exIds:['w1','w2','w3','w4','w6'], label:'Word — Fiches contact, courriers'},
-      {mod:'ppt', exIds:['p1','p2','p3','p4'], label:'PowerPoint — Présentations accueil'},
-    ],
+      {mod:'ppt', exIds:['p1','p2','p3','p4'], label:'PowerPoint — Présentations accueil'}],
     advf: [
       {mod:'word', exIds:['w1','w2','w3','w4','w6','w7'], label:'Word — Fiches de soins, transmissions'},
-      {mod:'pub', exIds:['pu1','pu2','pu3','pu4'], label:'Publisher — Flyers, affiches'},
-    ],
+      {mod:'pub', exIds:['pu1','pu2','pu3','pu4'], label:'Publisher — Flyers, affiches'}],
     entretien: [
       {mod:'word', exIds:['w1','w2','w3','w6'], label:'Word — Bons de commande, notes'},
-      {mod:'excel', exIds:['e1','e2','e3','e4'], label:'Excel — Suivi, planning'},
-    ],
+      {mod:'excel', exIds:['e1','e2','e3','e4'], label:'Excel — Suivi, planning'}],
     vente: [
       {mod:'excel', exIds:['e1','e2','e3','e4','e5','e6','e7'], label:'Excel — Stats, graphiques CA'},
-      {mod:'ppt', exIds:['p1','p2','p3','p4','p5'], label:'PowerPoint — Présentations catalogue'},
-    ],
+      {mod:'ppt', exIds:['p1','p2','p3','p4','p5'], label:'PowerPoint — Présentations catalogue'}],
     general: [
       {mod:'word', exIds:['w1','w2','w3','w4'], label:'Word — Bases'},
       {mod:'excel', exIds:['e1','e2','e3'], label:'Excel — Bases'},
       {mod:'ppt', exIds:['p1','p2'], label:'PowerPoint — Bases'},
-      {mod:'pub', exIds:['pu1','pu2'], label:'Publisher — Bases'},
-    ],
+      {mod:'pub', exIds:['pu1','pu2'], label:'Publisher — Bases'}],
   };
   const exoGroups = metierExos[key] || metierExos.general;
   const label = metierLabels[key] || key;
@@ -2007,6 +2070,8 @@ function openMetierExos(key) {
 
 // ── TESTS ──────────────────────────────────────
 function renderTests() {
+
+  try {
   setEl('testsGrid', `
     <div class="card">
       <div class="card-title">⏱️ Tests par niveau</div>
@@ -2028,6 +2093,7 @@ function renderTests() {
   document.querySelectorAll('#testsGrid .ex-item[data-sim]').forEach(item => {
     item.addEventListener('click', () => startTestMode(item.dataset.sim));
   });
+  } catch(e) { console.error('renderTests error:', e); }
 }
 
 function startTestMode(label) {
@@ -2077,7 +2143,12 @@ function showTestResult(total) {
       <div style="font-size:52px;margin-bottom:12px">${pct >= 80 ? '🏆' : pct >= 60 ? '✅' : '📚'}</div>
       <div style="font-size:24px;font-weight:900;margin-bottom:6px">${score} / ${total}</div>
       <div style="font-size:17px;font-weight:700;margin-bottom:18px">${pct}% — ${mention}</div>
-      ${pct < 80 ? `<div class="alert al-info" style="text-align:left;max-width:360px;margin:0 auto 16px"><span>💡</span><div><b>Points à retravailler :</b> Pratiquez les exercices de niveau A1 et A2 dans les modules Word et Excel.</div></div>` : ''}
+      ${pct < 80 ? `<div class="alert al-warn" style="text-align:left;max-width:420px;margin:0 auto 16px">
+        <span>📋</span>
+        <div><b>Questions à retravailler :</b><br>
+        ${S.testAnswers.map((ok,i) => ok ? '' : `<div style="margin-top:6px;padding:6px;background:rgba(0,0,0,.08);border-radius:4px;font-size:12px">❌ Q${i+1}: ${QUIZ_POSITIONNEMENT[i]?.q?.substring(0,60)||''}…</div>`).filter(Boolean).join('')}
+        </div>
+      </div>` : '<div class="alert al-ok" style="max-width:420px;margin:0 auto 16px"><span>🏆</span><div>Score parfait ! Vous maîtrisez ce niveau.</div></div>'}
       <div class="flex gap2 fwrap" style="justify-content:center">
         ${pct < 100 ? `<button class="btn btn-primary" onclick="document.getElementById('testDetail').classList.add('hidden');showPage('modules')">📚 Travailler les exercices</button>` : ''}
         <button class="btn btn-outline" onclick="document.getElementById('testDetail').classList.add('hidden')">← Retour aux tests</button>
@@ -2088,6 +2159,8 @@ function showTestResult(total) {
 
 // ── ENVOI ──────────────────────────────────────
 function renderEnvoi() {
+
+  try {
   updateEnvoiExSelect(); // FIX #2: populate on render
   setEl('envoiHist', S.travaux.map(t => `
     <tr>
@@ -2105,6 +2178,7 @@ function renderEnvoi() {
     corrEl.innerHTML = '<div class="card-title" style="margin-bottom:10px">💬 Commentaires de correction</div>' +
       withComments.map(t => `<div class="alert al-ok mb2"><span>💬</span><div><b>${t.fichier}</b> — Note : ${t.note}<br><em>"${t.comment}"</em></div></div>`).join('');
   }
+  } catch(e) { console.error('renderEnvoi error:', e); }
 }
 
 function handleFile(f) {
@@ -2162,7 +2236,9 @@ function envoyerTravail() {
 // ── PROGRESSION ────────────────────────────────
 function resetProgression() {
   if (!window.confirm('Réinitialiser toute votre progression ? Vos badges, exercices et cas pratiques seront remis à zéro. Cette action est irréversible.')) return;
+  const savedSettings = {...S.settings}; // B6: keep user settings
   S.prog = { word:0, excel:0, ppt:0, pub:0, exercises:{}, badges:[], activity:[], weekly:0, weekStart:Date.now(), casProgress:{} };
+  S.settings = savedSettings;
   // Reset cas pratiques
   CAS_PRATIQUES.forEach(cp => cp.etapes.forEach(e => { e.done = false; }));
   saveState();
@@ -2176,6 +2252,8 @@ function resetProgression() {
 }
 
 function renderProgression() {
+
+  try {
   const p = S.prog, cfg = S.settings;
   const global = Math.round((p.word + p.excel + p.ppt + p.pub) / 4);
   const nbEx = Object.values(p.exercises || {}).filter(Boolean).length;
@@ -2190,8 +2268,7 @@ function renderProgression() {
     { k:'word', n:'📄 Word 2019', f:'fill-word' },
     { k:'excel', n:'📊 Excel 2019', f:'fill-excel' },
     { k:'ppt', n:'📽️ PowerPoint', f:'fill-ppt' },
-    { k:'pub', n:'🖨️ Publisher', f:'fill-pub' },
-  ].map(m => `
+    { k:'pub', n:'🖨️ Publisher', f:'fill-pub' }].map(m => `
     <div class="pr-row">
       <div class="pr-top"><span class="pr-name">${m.n}</span><span class="pr-pct">${p[m.k]}%</span></div>
       <div class="pr-bar"><div class="pr-fill ${m.f}" style="width:${p[m.k]}%"></div></div>
@@ -2246,10 +2323,13 @@ function renderProgression() {
     <div class="pr-top mb2"><span class="pr-name">Exercices cette semaine</span><span class="pr-pct">${weekly} / ${goal}</span></div>
     <div class="pr-bar mb2"><div class="pr-fill fill-accent" style="width:${Math.min(100, weekly / goal * 100)}%"></div></div>
     <div class="muted">${weekly >= goal ? '✅ Objectif atteint cette semaine ! Bravo !' : 'Encore ' + (goal - weekly) + ' exercice(s) pour atteindre votre objectif.'}</div>`);
+  } catch(e) { console.error('renderProgression error:', e); }
 }
 
 // ── FORMATEUR ──────────────────────────────────
 function renderFormateur() {
+
+  try {
   const travCount = getFormTravaux().length;
   // B6: Calculate real stats from DEMO_STAGIAIRES
   const totalStag = DEMO_STAGIAIRES.length;
@@ -2261,8 +2341,16 @@ function renderFormateur() {
     <div class="sc"><div class="sv" style="color:var(--warn)">${travCount}</div><div class="sl">Travaux à corriger</div></div>
     <div class="sc"><div class="sv" style="color:var(--purple)">${avgProg}%</div><div class="sl">Progression moy.</div></div>`);
   const trBadgeEl = document.getElementById('trBadge');
-  if (trBadgeEl) trBadgeEl.textContent = travCount;
+  if (trBadgeEl) { trBadgeEl.textContent = travCount; if(travCount>0) trBadgeEl.classList.remove('hidden'); else trBadgeEl.classList.add('hidden'); }
+  // Afficher alerte si travaux en attente
+  const alertZone = document.getElementById('formAlertZone');
+  if (alertZone) {
+    alertZone.innerHTML = travCount > 0
+      ? `<div class="alert al-warn mb3"><span>📋</span><div><b>${travCount} travail${travCount>1?'x':''} en attente de correction.</b> <button class="btn btn-sm btn-outline" onclick="fTab('travaux',document.querySelector('#formTabs .tab-btn:nth-child(2)'))">Voir les travaux →</button></div></div>`
+      : '';
+  }
   renderStagTable(); renderTravTable(); renderDiffStats(); renderGrpProg(); renderMsgs();
+  } catch(e) { console.error('renderFormateur error:', e); }
 }
 
 function fTabMsg() {
@@ -2286,6 +2374,8 @@ function fTab(tab, btn) {
 }
 
 function renderStagTable() {
+
+  try {
   const search = (document.getElementById('stagSearch')?.value || '').toLowerCase();
   const grp = document.getElementById('stagGrp')?.value || 'all';
   const niv = document.getElementById('stagNiv')?.value || 'all';
@@ -2327,6 +2417,7 @@ function renderStagTable() {
         <button class="btn btn-outline btn-sm" onclick="imprimerFiche(${s.id})">🖨️</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" class="muted tc" style="padding:20px">Aucun stagiaire trouvé.</td></tr>');
+  } catch(e) { console.error('renderStagTable error:', e); }
 }
 
 // FIX #3: FORM_TRAVAUX merges demo data + real submissions from localStorage
@@ -2335,8 +2426,7 @@ function getFormTravaux() {
     { id:1, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04' },
     { id:2, stag:'Amara Diallo', fichier:'Diallo_G2_Lettre.docx', module:'Word', date:'17/04' },
     { id:3, stag:'Fatou Koné', fichier:'Kone_G1_DocA1.docx', module:'Word', date:'15/04' },
-    { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' },
-  ];
+    { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' }];
   const fromLS = safeGet('mpb_travaux', [])
     .filter(t => t.statut === 'attente')
     .map(t => ({ id: t.id, stag: t.stag, fichier: t.fichier, module: t.module, date: t.date }));
@@ -2348,6 +2438,8 @@ function getFormTravaux() {
 }
 
 function renderTravTable() {
+
+  try {
   const searchTrav = document.getElementById('travSearch')?.value?.toLowerCase() || '';
   const FORM_TRAVAUX = getFormTravaux().filter(t => !searchTrav || t.stag.toLowerCase().includes(searchTrav) || t.fichier.toLowerCase().includes(searchTrav));
   setEl('travBody', FORM_TRAVAUX.map(t => `
@@ -2361,6 +2453,7 @@ function renderTravTable() {
         <button class="btn btn-success btn-sm" onclick="validerTrav(${t.id})">✅ Valider</button>
       </td>
     </tr>`).join(''));
+  } catch(e) { console.error('renderTravTable error:', e); }
 }
 
 function ouvrirCorrectionForStag(stagId) {
@@ -2462,6 +2555,8 @@ function closeFicheModal() { document.getElementById('ficheModal').classList.add
 function imprimerFiche(id) { openFiche(id); setTimeout(() => window.print(), 600); }
 
 function renderDiffStats() {
+
+  try {
   // FIX #43: Calculate from DEMO_STAGIAIRES
   const a1Count = DEMO_STAGIAIRES.filter(s => s.niveau === 'A1').length;
   const lowProg = DEMO_STAGIAIRES.filter(s => s.prog < 30).length;
@@ -2476,9 +2571,12 @@ function renderDiffStats() {
     <div class="ex-item" style="border-left-color:var(--accent);cursor:default">
       <div class="ex-body"><div class="ex-name">🟢 Progression > 70% — En avance</div>
       <div class="muted">${highProg.length} stagiaire(s) · ${highProg.map(s=>s.prenom+' '+s.nom[0]+'.').join(', ')}</div></div></div>`);
+  } catch(e) { console.error('renderDiffStats error:', e); }
 }
 
 function renderGrpProg() {
+
+  try {
   // FIX #44: Calculate group progress from DEMO_STAGIAIRES
   const grpMap = {};
   DEMO_STAGIAIRES.forEach(s => {
@@ -2498,6 +2596,7 @@ function renderGrpProg() {
     </div>`).join('') +
     '<div class="flex gap2 mt3 fwrap"><button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 Export PDF</button><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button></div>');
   setEl('evolGraph', `<div class="alert al-info"><span>📊</span><div>Progression 30 jours : <b>+9% global</b>. Semaine du 14/04 : +8% G1, +12% G2, +6% G3. <b>Meilleure progression :</b> Karim O. (+22%).</div></div>`);
+  } catch(e) { console.error('renderGrpProg error:', e); }
 }
 
 function updateMsgTo() {
@@ -2511,10 +2610,13 @@ function updateMsgTo() {
 }
 
 function renderMsgs() {
+
+  try {
   updateMsgTo();
   setEl('msgHist', S.msgs.length
     ? S.msgs.slice(-5).reverse().map(m => `<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div class="muted" style="font-size:11px">${m.date}</div><div style="font-weight:700">→ ${m.to}</div><div style="font-size:13px;color:var(--text2)">${m.text}</div></div>`).join('')
     : '<div class="muted">Aucun message envoyé.</div>');
+  } catch(e) { console.error('renderMsgs error:', e); }
 }
 
 function saveContenu() {
@@ -2560,37 +2662,34 @@ function saveContenu() {
 }
 
 function renderCustomExList() {
+
+  try {
   const customExs = safeGet('mpb_custom_exs', []);
   const el = document.getElementById('customExList');
   if (!el) return;
   if (!customExs.length) { el.innerHTML = '<div class="muted">Aucun exercice personnalisé pour l\'instant. Cliquez sur "➕ Ajouter".</div>'; return; }
   el.innerHTML = '<div class="card-title mt3">Exercices personnalisés</div>' +
     customExs.map((ex,i) => `<div class="ex-item"><div class="ex-body"><div class="ex-name">${ex.name}</div><div class="ex-meta"><span class="lvl l${ex.lvl}">${ex.lvl}</span><span class="tag t-blue">${MODULES_DATA[ex.mod]?.name||ex.mod}</span></div></div><div class="flex gap2"><button class="btn btn-outline btn-sm" onclick="editCustomEx(${i})">✏️</button><button class="btn btn-ghost btn-sm" onclick="deleteCustomEx(${i})">🗑️</button></div></div>`).join('');
+  } catch(e) { console.error('renderCustomExList error:', e); }
 }
 
 function editCustomEx(idx) {
-  // FIX #47: Pre-fill form with existing exercise data
+  // SAFE: fill form without deleting — saveContenu handles replacement via editIdx
   const customExs = safeGet('mpb_custom_exs', []);
   const ex = customExs[idx];
   if (!ex) return;
-  const modEl = document.getElementById('cfMod');
-  const titreEl = document.getElementById('cfTitre');
-  const nivEl = document.getElementById('cfNiv');
-  const dureeEl = document.getElementById('cfDuree');
+  const fields = {cfMod:ex.mod, cfTitre:ex.name, cfNiv:ex.lvl, cfDuree:ex.time};
+  Object.entries(fields).forEach(([id,val]) => { const el=document.getElementById(id); if(el) el.value=val; });
   const stepsEl = document.getElementById('cfSteps');
-  if (modEl) modEl.value = ex.mod;
-  if (titreEl) titreEl.value = ex.name;
-  if (nivEl) nivEl.value = ex.lvl;
-  if (dureeEl) dureeEl.value = ex.time;
-  if (stepsEl) stepsEl.value = ex.steps.join('\n');
-  // Set edit mode
+  if (stepsEl) stepsEl.value = (ex.steps||[]).join('\n');
   const form = document.getElementById('contenuForm');
   if (form) {
     form.classList.remove('hidden');
     form.dataset.editIdx = idx;
-    form.querySelector('.btn-primary').textContent = '💾 Modifier l\'exercice';
+    const btn = form.querySelector('.btn-primary');
+    if (btn) btn.textContent = '💾 Modifier l\'exercice';
   }
-  deleteCustomEx(idx); // Remove old version
+  renderCustomExList();
 }
 
 function deleteCustomEx(idx) {
@@ -2618,9 +2717,46 @@ function sendMsg() {
 }
 
 function exportPDF() {
-  // FIX #29: Use browser print as PDF (Ctrl+P → Save as PDF)
-  toast('📄 Utilisez Ctrl+P → "Enregistrer en PDF" pour exporter.', 4000);
-  setTimeout(() => window.print(), 600);
+  // Export via print — CSS @media print hides UI chrome
+  const w = window.open('','_blank');
+  if (!w) { toast('⚠️ Autorisez les popups pour exporter.'); return; }
+  const p = S.prog, u = S.currentUser;
+  const mods = [
+    {n:'Word',k:'word',pct:p.word,icon:'📄'},
+    {n:'Excel',k:'excel',pct:p.excel,icon:'📊'},
+    {n:'PowerPoint',k:'ppt',pct:p.ppt,icon:'📽️'},
+    {n:'Publisher',k:'pub',pct:p.pub,icon:'🖨️'}];
+  const global = Math.round((p.word+p.excel+p.ppt+p.pub)/4);
+  const doneExs = Object.entries(p.exercises||{}).filter(([k,v])=>v&&!k.includes('_steps')).length;
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+    <title>Rapport — Ma Plateforme Bureautique</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:30px;color:#1a1a2e;max-width:700px;margin:0 auto}
+      h1{color:#1a5ec8;border-bottom:3px solid #1a5ec8;padding-bottom:8px}
+      h2{color:#0d9e6e;margin-top:24px}
+      .stat{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee}
+      .bar{background:#e5e7eb;border-radius:4px;height:12px;margin-top:4px}
+      .fill{background:#1a5ec8;height:12px;border-radius:4px}
+      .badge{display:inline-block;padding:3px 10px;background:#1a5ec8;color:#fff;border-radius:12px;font-size:12px;margin:2px}
+      .footer{margin-top:40px;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:12px}
+    </style>
+  </head><body>
+    <h1>📊 Rapport de progression</h1>
+    <div class="stat"><b>Stagiaire</b><span>${esc(u?.prenom||'')  } ${esc(u?.nom||'')}</span></div>
+    <div class="stat"><b>Date</b><span>${new Date().toLocaleDateString('fr-FR')}</span></div>
+    <div class="stat"><b>Niveau</b><span>${S.settings.niveauFr||'Non défini'}</span></div>
+    <div class="stat"><b>Progression globale</b><span>${global}%</span></div>
+    <div class="stat"><b>Exercices complétés</b><span>${doneExs}</span></div>
+    <div class="stat"><b>Badges obtenus</b><span>${p.badges.length}</span></div>
+    <h2>📚 Modules</h2>
+    ${mods.map(m=>`<div class="stat"><b>${m.icon} ${m.n}</b><span>${m.pct}%</span></div>
+      <div class="bar"><div class="fill" style="width:${m.pct}%"></div></div>`).join('')}
+    <h2>🏅 Badges</h2>
+    <div>${p.badges.map(id=>{const b=BADGES_DEF.find(x=>x.id===id);return b?`<span class="badge">${b.icon} ${b.name}</span>`:''}).join('')||'Aucun badge encore.'}</div>
+    <div class="footer">Généré par Ma Plateforme Bureautique — ${new Date().toLocaleString('fr-FR')}</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => { w.print(); }, 400);
 }
 
 // ── TTS ────────────────────────────────────────
@@ -2678,5 +2814,6 @@ function toast(msg, dur = 3000) {
   tTimer = setTimeout(() => el.classList.remove('show'), dur);
 }
 </script>
-</body>
+
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--text3);pointer-events:none;z-index:50" id="lsIndicator">💾 Local</div></body>
 </html>
