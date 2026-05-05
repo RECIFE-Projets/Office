@@ -369,7 +369,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <button class="btn btn-primary btn-full" style="padding:13px" onclick="loginAs('stagiaire')">🎓 Stagiaire</button>
         <button class="btn btn-outline btn-full" style="padding:13px" onclick="loginAs('formateur')">👨‍🏫 Formateur</button>
       </div>
-      <p class="muted tc" style="margin-top:12px">Démo : cliquez directement sur un bouton</p>
+      <p class="muted tc" style="margin-top:12px">💡 Démo (sans compte) : cliquez sur un bouton<br><small style="color:var(--danger)">Données non sauvegardées en mode démo</small></p>
     </div>
     <div class="auth-panel" id="apRegister">
       <div class="f2">
@@ -798,19 +798,20 @@ const DEMO_STAGIAIRES = [
   {id:6,prenom:'Léa',nom:'Renard',init:'LR',formation:'#AVENIR',ftag:'t-purple',niveau:'B1',lclass:'lB1',metier:'Accueil',prog:55,acces:'22/04/2026',groupe:'Groupe 3',detail:{word:70,excel:50,ppt:40,pub:10,temps:'5h40',exFaits:22}}];
 
 const BADGES_DEF = [
-  {id:'first',icon:'🌟',name:'1ère connexion'},
-  {id:'word_a1',icon:'📄',name:'Word A1'},
-  {id:'premier_doc',icon:'✏️',name:'1er document'},
-  {id:'word_a2',icon:'📝',name:'Word A2'},
-  {id:'excel_a1',icon:'📊',name:'Excel A1'},
-  {id:'ppt_a1',icon:'📽️',name:'PPT A1'},
-  {id:'exercice5',icon:'⭐',name:'5 exercices'},
-  {id:'exercice20',icon:'🔥',name:'20 exercices'},
-  {id:'metier',icon:'💼',name:'Métier ciblé'},
-  {id:'positionnement',icon:'🎯',name:'Test passé'},
-  {id:'envoi',icon:'📤',name:'1er envoi'},
-  {id:'pack',icon:'🏆',name:'Pack complet'},
-  {id:'medaille_c2',icon:'🥇',name:'Médaille C2'}];
+  {id:'first',       icon:'🌟', name:'1ère connexion',    desc:'Obtenu dès votre 1ère connexion'},
+  {id:'word_a1',     icon:'📄', name:'Word A1',            desc:'Terminer votre 1er exercice Word'},
+  {id:'premier_doc', icon:'📝', name:'Premier document',   desc:'Terminer 1 exercice (tous modules)'},
+  {id:'word_a2',     icon:'📃', name:'Word A2',            desc:'Atteindre 40% en Word'},
+  {id:'excel_a1',    icon:'📊', name:'Excel A1',           desc:'Terminer votre 1er exercice Excel'},
+  {id:'ppt_a1',      icon:'📽️', name:'PPT A1',             desc:'Terminer votre 1er exercice PowerPoint'},
+  {id:'exercice5',   icon:'⭐', name:'5 exercices',         desc:'Terminer 5 exercices au total'},
+  {id:'exercice20',  icon:'💎', name:'20 exercices',        desc:'Terminer 20 exercices au total'},
+  {id:'metier',      icon:'💼', name:'Profil métier',       desc:'Choisir un métier dans Mon Parcours'},
+  {id:'positionnement',icon:'🎯',name:'Test de niveau',    desc:'Faire le test de positionnement'},
+  {id:'envoi',       icon:'📤', name:'Premier envoi',       desc:'Envoyer un travail à la formatrice'},
+  {id:'pack',        icon:'🏆', name:'Pack complet',        desc:'Atteindre 80% dans les 4 modules'},
+  {id:'medaille_c2', icon:'🥇', name:'Médaille C2',         desc:'Compléter un exercice niveau C2'},
+];
 
 const MODULES_DATA = {
   word:{icon:'📄',name:'Word 2019',colorClass:'mod-top-word',fillClass:'fill-word',tag:'t-blue',
@@ -1083,12 +1084,13 @@ function loginAs(role) {
     setTimeout(() => {
       const banner = document.createElement('div');
       banner.id = 'demoBanner';
-      banner.style.cssText = 'background:#f59e0b;color:#fff;text-align:center;padding:8px;font-weight:700;font-size:13px;position:sticky;top:0;z-index:300';
-      banner.textContent = '🎭 Mode démonstration — Aucun compte connecté. Inscrivez-vous pour sauvegarder votre progression.';
+      banner.style.cssText = 'background:#f59e0b;color:#1a1a2e;text-align:center;padding:10px 16px;font-weight:700;font-size:13px;position:sticky;top:0;z-index:300;display:flex;align-items:center;justify-content:center;gap:12px';
+      banner.innerHTML = '🎭 <b>Mode démonstration</b> — Vos données ne seront pas sauvegardées. <button onclick="logout();document.getElementById(\'authScreen\').querySelector(\'[data-tab=\'inscription\'\']\')?.click()" style="background:#1a1a2e;color:#fff;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px">Créer mon compte →</button>';
       document.getElementById('mainApp').prepend(banner);
     }, 300);
   }
-  toast('✅ Bienvenue ' + esc(demoUser.prenom) + ' !');
+  const greeting = isDemo ? '🎭 Démo — ' + esc(demoUser.prenom) : '✅ Bienvenue ' + esc(demoUser.prenom) + ' !';
+  toast(greeting);
 }
 
 function doRegister(btn) {
@@ -1500,12 +1502,14 @@ function answerQuizPos(chosen) {
       ? `✅ Bonne réponse !${q.expl ? '<div style="margin-top:6px;font-size:13px;opacity:.9">💡 '+q.expl+'</div>' : ''}` 
       : `❌ Incorrect. Bonne réponse : <b>${q.opts[q.rep]}</b>${q.expl ? '<div style="margin-top:6px;font-size:13px;opacity:.9">💡 '+q.expl+'</div>' : ''}`;
   }
-  document.getElementById('qNext')?.classList.remove('hidden');
+  // F3: Handle both quiz positionnement and test mode next buttons
+  const nxtBtn = document.getElementById('qNext') || document.getElementById('testNext');
+  if (nxtBtn) nxtBtn.classList.remove('hidden');
 }
 function showQuizResult() {
   const score = S.posAnswers.filter(Boolean).length, total = QUIZ_POSITIONNEMENT.length; // FIX #3
   const pct = Math.round((score / total) * 100);
-  const lvl = pct >= 87 ? 'C1' : pct >= 73 ? 'B2' : pct >= 53 ? 'B1' : pct >= 33 ? 'A2' : 'A1';
+  const lvl = pct >= 95 ? 'C2' : pct >= 80 ? 'C1' : pct >= 67 ? 'B2' : pct >= 47 ? 'B1' : pct >= 27 ? 'A2' : 'A1';
   if (!S.prog.badges.includes('positionnement')) { unlockBadge('positionnement'); }
   saveState();
   setEl('quizContent', `
@@ -2099,16 +2103,22 @@ function renderTests() {
 function startTestMode(label) {
   const detail = document.getElementById('testDetail');
   detail.classList.remove('hidden');
-  S.testQuizIdx = 0; S.testAnswers = []; // FIX #3
+  // F4: offset based on simulation label to avoid repeated questions
+  const labelHash = label.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+  S.testOffset = (labelHash * 3) % Math.max(1, QUIZ_POSITIONNEMENT.length - 8);
+  S.testQuizIdx = 0; S.testAnswers = [];
   detail.innerHTML = `<div class="card"><div class="card-title">📝 ${label}</div><div class="alert al-info mb3"><span>⏱️</span><div>Test démarré sur la base des questions de positionnement.</div></div><div id="testQuizContent"></div></div>`;
   renderTestQ();
   detail.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderTestQ() {
-  const total = Math.min(10, QUIZ_POSITIONNEMENT.length), i = S.testQuizIdx; // FIX #3
+  const maxQ = Math.min(8, QUIZ_POSITIONNEMENT.length); // F4: 8 questions par test
+  const total = maxQ, i = S.testQuizIdx;
   if (i >= total) { showTestResult(total); return; }
-  const q = QUIZ_POSITIONNEMENT[i];
+  const offset = S.testOffset || 0;
+  const qIdx = (offset + i) % QUIZ_POSITIONNEMENT.length;
+  const q = QUIZ_POSITIONNEMENT[qIdx];
   setEl('testQuizContent', `
     <div class="flex jb mb3"><span class="muted">Question ${i+1}/${total}</span><span class="lvl l${q.lvl}">${q.lvl}</span></div>
     <div class="pr-bar mb3"><div class="pr-fill fill-primary" style="width:${(i/total)*100}%"></div></div>
@@ -2135,13 +2145,16 @@ function renderTestQ() {
 }
 
 function showTestResult(total) {
-  const score = S.testAnswers.filter(Boolean).length; // FIX #3
-  const pct = Math.round(score / total * 100);
+  // F2: Use actual length of answers (not passed total) to avoid score > total
+  const answeredCount = S.testAnswers.length;
+  const score = S.testAnswers.filter(Boolean).length;
+  const realTotal = Math.max(answeredCount, total || 10);
+  const pct = Math.round(score / realTotal * 100);
   const mention = pct >= 80 ? 'Excellent 🏆' : pct >= 60 ? 'Bien ✅' : pct >= 40 ? 'Passable ⚠️' : 'À retravailler 📚';
   setEl('testQuizContent', `
     <div class="tc" style="padding:20px 0">
       <div style="font-size:52px;margin-bottom:12px">${pct >= 80 ? '🏆' : pct >= 60 ? '✅' : '📚'}</div>
-      <div style="font-size:24px;font-weight:900;margin-bottom:6px">${score} / ${total}</div>
+      <div style="font-size:24px;font-weight:900;margin-bottom:6px">${score} / ${realTotal}</div>
       <div style="font-size:17px;font-weight:700;margin-bottom:18px">${pct}% — ${mention}</div>
       ${pct < 80 ? `<div class="alert al-warn" style="text-align:left;max-width:420px;margin:0 auto 16px">
         <span>📋</span>
@@ -2312,11 +2325,14 @@ function renderProgression() {
     existDoneList.innerHTML = doneHtml;
   }
 
-  setEl('allBadges', BADGES_DEF.map(b => `
-    <div class="bdg ${p.badges.includes(b.id) ? 'earned' : ''}">
-      <div class="bdg-icon">${p.badges.includes(b.id) ? b.icon : '🔒'}</div>
+  setEl('allBadges', BADGES_DEF.map(b => {
+    const earned = p.badges.includes(b.id);
+    return `<div class="bdg ${earned ? 'earned' : ''}" title="${earned ? '✅ Débloqué !' : '🔒 Comment : ' + (b.desc||'')}">
+      <div class="bdg-icon">${earned ? b.icon : '🔒'}</div>
       <div class="bdg-name">${b.name}</div>
-    </div>`).join(''));
+      ${!earned ? `<div style="font-size:10px;color:var(--text3);text-align:center;line-height:1.3;padding:2px">${b.desc||''}</div>` : ''}
+    </div>`;
+  }).join(''));
 
   const weekly = p.weekly || 0, goal = 5;
   setEl('weeklyGoal', `
