@@ -356,15 +356,16 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <div class="auth-logo-sub">Pack Office · Niveaux A1 → C2 · Formations qualifiantes</div>
     </div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="authTab('login',this)">Connexion</button>
-      <button class="auth-tab" onclick="authTab('register',this)">Inscription</button>
+      <button class="auth-tab active" onclick="authTab('register',this)">Inscription</button>
+      <button class="auth-tab" onclick="authTab('login',this)">Connexion</button>
     </div>
-    <div class="auth-panel" id="apLogin" style="display:block">
+    <div class="auth-panel" id="apLogin" style="display:none;display:block">
       <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email"></div>
       <div class="fg"><label class="fl">Mot de passe</label>
         <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
       </div>
       <div id="lErr" class="f-err hidden"></div>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px">Mot de passe oublié ? Contactez votre formatrice pour réinitialiser votre compte.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
         <button class="btn btn-primary btn-full" style="padding:13px" onclick="loginAs('stagiaire')">🎓 Stagiaire</button>
         <button class="btn btn-outline btn-full" style="padding:13px" onclick="loginAs('formateur')">👨‍🏫 Formateur</button>
@@ -377,8 +378,12 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div class="fg"><label class="fl">Nom <span style="color:var(--danger)">*</span></label><input id="rNom" class="fi" type="text" placeholder="Nom"></div>
       </div>
       <div class="fg"><label class="fl">E-mail <span style="color:var(--danger)">*</span></label><input id="rEmail" class="fi" type="email" placeholder="votre@email.com"></div>
+      <div class="fg"><label class="fl">Confirmer l'e-mail <span style="color:var(--danger)">*</span></label><input id="rEmailConf" class="fi" type="email" placeholder="Répétez votre e-mail"></div>
       <div class="fg"><label class="fl">Mot de passe <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--text3)">(min. 6 caractères)</span></label>
-        <div class="f-icon-wrap"><input id="rMdp" class="fi" type="password" placeholder="Choisissez un mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
+        <div class="f-icon-wrap"><input id="rMdp" class="fi" type="password" placeholder="Choisissez un mot de passe"><button class="f-icon-btn" onclick="togglePwd('rMdp',this)" type="button">👁</button></div>
+      </div>
+      <div class="fg"><label class="fl">Confirmer le mot de passe <span style="color:var(--danger)">*</span></label>
+        <div class="f-icon-wrap"><input id="rMdpConf" class="fi" type="password" placeholder="Répétez votre mot de passe"><button class="f-icon-btn" onclick="togglePwd('rMdpConf',this)" type="button">👁</button></div>
       </div>
       <div class="fg"><label class="fl">Vous êtes :</label>
         <div class="role-grid">
@@ -464,6 +469,11 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div class="bdg-grid" id="dashBadges"></div>
             <button class="btn btn-outline btn-sm mt3" onclick="showPage('progression')">Tous mes badges →</button>
           </div>
+        </div>
+        <div class="card" id="dashSendMsg">
+          <div class="card-title">✉️ Contacter la formatrice</div>
+          <div class="fg"><textarea class="fta" id="stagMsgTxt" rows="3" placeholder="Écrivez votre message à la formatrice…"></textarea></div>
+          <button class="btn btn-primary btn-sm mt2" onclick="stagSendMsg()">📤 Envoyer le message</button>
         </div>
         <div class="card" id="dashMsgsCard" style="display:none">
           <div class="card-title">💬 Mes messages <span id="dashMsgBadge" style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:20px;font-size:11px;margin-left:6px"></span></div>
@@ -589,7 +599,18 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <input type="file" id="fileIn" style="display:none" accept=".docx,.xlsx,.pptx,.pub,.doc,.xls,.ppt">
             </div>
             <div id="fileInfo" class="hidden mt3"></div>
-            <div class="fg mt4"><label class="fl">Module</label><select class="fs" id="envoiMod" onchange="updateEnvoiExSelect()"><option>Word 2019</option><option>Excel 2019</option><option>PowerPoint 2019</option><option>Publisher 2019</option></select></div>
+            <div class="fg mt4"><label class="fl">Module</label><select class="fs" id="envoiMod" onchange="updateEnvoiExSelect()">
+              <optgroup label="Modules bureautiques">
+                <option value="word">Word 2019</option><option value="excel">Excel 2019</option>
+                <option value="ppt">PowerPoint 2019</option><option value="pub">Publisher 2019</option>
+              </optgroup>
+              <optgroup label="Autres travaux">
+                <option value="cas">Cas pratique</option>
+                <option value="metier">Entraînement métier</option>
+                <option value="test">Test d'entrée</option>
+                <option value="autre">Autre</option>
+              </optgroup>
+            </select></div>
             <div class="fg"><label class="fl">Exercice</label><select class="fs" id="envoiEx"><option value="">-- Choisir --</option></select></div>
             <div class="fg"><label class="fl">Message (facultatif)</label><textarea class="fta" placeholder="Difficultés rencontrées…"></textarea></div>
             <button class="btn btn-primary btn-full btn-lg" onclick="envoyerTravail()">📤 Envoyer mon travail</button>
@@ -607,6 +628,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div class="ph flex jb fwrap gap2">
           <div><div class="ph-title">📊 Progression & Badges</div><div class="ph-sub">Votre avancement détaillé</div></div>
           <button class="btn btn-ghost" onclick="window.print()">🖨️ Imprimer</button>
+      <button class="btn btn-ghost" onclick="printExercices()">🖨️ Imprimer exercices</button>
       <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetProgression()">🗑️ Réinitialiser</button>
         </div>
         <div class="sg" id="progStats"></div>
@@ -634,6 +656,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="tab-btn" onclick="fTab('stats',this)">📊 Statistiques</button>
           <button class="tab-btn" onclick="fTab('contenus',this)">🧱 Contenus</button>
           <button class="tab-btn" onclick="fTab('messages',this)">💬 Messages</button>
+          <button class="tab-btn" onclick="fTab('groupes',this)">👥 Groupes</button>
         </div>
         <div id="formAlertZone"></div>
 <div id="ft-stagiaires">
@@ -646,7 +669,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
                 <select class="fs" id="stagNiv" style="width:auto" onchange="renderStagTable()"><option value="all">Tous niveaux</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option></select>
               </div>
             </div>
-            <div class="tw-wrap"><table><thead><tr><th>Stagiaire</th><th>Formation</th><th>Niveau FR</th><th>Métier</th><th>Progression</th><th>Dernier accès</th><th>Actions</th></tr></thead><tbody id="stagBody"></tbody></table></div>
+            <div class="tw-wrap"><table><thead><tr><th>Stagiaire</th><th>Formation</th><th>Niveau FR</th><th>Progression détaillée</th><th>%</th><th>Dernier accès</th><th>Actions</th></tr></thead><tbody id="stagBody"></tbody></table></div>
           </div>
         </div>
         <div id="ft-travaux" class="hidden">
@@ -682,11 +705,42 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             </div>
             <div class="flex gap2 fwrap mb3">
               <button class="btn btn-primary" onclick="document.getElementById('contenuForm').classList.toggle('hidden')">➕ Ajouter un exercice</button>
+              <button class="btn btn-outline" onclick="document.getElementById('pdfImportForm').classList.toggle('hidden')">📄 Importer un manuel PDF</button>
+            </div>
+            <div id="pdfImportForm" class="hidden card" style="border:2px solid var(--warn)">
+              <div class="card-title">📄 Importer un manuel PDF par étapes</div>
+              <div class="alert al-info mb3"><span>ℹ️</span><div>Déposez votre manuel PDF. Il sera découpé en étapes que les stagiaires pourront suivre progressivement.</div></div>
+              <div class="fg"><label class="fl">Titre du manuel</label><input class="fi" id="pdfTitle" placeholder="Ex: Guide Word 2019 avancé"></div>
+              <div class="fg"><label class="fl">Module cible</label><select class="fs" id="pdfMod"><option value="word">Word</option><option value="excel">Excel</option><option value="ppt">PowerPoint</option><option value="pub">Publisher</option><option value="autre">Autre</option></select></div>
+              <div class="fg"><label class="fl">Niveau</label><select class="fs" id="pdfNiv"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option></select></div>
+              <div class="fg"><label class="fl">Votre manuel (PDF, Word, ou liste d'étapes)</label>
+                <div class="up-zone" onclick="document.getElementById('pdfFileIn').click()" style="height:80px;cursor:pointer">
+                  <div class="up-icon" style="font-size:24px">📄</div>
+                  <div class="up-title" style="font-size:13px">Cliquez pour choisir votre fichier</div>
+                  <input type="file" id="pdfFileIn" style="display:none" accept=".pdf,.docx,.txt" onchange="handlePdfImport(this)">
+                </div>
+              </div>
+              <div class="fg"><label class="fl">Ou saisissez les étapes manuellement (une par ligne)</label><textarea class="fta" id="pdfSteps" rows="8" placeholder="Chapitre 1 : Ouvrir Word&#10;Chapitre 2 : Découverte de l'interface&#10;Chapitre 3 : ..."></textarea></div>
+              <div class="flex gap2 mt3">
+                <button class="btn btn-primary" onclick="savePdfManuel()">💾 Créer le cours par étapes</button>
+                <button class="btn btn-ghost" onclick="document.getElementById('pdfImportForm').classList.add('hidden')">Annuler</button>
+              </div>
             </div>
             <div id="customExList"></div>
           </div>
         </div>
+        <div id="ft-groupes" class="hidden">
+          <div class="card">
+            <div class="card-title">👥 Gestion des groupes</div>
+            <div class="flex gap2 mb3">
+              <input class="fi" id="newGroupName" placeholder="Nom du nouveau groupe (ex: Groupe 4)" style="flex:1">
+              <button class="btn btn-primary btn-sm" onclick="createGroup()">+ Créer</button>
+            </div>
+            <div id="groupList"></div>
+          </div>
+        </div>
         <div id="ft-messages" class="hidden">
+          <div id="stagMsgsReceived" style="display:none"></div>
           <div class="g2">
             <div class="card">
               <div class="card-title">💬 Envoyer un message</div>
@@ -1036,15 +1090,36 @@ function authTab(tab, el) {
   document.getElementById('apRegister').classList.toggle('active', tab === 'register');
 }
 
-function togglePwd(btn) {
-  const inp = btn.previousElementSibling;
+function togglePwd(idOrBtn, btn2) {
+  // Accept togglePwd(btn) for connexion or togglePwd('id', btn) for inscription
+  const realBtn = btn2 || idOrBtn;
+  const inp = typeof idOrBtn === 'string'
+    ? document.getElementById(idOrBtn)
+    : (realBtn.previousElementSibling || realBtn.closest('.f-icon-wrap')?.querySelector('input'));
+  if (!inp) return;
   inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  realBtn.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 
 function selRole(card) {
   card.closest('.role-grid').querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
+}
+
+function loginAfterRegister(pre, nom, email, role) {
+  // Called directly after registration — no demo mode
+  S.role = role;
+  const initials = (pre[0] + (nom?nom[0]:'')).toUpperCase();
+  const user = { prenom: pre, nom, initials, email };
+  S.currentUser = user;
+  sessionStorage.setItem('mpb_sess', JSON.stringify({ role, user }));
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('demoBanner')?.remove();
+  initApp(role, user);
+  toast('✅ Bienvenue ' + esc(pre) + ' ! Commencez par le test de positionnement.');
+  // Redirect to test de positionnement after first registration
+  setTimeout(() => showPage('positionnement'), 1200);
 }
 
 function loginAs(role) {
@@ -1097,9 +1172,12 @@ function doRegister(btn) {
   // FIX #11: Prevent double-click
   if (btn && btn.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Création…'; }
-  const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp');
+  const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp'),
+    emailConf = val('rEmailConf'), mdpConf = val('rMdpConf');
   const err = document.getElementById('rErr');
   const re_enable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; }};
+  if (emailConf && email !== emailConf) { showErr(err, '⚠️ Les e-mails ne correspondent pas.'); return; }
+  if (mdpConf && mdp !== mdpConf) { showErr(err, '⚠️ Les mots de passe ne correspondent pas.'); return; }
   if (!pre || !nom || !email || !mdp) { showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.'); re_enable(); return; }
   if (mdp.length < 6) { showErr(err, '⚠️ Mot de passe trop court (minimum 6 caractères).'); re_enable(); return; }
   if (S.users.find(u => u.email === email)) { showErr(err, '⚠️ Cet e-mail est déjà utilisé.'); re_enable(); return; }
@@ -1118,7 +1196,7 @@ function doRegister(btn) {
     <div style="background:#fff;border-radius:8px;padding:12px;font-size:14px;font-family:monospace">
       📧 ${esc(email)}<br>🔑 ${esc(mdp).replace(/./g,'•')}
     </div>
-    <button class="btn btn-success btn-full mt3" onclick="this.closest('div.card,div[style]').remove();loginAs('${role}')">
+    <button class="btn btn-success btn-full mt3" onclick="this.closest('div.card,div[style]').remove();loginAfterRegister('${pre}','${nom}','${email}','${role}')">
       ▶ Accéder à la plateforme
     </button>
   </div>`;
@@ -1181,6 +1259,13 @@ function initApp(role, user) {
   const sbS = document.getElementById('sbStagiaire');
   const sbF = document.getElementById('sbFormateur');
   const nbLvl = document.getElementById('nbLvl');
+
+  // A13: Load user-specific progression
+  if (user && user.email) {
+    const pKey = 'mpb_prog_' + btoa(user.email).replace(/=/g,'');
+    const userProg = safeGet(pKey, null);
+    if (userProg) S.prog = userProg;
+  }
 
   // FIX #5: Always use currentUser for display
   setEl('nbInit', u ? esc(u.initials || ((u.prenom[0] || 'U') + (u.nom ? u.nom[0] : '')).toUpperCase()) : 'U');
@@ -2180,7 +2265,9 @@ function renderEnvoi() {
       <td style="font-size:13px">${t.fichier}</td>
       <td><span class="tag ${t.module==='Word'?'t-blue':t.module==='Excel'?'t-green':t.module==='PowerPoint'?'t-orange':'t-purple'}">${t.module}</span></td>
       <td class="muted">${t.date}</td>
-      <td>${t.statut === 'corrige' ? '<span class="tag t-green">✓ Corrigé</span>' : '<span class="tag t-orange">⏳ En attente</span>'}</td>
+      <td>${t.statut === 'corrige' || t.statut === 'valide'
+        ? `<span class="tag t-green">✓ Corrigé${t.note ? ' — ' + t.note : ''}</span>${t.comment ? '<br><span style="font-size:11px;color:var(--text2)">💬 ' + esc(t.comment) + '</span>' : ''}`
+        : '<span class="tag t-orange>⏳ En attente</span>'}</td>
       <td>${t.note || '—'}</td>
     </tr>`).join(''));
 
@@ -2247,6 +2334,32 @@ function envoyerTravail() {
 }
 
 // ── PROGRESSION ────────────────────────────────
+function printExercices() {
+  const p = S.prog;
+  const w = window.open('','_blank','width=750,height=900');
+  const modItems = Object.values(MODULES_DATA).flatMap(m =>
+    m.exercises.map(e => ({ mod: m.name, name: e.name, lvl: e.lvl, done: !!p.exercises[e.id], date: typeof p.exercises[e.id]==='string'?p.exercises[e.id]:'' }))
+  );
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Exercices — Ma Plateforme Bureautique</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a2e;max-width:700px;margin:0 auto}h1{color:#1a5ec8;border-bottom:3px solid #1a5ec8;padding-bottom:8px}h2{color:#0d9e6e;margin-top:20px}.ex{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #eee;font-size:13px}.lvl{background:#1a5ec8;color:#fff;padding:1px 8px;border-radius:10px;font-size:11px;margin:0 8px}.done{color:#0d9e6e;font-weight:700}.todo{color:#d97706}@media print{button{display:none}}</style>
+  </head><body>
+  <h1>📚 Liste des exercices</h1>
+  <p>Stagiaire : <b>${esc(S.currentUser?.prenom||'')} ${esc(S.currentUser?.nom||'')}</b> — ${new Date().toLocaleDateString('fr-FR')}</p>
+  ${['Word 2019','Excel 2019','PowerPoint 2019','Publisher 2019'].map(modName => {
+    const modExs = modItems.filter(e => e.mod === modName);
+    if (!modExs.length) return '';
+    return `<h2>${modName}</h2>` + modExs.map(e => `<div class="ex">
+      <span class="${e.done?'done':'todo'}">${e.done?'✅':'○'}</span>
+      <span class="lvl">${e.lvl}</span>
+      <span style="flex:1">${esc(e.name)}</span>
+      ${e.done&&e.date?`<span style="font-size:11px;color:#888">${e.date}</span>`:''}
+    </div>`).join('');
+  }).join('')}
+  <button onclick="window.print();window.close()" style="margin-top:16px;padding:8px 20px;background:#1a5ec8;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimer</button>
+  </body></html>`);
+  w.document.close();
+}
+
 function resetProgression() {
   if (!window.confirm('Réinitialiser toute votre progression ? Vos badges, exercices et cas pratiques seront remis à zéro. Cette action est irréversible.')) return;
   const savedSettings = {...S.settings}; // B6: keep user settings
@@ -2369,6 +2482,26 @@ function renderFormateur() {
   } catch(e) { console.error('renderFormateur error:', e); }
 }
 
+function stagSendMsg() {
+  const txt = document.getElementById('stagMsgTxt')?.value?.trim();
+  if (!txt) { toast('⚠️ Écrivez un message avant d\'envoyer.'); return; }
+  const u = S.currentUser;
+  const from = u ? esc(u.prenom + ' ' + (u.nom||'')) : 'Stagiaire';
+  S.msgs.push({ id: Date.now(), from, to: 'Formatrice', text: txt, date: new Date().toLocaleDateString('fr-FR'), fromStag: true });
+  safeSet('mpb_msgs', S.msgs);
+  document.getElementById('stagMsgTxt').value = '';
+  toast('✅ Message envoyé à la formatrice !');
+}
+
+function voirTravauxStag(stagName) {
+  // Filter travaux table to show only this stagiaire
+  const searchEl = document.getElementById('travSearch');
+  if (searchEl) { searchEl.value = stagName; }
+  fTab('travaux', document.querySelector('#formTabs .tab-btn:nth-child(2)'));
+  renderTravTable();
+  toast('📋 Travaux filtrés pour ' + stagName);
+}
+
 function fTabMsg() {
   const btn = document.querySelector('#formTabs .tab-btn:nth-child(5)');
   if (btn) fTab('messages', btn);
@@ -2387,6 +2520,7 @@ function fTab(tab, btn) {
   if (tab === 'stats') { renderDiffStats(); renderGrpProg(); }
   if (tab === 'messages') renderMsgs();
   if (tab === 'contenus') renderCustomExList();
+  if (tab === 'groupes') renderGroupes();
 }
 
 function renderStagTable() {
@@ -2396,9 +2530,11 @@ function renderStagTable() {
   const grp = document.getElementById('stagGrp')?.value || 'all';
   const niv = document.getElementById('stagNiv')?.value || 'all';
   // FIX #33: Populate dynamic group filter
+  // A17: Load groups from saved list
+  const savedGroups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
   const grpSel = document.getElementById('stagGrp');
   if (grpSel) {
-    const groups = ['all', ...new Set(DEMO_STAGIAIRES.map(s=>s.groupe).sort())];
+    const groups = ['all', ...new Set([...savedGroups, ...DEMO_STAGIAIRES.map(s=>s.groupe)].sort())];
     const curGrp = grpSel.value || 'all';
     grpSel.innerHTML = groups.map(g => `<option value="${g}" ${g===curGrp?'selected':''}>${g==='all'?'Tous groupes':g}</option>`).join('');
   }
@@ -2426,7 +2562,10 @@ function renderStagTable() {
       <td><span class="tag ${s.ftag}">${s.formation}</span></td>
       <td><span class="lvl ${s.lclass}">${s.niveau}</span></td>
       <td>${s.metier}</td>
-      <td><div class="flex gap2"><div class="pr-bar" style="width:80px"><div class="pr-fill fill-primary" style="width:${s.prog}%"></div></div><b style="font-size:13px">${s.prog}%</b></div></td>
+      <td style="font-size:11px;line-height:2">
+        ${['W','E','P','Pu'].map((l,i)=>{const v=[s.detail?.word||0,s.detail?.excel||0,s.detail?.ppt||0,s.detail?.pub||0][i];return `<span title="${['Word','Excel','PPT','Publisher'][i]}:${v}%">${l}:<b>${v}%</b> </span>`;}).join('')}
+      </td>
+      <td><div class="pr-bar" style="width:60px;display:inline-block"><div class="pr-fill fill-primary" style="width:${s.prog}%"></div></div> <b style="font-size:12px">${s.prog}%</b></td>
       <td class="muted">${s.acces}</td>
       <td class="flex gap2">
         <button class="btn btn-ghost btn-sm" onclick="openFiche(${s.id})">Voir fiche</button>
@@ -2479,7 +2618,11 @@ function ouvrirCorrectionForStag(stagId) {
   const travaux = getFormTravaux();
   const trav = travaux.find(t => t.stag.includes(s.nom));
   if (trav) ouvrirCorrection(trav.id);
-  else toast('ℹ️ Aucun travail en attente pour ce stagiaire.');
+  else {
+    closeFicheModal();
+    fTab('travaux', document.querySelector('#formTabs .tab-btn:nth-child(2)'));
+    toast('ℹ️ Aucun travail en attente. Tous les travaux sont dans l\'onglet Travaux.');
+  }
 }
 
 function ouvrirCorrection(id) {
@@ -2520,6 +2663,9 @@ function saveCorrAndClose(id) {
 }
 
 function validerTrav(id) {
+  // A9: Save validation to S.travaux
+  const idx9 = S.travaux.findIndex(t => t.id === id || String(t.id) === String(id));
+  if (idx9 >= 0) { S.travaux[idx9].statut = 'valide'; safeSet('mpb_travaux', S.travaux); }
   document.getElementById('trow_' + id)?.remove();
   const badge = document.getElementById('trBadge');
   if (badge) {
@@ -2534,8 +2680,19 @@ function validerTrav(id) {
 }
 
 function openFiche(id) {
-  const s = DEMO_STAGIAIRES.find(st => st.id === id);
-  if (!s) return;
+  // A7: Find in demo OR real users
+  let s = DEMO_STAGIAIRES.find(st => st.id === id);
+  if (!s) {
+    const u = S.users.find((u, i) => 900 + i === id || String(900 + i) === String(id));
+    if (u) {
+      s = { id, prenom: u.prenom, nom: u.nom||'', init: (u.prenom[0]+(u.nom?.[0]||'')).toUpperCase(),
+        formation: 'Inscrit', ftag: 't-green', niveau: u.niveauFr||'A1', lclass: 'l'+(u.niveauFr||'A1'),
+        metier: 'Non défini', prog: S.prog.word||0, groupe: 'Groupe 1', acces: new Date().toLocaleDateString('fr-FR'),
+        detail: { word:S.prog.word||0, excel:S.prog.excel||0, ppt:S.prog.ppt||0, pub:S.prog.pub||0, temps:'En cours', exFaits:Object.keys(S.prog.exercises||{}).filter(k=>!k.includes('_steps')).length }
+      };
+    }
+  }
+  if (!s) { toast('⚠️ Fiche non disponible pour ce stagiaire.'); return; }
   setEl('ficheModalTitle', '📋 ' + s.prenom + ' ' + s.nom);
   setEl('ficheModalBody', `
     <div class="flex gap2 mb4">
@@ -2558,7 +2715,11 @@ function openFiche(id) {
       ${s.detail.exFaits >= 1 ? '<div class="bdg earned"><div class="bdg-icon">🌟</div><div class="bdg-name">1ère connexion</div></div>' : ''}
     </div>
 <div class="flex gap2 mt4 fwrap">
+      <button class="btn btn-outline" onclick="voirTravauxStag('${s.prenom} ${s.nom}');closeFicheModal()">📋 Voir travaux</button>
       <button class="btn btn-primary" onclick="ouvrirCorrectionForStag(${s.id})">✏️ Corriger un travail</button>
+      <select class="fs btn-sm" style="width:auto" onchange="assignGroup(${s.id},this.value)" title="Changer de groupe">
+        ${safeGet('mpb_groups',['Groupe 1','Groupe 2','Groupe 3']).map(g=>`<option value="${g}" ${g===s.groupe?'selected':''}>${g}</option>`).join('')}
+      </select>
       <button class="btn btn-outline" onclick="fTabMsg();closeFicheModal()">💬 Envoyer message</button>
       <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimer fiche</button>
       <button class="btn btn-ghost" onclick="closeFicheModal()">Fermer</button>
@@ -2568,7 +2729,30 @@ function openFiche(id) {
 
 function closeFicheModal() { document.getElementById('ficheModal').classList.add('hidden'); }
 // FIX #15: Print after modal is rendered (longer timeout)
-function imprimerFiche(id) { openFiche(id); setTimeout(() => window.print(), 600); }
+function imprimerFiche(id) {
+  // A11: Print only the fiche, not the whole page
+  const s = DEMO_STAGIAIRES.find(st => st.id === id) ||
+    (() => { const u = S.users.find((u,i) => 900+i === id); return u ? {prenom:u.prenom,nom:u.nom||'',prog:0,niveau:u.niveauFr||'A1',groupe:'Groupe 1',detail:{word:0,excel:0,ppt:0,pub:0,temps:'N/A',exFaits:0}} : null; })();
+  if (!s) return;
+  const w = window.open('','_blank','width=700,height=800');
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Fiche — ${esc(s.prenom)} ${esc(s.nom)}</title>
+    <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a2e}h1{color:#1a5ec8}table{width:100%;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #eee}.bar{background:#e5e7eb;border-radius:4px;height:10px;margin-top:4px}.fill{background:#1a5ec8;height:10px;border-radius:4px}@media print{button{display:none}}</style>
+    </head><body>
+    <h1>📋 Fiche stagiaire</h1>
+    <table>
+      <tr><td><b>Nom</b></td><td>${esc(s.prenom)} ${esc(s.nom)}</td></tr>
+      <tr><td><b>Groupe</b></td><td>${s.groupe||'N/A'}</td></tr>
+      <tr><td><b>Niveau</b></td><td>${s.niveau||'N/A'}</td></tr>
+      <tr><td><b>Progression globale</b></td><td>${s.prog||0}%</td></tr>
+      <tr><td><b>Exercices faits</b></td><td>${s.detail?.exFaits||0}</td></tr>
+    </table>
+    <h2>Modules</h2>
+    ${['Word','Excel','PowerPoint','Publisher'].map((m,i) => {const pct=[s.detail?.word,s.detail?.excel,s.detail?.ppt,s.detail?.pub][i]||0;return `<div><b>${m}</b>: ${pct}%<div class="bar"><div class="fill" style="width:${pct}%"></div></div></div>`;}).join('')}
+    <p style="margin-top:30px;font-size:11px;color:#888">Imprimé le ${new Date().toLocaleDateString('fr-FR')}</p>
+    <button onclick="window.print();window.close()" style="margin-top:10px;padding:8px 16px;background:#1a5ec8;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimer</button>
+    </body></html>`);
+  w.document.close();
+}
 
 function renderDiffStats() {
 
@@ -2615,6 +2799,72 @@ function renderGrpProg() {
   } catch(e) { console.error('renderGrpProg error:', e); }
 }
 
+function renderGroupes() {
+  const groups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
+  const el = document.getElementById('groupList');
+  if (!el) return;
+  el.innerHTML = groups.map((g, i) => `
+    <div class="ex-item">
+      <div class="ex-body">
+        <div class="ex-name" id="gname_${i}">${esc(g)}</div>
+        <div class="muted" style="font-size:12px">${DEMO_STAGIAIRES.filter(s=>s.groupe===g).length} stagiaire(s)</div>
+      </div>
+      <div class="flex gap2">
+        <button class="btn btn-outline btn-sm" onclick="renameGroup(${i})">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteGroup(${i})" style="color:var(--danger)">🗑️</button>
+      </div>
+    </div>`).join('') || '<div class="muted">Aucun groupe.</div>';
+}
+
+function assignGroup(stagId, groupName) {
+  const idx = DEMO_STAGIAIRES.findIndex(s => s.id === stagId);
+  if (idx >= 0) { DEMO_STAGIAIRES[idx].groupe = groupName; }
+  // Also save to localStorage for real users
+  const assignments = safeGet('mpb_group_assign', {});
+  assignments[stagId] = groupName;
+  safeSet('mpb_group_assign', assignments);
+  renderStagTable();
+  toast('✅ Stagiaire déplacé vers ' + groupName + ' !');
+}
+
+function createGroup() {
+  const name = document.getElementById('newGroupName')?.value?.trim();
+  if (!name) { toast('⚠️ Entrez un nom de groupe.'); return; }
+  const groups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
+  if (groups.includes(name)) { toast('⚠️ Ce groupe existe déjà.'); return; }
+  groups.push(name);
+  safeSet('mpb_groups', groups);
+  document.getElementById('newGroupName').value = '';
+  renderGroupes();
+  toast('✅ Groupe "' + name + '" créé !');
+}
+
+function renameGroup(idx) {
+  const groups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
+  const newName = window.prompt('Nouveau nom pour "' + groups[idx] + '" :', groups[idx]);
+  if (!newName || newName === groups[idx]) return;
+  groups[idx] = newName.trim();
+  safeSet('mpb_groups', groups);
+  renderGroupes();
+  toast('✅ Groupe renommé.');
+}
+
+function deleteGroup(idx) {
+  if (!window.confirm('Supprimer ce groupe ?')) return;
+  const groups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
+  groups.splice(idx, 1);
+  safeSet('mpb_groups', groups);
+  renderGroupes();
+  toast('🗑️ Groupe supprimé.');
+}
+
+function replyToStag(fromName) {
+  const sel = document.getElementById('msgTo');
+  if (sel) { sel.value = fromName; }
+  document.getElementById('msgTxt')?.focus();
+  toast('💬 Répondre à ' + fromName);
+}
+
 function updateMsgTo() {
   // FIX #50: Populate message recipients from real S.users
   const sel = document.getElementById('msgTo');
@@ -2629,10 +2879,63 @@ function renderMsgs() {
 
   try {
   updateMsgTo();
+  // A16: Show messages FROM stagiaires
+  const stagMsgs = S.msgs.filter(m => m.fromStag);
+  const stagMsgEl = document.getElementById('stagMsgsReceived');
+  if (stagMsgEl) {
+    if (stagMsgs.length > 0) {
+      stagMsgEl.style.display = '';
+      stagMsgEl.innerHTML = '<div class="card-title mb2">📥 Messages des stagiaires (' + stagMsgs.length + ')</div>' +
+        stagMsgs.slice(-10).reverse().map(m => `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text3)">${m.date} — <b>${esc(m.from)}</b></div>
+          <div style="font-size:14px;margin-top:4px">${esc(m.text)}</div>
+          <button class="btn btn-ghost btn-sm mt2" onclick="replyToStag('${esc(m.from)}')">↩ Répondre</button>
+        </div>`).join('');
+    } else { stagMsgEl.style.display = 'none'; }
+  }
   setEl('msgHist', S.msgs.length
     ? S.msgs.slice(-5).reverse().map(m => `<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div class="muted" style="font-size:11px">${m.date}</div><div style="font-weight:700">→ ${m.to}</div><div style="font-size:13px;color:var(--text2)">${m.text}</div></div>`).join('')
     : '<div class="muted">Aucun message envoyé.</div>');
   } catch(e) { console.error('renderMsgs error:', e); }
+}
+
+function handlePdfImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // For PDF: we can't parse content, but we can note the filename
+    // For txt/docx-text: extract lines as steps
+    const content = e.target.result;
+    if (typeof content === 'string') {
+      const lines = content.split('\n').filter(l => l.trim().length > 5);
+      document.getElementById('pdfSteps').value = lines.slice(0,60).join('\n');
+      toast('✅ ' + lines.length + ' étapes détectées depuis le fichier !');
+    } else {
+      toast('ℹ️ PDF chargé : saisissez les étapes manuellement ou utilisez le .txt/.docx');
+    }
+  };
+  if (file.type === 'text/plain') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function savePdfManuel() {
+  const titre = document.getElementById('pdfTitle')?.value?.trim();
+  const mod = document.getElementById('pdfMod')?.value || 'autre';
+  const niv = document.getElementById('pdfNiv')?.value || 'B1';
+  const stepsRaw = document.getElementById('pdfSteps')?.value?.trim();
+  if (!titre || !stepsRaw) { toast('⚠️ Remplissez le titre et les étapes.'); return; }
+  const steps = stepsRaw.split('\n').map(s=>s.replace(/\r/g,'').trim()).filter(s=>s);
+  if (steps.length < 2) { toast('⚠️ Saisissez au moins 2 étapes.'); return; }
+  const customExs = safeGet('mpb_custom_exs', []);
+  const newEx = { id:'pdf'+Date.now(), num:customExs.length+1, name:titre, lvl:niv, time:Math.ceil(steps.length*5)+' min estimé', type:'steps', steps, mod, custom:true, isPdf:true };
+  customExs.push(newEx);
+  safeSet('mpb_custom_exs', customExs);
+  if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e=>e.id===newEx.id)) MODULES_DATA[mod].exercises.push(newEx);
+  document.getElementById('pdfImportForm').classList.add('hidden');
+  ['pdfTitle','pdfSteps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  renderCustomExList();
+  toast('✅ Manuel "' + titre + '" créé avec ' + steps.length + ' étapes ! Les stagiaires peuvent le suivre dans les Modules.');
 }
 
 function saveContenu() {
@@ -2815,7 +3118,13 @@ function setEl(id, html) { const el = document.getElementById(id); if (el) el.in
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
-function saveState() { safeSet('mpb_prog', S.prog); }
+function getUserKey() {
+  // A13: Namespace localStorage by user email to isolate data between users
+  const u = S.currentUser;
+  if (u && u.email && u.email !== 'demo') return 'mpb_prog_' + btoa(u.email).replace(/=/g,'');
+  return 'mpb_prog';
+}
+function saveState() { safeSet(getUserKey(), S.prog); }
 
 let tTimer; let tQueue = [];
 function toast(msg, dur = 3000) {
