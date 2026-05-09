@@ -8,6 +8,7 @@
   <meta property="og:description" content="Formation Pack Office Word, Excel, PowerPoint, Publisher — Niveaux A1 à C2">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#1a5ec8">
+
   <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Ma Plateforme Bureautique</title>
 <style>
@@ -708,25 +709,120 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <button class="btn btn-outline" onclick="document.getElementById('pdfImportForm').classList.toggle('hidden')">📄 Importer un manuel PDF</button>
             </div>
             <div id="pdfImportForm" class="hidden card" style="border:2px solid var(--warn)">
-              <div class="card-title">📄 Importer un manuel PDF par étapes</div>
-              <div class="alert al-info mb3"><span>ℹ️</span><div>Déposez votre manuel PDF. Il sera découpé en étapes que les stagiaires pourront suivre progressivement.</div></div>
-              <div class="fg"><label class="fl">Titre du manuel</label><input class="fi" id="pdfTitle" placeholder="Ex: Guide Word 2019 avancé"></div>
-              <div class="fg"><label class="fl">Module cible</label><select class="fs" id="pdfMod"><option value="word">Word</option><option value="excel">Excel</option><option value="ppt">PowerPoint</option><option value="pub">Publisher</option><option value="autre">Autre</option></select></div>
-              <div class="fg"><label class="fl">Niveau</label><select class="fs" id="pdfNiv"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option></select></div>
-              <div class="fg"><label class="fl">Votre manuel (PDF, Word, ou liste d'étapes)</label>
-                <div class="up-zone" onclick="document.getElementById('pdfFileIn').click()" style="height:80px;cursor:pointer">
-                  <div class="up-icon" style="font-size:24px">📄</div>
-                  <div class="up-title" style="font-size:13px">Cliquez pour choisir votre fichier</div>
-                  <input type="file" id="pdfFileIn" style="display:none" accept=".pdf,.docx,.txt" onchange="handlePdfImport(this)">
+              <div class="card-title">📄 Importer un manuel — Word ou PDF</div>
+
+              <!-- Barre de progression extraction -->
+              <div id="pdfProgress" class="hidden" style="margin-bottom:12px">
+                <div style="font-size:13px;color:var(--text2);margin-bottom:6px" id="pdfProgressLabel">Extraction en cours…</div>
+                <div class="pr-bar"><div class="pr-fill fill-primary" id="pdfProgressBar" style="width:0%;transition:width .3s"></div></div>
+              </div>
+
+              <!-- Champs de base -->
+              <div class="f2">
+                <div class="fg"><label class="fl">Titre du manuel <span style="color:var(--danger)">*</span></label><input class="fi" id="pdfTitle" placeholder="Ex: Guide Word 2019 avancé"></div>
+                <div class="fg"><label class="fl">Module cible</label>
+                  <select class="fs" id="pdfMod">
+                    <option value="word">Word</option><option value="excel">Excel</option>
+                    <option value="ppt">PowerPoint</option><option value="pub">Publisher</option>
+                    <option value="autre">Autre / Manuel générique</option>
+                  </select>
                 </div>
               </div>
-              <div class="fg"><label class="fl">Ou saisissez les étapes manuellement (une par ligne)</label><textarea class="fta" id="pdfSteps" rows="8" placeholder="Chapitre 1 : Ouvrir Word&#10;Chapitre 2 : Découverte de l'interface&#10;Chapitre 3 : ..."></textarea></div>
-              <div class="flex gap2 mt3">
+              <div class="f2">
+                <div class="fg"><label class="fl">Niveau</label>
+                  <select class="fs" id="pdfNiv"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+                </div>
+                <div class="fg"><label class="fl">Découpage automatique par</label>
+                  <select class="fs" id="pdfSplit">
+                    <option value="chapter">Chapitres / titres détectés</option>
+                    <option value="page">Pages (1 étape = 1 page)</option>
+                    <option value="paragraph">Paragraphes (texte court)</option>
+                    <option value="manual">Manuel — je saisis moi-même</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Zone de dépôt fichier -->
+              <div class="fg">
+                <label class="fl">Votre fichier Word (.docx) ou PDF</label>
+                <div class="up-zone" id="pdfDropZone" onclick="document.getElementById('pdfFileIn').click()"
+                     style="min-height:90px;cursor:pointer;border-style:dashed"
+                     ondragover="event.preventDefault();this.style.background='var(--accent-light)'"
+                     ondragleave="this.style.background=''"
+                     ondrop="event.preventDefault();this.style.background='';handlePdfImport({files:event.dataTransfer.files})">
+                  <div class="up-icon" style="font-size:28px" id="pdfDropIcon">📄</div>
+                  <div class="up-title" id="pdfDropTitle">Cliquez ou glissez votre fichier ici</div>
+                  <div class="up-sub">.docx (Word) · .pdf · .txt — jusqu'à 50 MB</div>
+                  <input type="file" id="pdfFileIn" style="display:none" accept=".pdf,.docx,.txt,.doc"
+                         onchange="handlePdfImport(this)">
+                </div>
+              </div>
+
+              <!-- Aperçu des étapes détectées -->
+              <div id="pdfPreviewZone" class="hidden">
+                <div class="flex jb mb2" style="align-items:center">
+                  <label class="fl" style="margin:0">Étapes détectées — modifiables avant import</label>
+                  <div class="flex gap2">
+                    <span id="pdfStepCount" style="font-size:12px;color:var(--text3)"></span>
+                    <button class="btn btn-ghost btn-sm" onclick="pdfResetSteps()">↺ Réinitialiser</button>
+                  </div>
+                </div>
+                <div class="alert al-ok mb2" id="pdfDetectInfo"><span>✅</span><div></div></div>
+                <textarea class="fta" id="pdfSteps" rows="12"
+                          placeholder="Les étapes détectées apparaîtront ici. Vous pouvez les modifier, en ajouter ou en supprimer (une étape par ligne)."
+                          oninput="updatePdfStepCount()"></textarea>
+                <div style="font-size:12px;color:var(--text3);margin-top:4px">
+                  💡 Une ligne = une étape. Vous pouvez éditer, supprimer ou réorganiser avant d'enregistrer.
+                </div>
+              </div>
+
+              <!-- Saisie manuelle si pas de fichier -->
+              <div id="pdfManualZone">
+                <div class="fg" style="margin-top:8px">
+                  <label class="fl">Ou collez votre contenu directement (texte, plan, chapitres…)</label>
+                  <textarea class="fta" id="pdfManualText" rows="6"
+                            placeholder="Collez ici le texte de votre manuel, ou saisissez les titres de chapitres (un par ligne) :&#10;&#10;Chapitre 1 : Introduction à Word&#10;Chapitre 2 : L'interface de Word&#10;Chapitre 3 : Créer et enregistrer un document&#10;..."
+                            oninput="autoDetectFromManual()"></textarea>
+                  <button class="btn btn-outline btn-sm mt2" onclick="analyzeManualText()">🔍 Analyser et découper en étapes</button>
+                </div>
+              </div>
+
+              <!-- Options avancées -->
+              <details style="margin-top:12px;font-size:13px">
+                <summary style="cursor:pointer;color:var(--text2);user-select:none">⚙️ Options avancées</summary>
+                <div class="card mt2" style="background:var(--surface2)">
+                  <div class="f2">
+                    <div class="fg"><label class="fl" style="font-size:12px">Étapes max par module</label>
+                      <select class="fs" id="pdfMaxSteps" style="font-size:12px">
+                        <option value="30">30 étapes (court)</option>
+                        <option value="60" selected>60 étapes (standard)</option>
+                        <option value="100">100 étapes (long)</option>
+                        <option value="200">200 étapes (complet)</option>
+                      </select>
+                    </div>
+                    <div class="fg"><label class="fl" style="font-size:12px">Si trop long, diviser en</label>
+                      <select class="fs" id="pdfSplitModules" style="font-size:12px">
+                        <option value="1">1 module unique</option>
+                        <option value="2">2 modules (Partie 1 & 2)</option>
+                        <option value="3">3 modules (Parties 1, 2 & 3)</option>
+                        <option value="4">4 modules (un par trimestre)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                    <input type="checkbox" id="pdfKeepNumbers" checked>
+                    Conserver la numérotation originale des chapitres
+                  </label>
+                </div>
+              </details>
+
+              <div class="flex gap2 mt4 fwrap">
                 <button class="btn btn-primary" onclick="savePdfManuel()">💾 Créer le cours par étapes</button>
-                <button class="btn btn-ghost" onclick="document.getElementById('pdfImportForm').classList.add('hidden')">Annuler</button>
+                <button class="btn btn-outline" onclick="previewPdfManuel()" id="pdfPreviewBtn" style="display:none">👁️ Aperçu stagiaire</button>
+                <button class="btn btn-ghost" onclick="document.getElementById('pdfImportForm').classList.add('hidden');resetPdfForm()">Annuler</button>
               </div>
             </div>
-            <div id="customExList"></div>
+            <div id="customExList">id="customExList"></div>
           </div>
         </div>
         <div id="ft-groupes" class="hidden">
@@ -776,6 +872,13 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
+function loadScript(url, cb) {
+  if (document.querySelector('script[data-lib="'+url+'"]')) { if(cb) cb(); return; }
+  const s = document.createElement('script');
+  s.src = url; s.setAttribute('data-lib', url);
+  s.onload = cb; document.head.appendChild(s);
+}
+
 'use strict';
 // ══════════════════════════════════════════════
 //  MA PLATEFORME BUREAUTIQUE v2.1 — BUGFIX
@@ -2899,44 +3002,349 @@ function renderMsgs() {
   } catch(e) { console.error('renderMsgs error:', e); }
 }
 
-function handlePdfImport(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    // For PDF: we can't parse content, but we can note the filename
-    // For txt/docx-text: extract lines as steps
-    const content = e.target.result;
-    if (typeof content === 'string') {
-      const lines = content.split('\n').filter(l => l.trim().length > 5);
-      document.getElementById('pdfSteps').value = lines.slice(0,60).join('\n');
-      toast('✅ ' + lines.length + ' étapes détectées depuis le fichier !');
-    } else {
-      toast('ℹ️ PDF chargé : saisissez les étapes manuellement ou utilisez le .txt/.docx');
-    }
-  };
-  if (file.type === 'text/plain') reader.readAsText(file, 'UTF-8');
-  else reader.readAsArrayBuffer(file);
+function resetPdfForm() {
+  ['pdfTitle','pdfSteps','pdfManualText'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const prog = document.getElementById('pdfProgress');
+  if (prog) prog.classList.add('hidden');
+  const prev = document.getElementById('pdfPreviewZone');
+  if (prev) prev.classList.add('hidden');
+  const previewBtn = document.getElementById('pdfPreviewBtn');
+  if (previewBtn) previewBtn.style.display = 'none';
+  const dropIcon = document.getElementById('pdfDropIcon');
+  if (dropIcon) dropIcon.textContent = '📄';
+  const dropTitle = document.getElementById('pdfDropTitle');
+  if (dropTitle) dropTitle.textContent = 'Cliquez ou glissez votre fichier ici';
 }
 
+function updatePdfStepCount() {
+  const txt = document.getElementById('pdfSteps')?.value || '';
+  const lines = txt.split('\n').filter(l => l.trim().length > 0);
+  const el = document.getElementById('pdfStepCount');
+  if (el) el.textContent = lines.length + ' étape' + (lines.length > 1 ? 's' : '');
+}
+
+function pdfResetSteps() {
+  const el = document.getElementById('pdfSteps');
+  if (el) el.value = '';
+  updatePdfStepCount();
+}
+
+function showPdfProgress(label, pct) {
+  const prog = document.getElementById('pdfProgress');
+  const lbl = document.getElementById('pdfProgressLabel');
+  const bar = document.getElementById('pdfProgressBar');
+  if (prog) prog.classList.remove('hidden');
+  if (lbl) lbl.textContent = label;
+  if (bar) bar.style.width = pct + '%';
+}
+
+function setPdfSteps(steps, infoMsg) {
+  const maxSteps = parseInt(document.getElementById('pdfMaxSteps')?.value || '60');
+  const keepNums = document.getElementById('pdfKeepNumbers')?.checked !== false;
+
+  // Smart truncation or multi-module split
+  const splitN = parseInt(document.getElementById('pdfSplitModules')?.value || '1');
+  let displaySteps = steps;
+  if (steps.length > maxSteps && splitN === 1) {
+    displaySteps = steps.slice(0, maxSteps);
+    infoMsg += ' ⚠️ Limité à ' + maxSteps + ' étapes (modifiez les options avancées pour plus).';
+  }
+
+  // Clean steps
+  if (!keepNums) {
+    displaySteps = displaySteps.map(s => s.replace(/^[\d]+[.):\s-]+/, '').trim());
+  }
+
+  document.getElementById('pdfSteps').value = displaySteps.join('\n');
+  document.getElementById('pdfPreviewZone').classList.remove('hidden');
+  document.getElementById('pdfManualZone').style.display = 'none';
+  document.getElementById('pdfPreviewBtn').style.display = '';
+
+  const info = document.getElementById('pdfDetectInfo');
+  if (info) info.innerHTML = '<span>✅</span><div>' + infoMsg + '</div>';
+
+  updatePdfStepCount();
+  showPdfProgress('Extraction terminée', 100);
+  setTimeout(() => document.getElementById('pdfProgress')?.classList.add('hidden'), 1500);
+}
+
+// ─── Détection intelligente des chapitres dans du texte brut ──────────
+function detectChapters(text, mode) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const steps = [];
+
+  // Patterns de détection de titres
+  const titlePatterns = [
+    /^(chapitre|chapter|partie|part|section|module|leçon|lesson|séquence|unité|unit)[\s.:]+(.+)/i,
+    /^(\d+[.):\s]+)(.{5,80})$/,
+    /^([IVX]+[.):\s]+)(.{5,80})$/,
+    /^([A-Z][A-Z\s]{3,50})$/,  // ALL CAPS titles
+    /^(\d+\.\d+[\s.]+)(.{5,60})$/,  // 1.1 Sub-chapters
+  ];
+
+  if (mode === 'chapter') {
+    // Extract only title lines
+    for (const line of lines) {
+      if (line.length < 3 || line.length > 200) continue;
+      for (const pat of titlePatterns) {
+        if (pat.test(line)) { steps.push(line); break; }
+      }
+      // Also catch lines ending with : that are short
+      if (line.length < 80 && line.endsWith(':') && !line.startsWith('•') && !line.startsWith('-')) {
+        steps.push(line);
+      }
+    }
+    if (steps.length < 3) {
+      // Fallback: take every non-empty, reasonably short line
+      return lines.filter(l => l.length >= 5 && l.length <= 120).slice(0, 100);
+    }
+    return steps;
+
+  } else if (mode === 'paragraph') {
+    // Split by double newlines (paragraphs)
+    const paragraphs = text.split(/\n{2,}/).map(p => p.replace(/\n/g, ' ').trim()).filter(p => p.length > 20);
+    return paragraphs.slice(0, 200);
+
+  } else {
+    // 'manual' or default: return all meaningful lines
+    return lines.filter(l => l.length >= 3 && l.length <= 300);
+  }
+}
+
+// ─── Extraction Word (.docx) avec mammoth.js ─────────────────────
+function extractWord(file) {
+  showPdfProgress('Chargement de la librairie Word…', 10);
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', () => {
+    showPdfProgress('Extraction du document Word…', 30);
+    const reader = new FileReader();
+    reader.onload = e => {
+      showPdfProgress('Analyse du contenu…', 60);
+      mammoth.extractRawText({ arrayBuffer: e.target.result })
+        .then(result => {
+          showPdfProgress('Découpage en étapes…', 85);
+          const mode = document.getElementById('pdfSplit')?.value || 'chapter';
+          const steps = detectChapters(result.value, mode);
+          const info = steps.length + ' étapes extraites du document Word "' + file.name + '"';
+          setPdfSteps(steps, info);
+          if (result.messages.length) {
+            console.log('Mammoth warnings:', result.messages);
+          }
+        })
+        .catch(err => {
+          showPdfProgress('Erreur', 0);
+          toast('⚠️ Impossible de lire ce fichier Word. Essayez de le sauvegarder au format .docx récent.');
+          console.error('Mammoth error:', err);
+        });
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ─── Extraction PDF avec pdf.js ──────────────────────────────────
+function extractPdf(file) {
+  showPdfProgress('Chargement de la librairie PDF…', 10);
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', () => {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    showPdfProgress('Lecture du fichier PDF…', 20);
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+        const totalPages = pdf.numPages;
+        showPdfProgress('Extraction page 1/' + totalPages + '…', 30);
+        const mode = document.getElementById('pdfSplit')?.value || 'chapter';
+        const maxSteps = parseInt(document.getElementById('pdfMaxSteps')?.value || '60');
+
+        let allText = '';
+        const pageTexts = [];
+
+        for (let i = 1; i <= totalPages; i++) {
+          const pct = 30 + Math.round((i / totalPages) * 55);
+          showPdfProgress('Extraction page ' + i + '/' + totalPages + '…', pct);
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(' ').replace(/\s+/g, ' ').trim();
+          if (pageText.length > 10) {
+            pageTexts.push('Page ' + i + ' : ' + pageText.slice(0, 300));
+            allText += pageText + '\n';
+          }
+        }
+
+        showPdfProgress('Découpage en étapes…', 90);
+        let steps;
+        if (mode === 'page') {
+          steps = pageTexts.slice(0, maxSteps);
+        } else {
+          steps = detectChapters(allText, mode);
+        }
+
+        const info = steps.length + ' étapes extraites du PDF "' + file.name + '" (' + totalPages + ' pages)';
+        setPdfSteps(steps, info);
+      } catch (err) {
+        showPdfProgress('Erreur PDF', 0);
+        toast('⚠️ Erreur lecture PDF. Vérifiez que le PDF n\'est pas protégé par mot de passe.');
+        console.error('PDF.js error:', err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ─── Extraction texte brut (.txt) ────────────────────────────────
+function extractTxt(file) {
+  showPdfProgress('Lecture du fichier texte…', 30);
+  const reader = new FileReader();
+  reader.onload = e => {
+    showPdfProgress('Découpage en étapes…', 80);
+    const mode = document.getElementById('pdfSplit')?.value || 'chapter';
+    const steps = detectChapters(e.target.result, mode);
+    const info = steps.length + ' étapes extraites depuis "' + file.name + '"';
+    setPdfSteps(steps, info);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ─── Point d'entrée principal ─────────────────────────────────────
+function handlePdfImport(input) {
+  const file = (input.files || input)[0];
+  if (!file) return;
+
+  // Vérification taille (50 MB max)
+  if (file.size > 50 * 1024 * 1024) {
+    toast('⚠️ Fichier trop volumineux (max 50 MB). Utilisez un fichier plus léger ou collez le texte manuellement.');
+    return;
+  }
+
+  // Update drop zone UI
+  const dropIcon = document.getElementById('pdfDropIcon');
+  const dropTitle = document.getElementById('pdfDropTitle');
+  if (dropIcon) dropIcon.textContent = file.name.endsWith('.pdf') ? '📕' : file.name.endsWith('.docx') || file.name.endsWith('.doc') ? '📘' : '📄';
+  if (dropTitle) dropTitle.textContent = file.name + ' — Extraction en cours…';
+
+  // Pré-remplir le titre si vide
+  const titleEl = document.getElementById('pdfTitle');
+  if (titleEl && !titleEl.value) {
+    titleEl.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') extractPdf(file);
+  else if (ext === 'docx' || ext === 'doc') extractWord(file);
+  else if (ext === 'txt') extractTxt(file);
+  else toast('⚠️ Format non supporté. Utilisez .pdf, .docx ou .txt');
+}
+
+// ─── Analyse depuis la zone de saisie manuelle ───────────────────
+function analyzeManualText() {
+  const text = document.getElementById('pdfManualText')?.value?.trim();
+  if (!text || text.length < 10) { toast('⚠️ Collez du texte avant d\'analyser.'); return; }
+  const mode = document.getElementById('pdfSplit')?.value || 'chapter';
+  showPdfProgress('Analyse du texte…', 50);
+  const steps = detectChapters(text, mode);
+  const info = steps.length + ' étapes détectées depuis votre saisie';
+  setPdfSteps(steps, info);
+}
+
+function autoDetectFromManual() {
+  // Auto-detect when user stops typing (debounce)
+  clearTimeout(window._pdfAutoTimer);
+  window._pdfAutoTimer = setTimeout(() => {
+    const text = document.getElementById('pdfManualText')?.value || '';
+    if (text.split('\n').filter(l=>l.trim()).length >= 3) analyzeManualText();
+  }, 1200);
+}
+
+// ─── Aperçu stagiaire avant enregistrement ───────────────────────
+function previewPdfManuel() {
+  const titre = document.getElementById('pdfTitle')?.value?.trim() || 'Aperçu';
+  const steps = (document.getElementById('pdfSteps')?.value || '').split('\n').filter(l => l.trim());
+  if (steps.length < 1) { toast('⚠️ Aucune étape à prévisualiser.'); return; }
+  const w = window.open('','_blank','width=700,height=800');
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Aperçu — ' + titre + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;padding:24px;max-width:700px;margin:0 auto;color:#1a1a2e}' +
+    'h1{color:#1a5ec8;border-bottom:3px solid #1a5ec8;padding-bottom:8px}' +
+    '.step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #eee;align-items:flex-start}' +
+    '.num{min-width:32px;height:32px;background:#1a5ec8;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}' +
+    '.btn{margin-top:16px;padding:8px 20px;background:#1a5ec8;color:#fff;border:none;border-radius:6px;cursor:pointer}' +
+    '@media print{.btn{display:none}}</style></head><body>' +
+    '<h1>📄 ' + titre + '</h1>' +
+    '<p style="color:#888;font-size:13px">' + steps.length + ' étapes — Aperçu tel que vu par le stagiaire</p>' +
+    steps.map((s, i) => '<div class="step"><div class="num">' + (i+1) + '</div><div>' + s + '</div></div>').join('') +
+    '<button class="btn" onclick="window.print()">🖨️ Imprimer</button>' +
+    '</body></html>');
+  w.document.close();
+}
+
+// ─── Enregistrement final avec gestion multi-modules ─────────────
 function savePdfManuel() {
   const titre = document.getElementById('pdfTitle')?.value?.trim();
   const mod = document.getElementById('pdfMod')?.value || 'autre';
   const niv = document.getElementById('pdfNiv')?.value || 'B1';
-  const stepsRaw = document.getElementById('pdfSteps')?.value?.trim();
-  if (!titre || !stepsRaw) { toast('⚠️ Remplissez le titre et les étapes.'); return; }
-  const steps = stepsRaw.split('\n').map(s=>s.replace(/\r/g,'').trim()).filter(s=>s);
-  if (steps.length < 2) { toast('⚠️ Saisissez au moins 2 étapes.'); return; }
+
+  // Récupérer les étapes depuis la zone preview OU la zone manuelle
+  const fromPreview = document.getElementById('pdfSteps')?.value?.trim();
+  const fromManual = document.getElementById('pdfManualText')?.value?.trim();
+  const stepsRaw = fromPreview || fromManual;
+
+  if (!titre) { toast('⚠️ Donnez un titre à votre manuel.'); document.getElementById('pdfTitle')?.focus(); return; }
+  if (!stepsRaw) { toast('⚠️ Aucune étape. Importez un fichier ou saisissez les étapes.'); return; }
+
+  const allSteps = stepsRaw.split('\n').map(s => s.replace(/\r/g,'').trim()).filter(s => s.length >= 2);
+  if (allSteps.length < 2) { toast('⚠️ Il faut au moins 2 étapes.'); return; }
+
+  const splitN = parseInt(document.getElementById('pdfSplitModules')?.value || '1');
+  const chunkSize = Math.ceil(allSteps.length / splitN);
   const customExs = safeGet('mpb_custom_exs', []);
-  const newEx = { id:'pdf'+Date.now(), num:customExs.length+1, name:titre, lvl:niv, time:Math.ceil(steps.length*5)+' min estimé', type:'steps', steps, mod, custom:true, isPdf:true };
-  customExs.push(newEx);
-  safeSet('mpb_custom_exs', customExs);
-  if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e=>e.id===newEx.id)) MODULES_DATA[mod].exercises.push(newEx);
+
+  // Vérifier la taille estimée (localStorage ~5MB)
+  const estimatedSize = JSON.stringify(allSteps).length;
+  if (estimatedSize > 300000) { // 300 KB par sécurité
+    toast('⚠️ Manuel trop volumineux pour la mémoire locale (' + Math.round(estimatedSize/1024) + ' KB). Réduisez le nombre d\'étapes ou utilisez l\'option de découpage en plusieurs modules.');
+    return;
+  }
+
+  for (let part = 0; part < splitN; part++) {
+    const partSteps = allSteps.slice(part * chunkSize, (part + 1) * chunkSize);
+    if (partSteps.length === 0) continue;
+    const partTitle = splitN > 1 ? titre + ' — Partie ' + (part + 1) + '/' + splitN : titre;
+    const newEx = {
+      id: 'pdf' + Date.now() + '_' + part,
+      num: customExs.length + 1 + part,
+      name: partTitle,
+      lvl: niv,
+      time: Math.ceil(partSteps.length * 3) + ' min estimé',
+      type: 'steps',
+      steps: partSteps,
+      mod,
+      custom: true,
+      isPdf: true,
+      totalParts: splitN,
+      part: part + 1
+    };
+    customExs.push(newEx);
+    if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e => e.id === newEx.id)) {
+      MODULES_DATA[mod].exercises.push(newEx);
+    }
+  }
+
+  try {
+    safeSet('mpb_custom_exs', customExs);
+  } catch(e) {
+    toast('⚠️ Mémoire locale insuffisante. Essayez de réduire le nombre d\'étapes ou supprimez d\'anciens manuels.');
+    return;
+  }
+
   document.getElementById('pdfImportForm').classList.add('hidden');
-  ['pdfTitle','pdfSteps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  resetPdfForm();
   renderCustomExList();
-  toast('✅ Manuel "' + titre + '" créé avec ' + steps.length + ' étapes ! Les stagiaires peuvent le suivre dans les Modules.');
+
+  const msg = splitN > 1
+    ? '✅ Manuel "' + titre + '" créé en ' + splitN + ' parties (' + allSteps.length + ' étapes au total) !'
+    : '✅ Manuel "' + titre + '" créé avec ' + allSteps.length + ' étapes — visible dans les Modules !';
+  toast(msg, 5000);
+  confetti();
 }
+
 
 function saveContenu() {
   // FIX #8: Check if we're editing an existing exercise
