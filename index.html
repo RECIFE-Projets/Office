@@ -307,8 +307,10 @@ tbody tr:hover td{background:var(--surface2)}
 .a11y-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface2);border-radius:var(--r-sm);margin-bottom:16px;flex-wrap:wrap}
 .a11y-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:700;transition:all .15s}
 .a11y-btn.on,.a11y-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.font-lg .st-desc,.font-lg .ex-name,.font-lg td,.font-lg .quiz-q{font-size:17px!important}
-.font-xl .st-desc,.font-xl .ex-name,.font-xl td,.font-xl .quiz-q{font-size:20px!important}
+.font-lg .st-desc,.font-lg .ex-name,.font-lg td,.font-lg .quiz-q,.font-lg p,.font-lg li,.font-lg .muted,.font-lg label,.font-lg input,.font-lg .card-title{font-size:17px!important}
+body.font-lg{font-size:17px}
+.font-xl .st-desc,.font-xl .ex-name,.font-xl td,.font-xl .quiz-q,.font-xl p,.font-xl li,.font-xl .muted,.font-xl label,.font-xl input,.font-xl .card-title{font-size:20px!important}
+body.font-xl{font-size:20px}
 .high-contrast{--text:#000;--text2:#111;--border:#000;--surface2:#f0f0f0}
 
 /* ── UTILS ────────────────────────────────────── */
@@ -360,7 +362,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <button class="auth-tab active" onclick="authTab('register',this)">Inscription</button>
       <button class="auth-tab" onclick="authTab('login',this)">Connexion</button>
     </div>
-    <div class="auth-panel" id="apLogin" style="display:none;display:block">
+    <div class="auth-panel" id="apLogin" style="display:none">
       <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email"></div>
       <div class="fg"><label class="fl">Mot de passe</label>
         <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
@@ -434,6 +436,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <div class="sb-label">Suivi</div>
           <div class="nav-link" data-page="envoi"><span class="nav-icon">📤</span> Envoyer mes travaux</div>
           <div class="nav-link" data-page="progression"><span class="nav-icon">📊</span> Progression & Badges <span class="nav-badge" id="nbBadge">0</span></div>
+        <div class="nav-link" data-page="glossaire"><span class="nav-icon">📖</span> Glossaire</div>
         </div>
       </div>
       <div id="sbFormateur" class="hidden">
@@ -473,8 +476,24 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         </div>
         <div class="card" id="dashSendMsg">
           <div class="card-title">✉️ Contacter la formatrice</div>
-          <div class="fg"><textarea class="fta" id="stagMsgTxt" rows="3" placeholder="Écrivez votre message à la formatrice…"></textarea></div>
-          <button class="btn btn-primary btn-sm mt2" onclick="stagSendMsg()">📤 Envoyer le message</button>
+          <div class="f2" style="margin-bottom:8px">
+              <div class="fg"><label class="fl">À</label>
+                <select class="fs" id="stagMsgTo">
+                  <option value="formatrice">Ma formatrice</option>
+                  <option value="equipe">Toute l'équipe pédagogique</option>
+                </select>
+              </div>
+              <div class="fg"><label class="fl">Objet</label>
+                <select class="fs" id="stagMsgSubject">
+                  <option>Question sur un exercice</option>
+                  <option>Problème technique</option>
+                  <option>Demande d'aide</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+            </div>
+            <div class="fg"><textarea class="fta" id="stagMsgTxt" rows="3" placeholder="Écrivez votre message…"></textarea></div>
+            <button class="btn btn-primary btn-sm mt2" onclick="stagSendMsg()">📤 Envoyer le message</button>
         </div>
         <div class="card" id="dashMsgsCard" style="display:none">
           <div class="card-title">💬 Mes messages <span id="dashMsgBadge" style="background:var(--danger);color:#fff;padding:2px 8px;border-radius:20px;font-size:11px;margin-left:6px"></span></div>
@@ -490,8 +509,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div class="a11y-bar">
           <span style="font-size:13px;font-weight:700;color:var(--text2)">♿ Accessibilité :</span>
           <button class="a11y-btn" id="btnSimple" onclick="toggleSimple()">🔤 Texte simplifié A1</button>
-          <button class="a11y-btn" id="btnFontLg" onclick="setFont('lg')">A+</button>
-          <button class="a11y-btn" id="btnFontXl" onclick="setFont('xl')">A++</button>
+          <button class="a11y-btn" id="btnFontLg" onclick="toggleFont('lg')">A+</button>
+          <button class="a11y-btn" id="btnFontXl" onclick="toggleFont('xl')">A++</button>
           <button class="a11y-btn" id="btnFontN" onclick="setFont('n')">A normal</button>
           <button class="a11y-btn" id="btnContrast" onclick="toggleContrast()">⬛ Fort contraste</button>
         </div>
@@ -639,6 +658,26 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         </div>
         <div class="card"><div class="card-title">🏅 Tous mes badges</div><div class="bdg-grid" id="allBadges"></div></div>
         <div class="card"><div class="card-title">📅 Objectif hebdomadaire</div><div id="weeklyGoal"></div></div>
+      </div>
+
+      <!-- GLOSSAIRE -->
+      <div class="page" id="page-glossaire">
+        <div class="ph"><div class="ph-title">📖 Glossaire Pack Office</div><div class="ph-sub">Les termes bureautiques en 8 langues</div></div>
+        <div class="alert al-info mb3"><span>🌍</span><div>Cherchez un terme bureautique pour le voir traduit en français, arabe, anglais, wolof, bambara, turc, espagnol et portugais.</div></div>
+        <div class="flex gap2 mb3 fwrap">
+          <input class="fi" id="glossSearch" placeholder="🔍 Rechercher un terme (ex: souris, enregistrer, copier...)" oninput="renderGlossaire()" style="flex:1;max-width:400px">
+          <select class="fs" id="glossLang" onchange="renderGlossaire()" style="width:auto">
+            <option value="all">Toutes les langues</option>
+            <option value="ar">العربية (Arabe)</option>
+            <option value="en">English (Anglais)</option>
+            <option value="wo">Wolof</option>
+            <option value="bm">Bambara</option>
+            <option value="tr">Türkçe (Turc)</option>
+            <option value="es">Español (Espagnol)</option>
+            <option value="pt">Português (Portugais)</option>
+          </select>
+        </div>
+        <div id="glossaireList"></div>
       </div>
 
       <!-- FORMATEUR -->
@@ -1043,7 +1082,7 @@ const MODULES_DATA = {
   excel:{icon:'📊',name:'Excel 2019',colorClass:'mod-top-excel',fillClass:'fill-excel',tag:'t-green',
     desc:'Tableur : saisir des données, créer des tableaux et effectuer des calculs.',
     exercises:[
-      {id:'e1',num:1,name:'Découverte de l\'interface',lvl:'A1',time:'15 min',type:'steps',steps:['Observez les colonnes (A, B, C…) et les lignes (1, 2, 3…)','Chaque case s\'appelle une cellule : A1, B3, C5…','Cliquez sur une cellule pour la sélectionner','Tapez un chiffre ou du texte → Entrée pour valider','La barre de formule affiche le contenu de la cellule active']},
+      {id:'e1',num:1,name:'Découverte de l\'interface',lvl:'A1',time:'15 min',type:'steps',steps:['🖥️ Ouvrez Excel 2019 : Démarrer → tapez Excel → Entrée → Document vierge','Observez les colonnes (A, B, C…) et les lignes (1, 2, 3…)','Chaque case s\'appelle une cellule : A1, B3, C5…','Cliquez sur une cellule pour la sélectionner','Tapez un chiffre ou du texte → Entrée pour valider','La barre de formule affiche le contenu de la cellule active']},
       {id:'e2',num:2,name:'Saisir des données',lvl:'A1',time:'20 min',type:'quiz',qIdx:2},
       {id:'e3',num:3,name:'Formules SOMME et MOYENNE',lvl:'A2',time:'25 min',type:'steps',steps:['Cliquez sur la cellule résultat (ex: B6)','Tapez =SOMME( puis sélectionnez la plage B2:B5','Fermez la parenthèse → Entrée : le résultat s\'affiche !','Pour la moyenne : =MOYENNE(B2:B5)','Pour le max : =MAX(B2:B5) et le min : =MIN(B2:B5)']},
       {id:'e4',num:4,name:'Mise en forme des cellules',lvl:'A2',time:'25 min',type:'steps',steps:['Sélectionnez les cellules à mettre en forme','Gras, couleur de police : onglet Accueil','Bordures : cliquez sur l\'icône quadrillage → Toutes les bordures','Centrer : icône d\'alignement centré','Format nombre : € pour euros, % pour pourcentage']},
@@ -1132,7 +1171,7 @@ const CAS_PRATIQUES = [
 
 const QUIZ_DATA = [
   // qIdx 0 — Word mise en forme
-  {q:'Pour mettre un texte en gras dans Word, vous sélectionnez le texte puis vous appuyez sur :',opts:['Ctrl + I','Ctrl + G','Ctrl + U','Ctrl + B'],rep:1,
+  {q:'Pour mettre un texte en gras dans Word, vous sélectionnez le texte puis vous appuyez sur :',opts:['Ctrl + I','Ctrl + G','Ctrl + U','Ctrl + B'],rep:3,
    expl:'Ctrl+B (Bold = Gras en anglais) met le texte en gras. Ctrl+I = Italique, Ctrl+U = Souligné.'},
   // qIdx 1 — Word tableau
   {q:'Pour créer un tableau dans Word, vous utilisez quel onglet ?',opts:['Accueil','Mise en page','Insertion','Références'],rep:2,
@@ -1240,6 +1279,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Nav links
   document.querySelectorAll('.nav-link[data-page]').forEach(l => {
     l.addEventListener('click', () => showPage(l.dataset.page));
+    // Also close mobile sidebar
+    l.addEventListener('click', () => { if(window.innerWidth < 768) document.getElementById('sidebar')?.classList.remove('open'); });
   });
   // Upload
   const fIn = document.getElementById('fileIn');
@@ -1386,13 +1427,17 @@ function loginAs(role) {
 }
 
 function doRegister(btn) {
-  // FIX #11: Prevent double-click
   if (btn && btn.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Création…'; }
+  const _reEnable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; } };
+  try { _doRegisterWork(btn, _reEnable); } catch(e) { _reEnable(); console.error('Register error:',e); toast('⚠️ Erreur. Réessayez.'); }
+}
+
+function _doRegisterWork(btn, _reEnable) {
   const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp'),
     emailConf = val('rEmailConf'), mdpConf = val('rMdpConf');
   const err = document.getElementById('rErr');
-  const re_enable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; }};
+  // _reEnable injected from doRegister wrapper — called on all error paths
   if (emailConf && email !== emailConf) { showErr(err, '⚠️ Les e-mails ne correspondent pas.'); return; }
   if (mdpConf && mdp !== mdpConf) { showErr(err, '⚠️ Les mots de passe ne correspondent pas.'); return; }
   if (!pre || !nom || !email || !mdp) { showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.'); re_enable(); return; }
@@ -1473,6 +1518,12 @@ function initApp(role, user) {
   S.role = role;
   if (user) S.currentUser = user;
   const u = S.currentUser;
+  // P11: Load user-specific settings
+  if (user?.email && user.email !== 'demo') {
+    const sKey = 'mpb_settings_' + btoa(user.email).replace(/=/g,'');
+    const userSettings = safeGet(sKey, null);
+    if (userSettings) S.settings = { ...S.settings, ...userSettings };
+  }
   const sbS = document.getElementById('sbStagiaire');
   const sbF = document.getElementById('sbFormateur');
   const nbLvl = document.getElementById('nbLvl');
@@ -1543,6 +1594,7 @@ function showPage(id) {
   if (id === 'tests') renderTests();
   if (id === 'envoi') renderEnvoi();
   if (id === 'progression') renderProgression();
+  if (id === 'glossaire') renderGlossaire();
   if (id === 'formateur') renderFormateur();
   if (id === 'positionnement') startQuizPositionnement();
   if (id === 'parcours') applySavedSettings();
@@ -1679,10 +1731,15 @@ function toggleRopt(label, name) {
   if (inp) inp.checked = true;
   saveParc();
 }
+function getSettingsKey() {
+  const u = S.currentUser;
+  if (u?.email && u.email !== 'demo') return 'mpb_settings_' + btoa(u.email).replace(/=/g,'');
+  return 'mpb_settings';
+}
 function saveParc() {
   S.settings.formation = document.querySelector('input[name="form"]:checked')?.value || 'savoirs';
   S.settings.niveauNum = document.querySelector('input[name="num"]:checked')?.value || 'inter';
-  safeSet('mpb_settings', S.settings);
+  safeSet(getSettingsKey(), S.settings);
   const saved = document.getElementById('parcSaved');
   if (saved) saved.textContent = '✅ Parcours enregistré le ' + new Date().toLocaleDateString('fr-FR');
 }
@@ -1712,6 +1769,7 @@ function setLvl(lvl, el) {
 }
 function applySavedSettings() {
   const cfg = S.settings;
+  if (cfg.fontSize) { document.body.classList.remove('font-normal','font-lg','font-xl'); document.body.classList.add('font-'+cfg.fontSize); }
   // Restore metier tags
   document.querySelectorAll('.mtag').forEach(t => {
     t.classList.toggle('on', cfg.metiers.includes(t.dataset.m));
@@ -1755,6 +1813,17 @@ function setFont(s) {
   if (s === 'xl') document.getElementById('btnFontXl')?.classList.add('on');
   if (s === 'n') document.getElementById('btnFontN')?.classList.add('on');
 }
+function toggleFont(size) {
+  // P10: Apply font size class to body for global effect
+  document.body.classList.remove('font-normal', 'font-lg', 'font-xl');
+  document.body.classList.add(size === 'lg' ? 'font-lg' : size === 'xl' ? 'font-xl' : 'font-normal');
+  document.querySelectorAll('.a11y-btn[data-font]').forEach(b => b.classList.remove('on'));
+  document.querySelector('.a11y-btn[data-font="' + size + '"]')?.classList.add('on');
+  S.settings.fontSize = size;
+  saveParc();
+  toast('Taille de texte : ' + (size === 'lg' ? 'Grande' : size === 'xl' ? 'Très grande' : 'Normale'));
+}
+
 function toggleContrast() {
   document.documentElement.classList.toggle('high-contrast');
   document.getElementById('btnContrast')?.classList.toggle('on');
@@ -2007,7 +2076,23 @@ function openExModal(modKey, exId) {
   // Add save reminder at bottom of all exercises
   body += `<div class="alert al-warn mt3"><span>💾</span><div><b>Rappel :</b> Enregistrez votre fichier dans Documents → <code>NomRéférente_Groupe_${ex.name.replace(/['"]/g,'').substring(0,20)}</code></div></div>`;
 
-  setEl('exModalBody', body);
+  // P13: Add "open software" banner before exercise content
+  const softwareMap = {
+    word:  { name:'Word 2019',        icon:'📄', color:'#1a5ec8', hint:'Démarrer → taper "Word" → Entrée' },
+    excel: { name:'Excel 2019',       icon:'📊', color:'#0d9e6e', hint:'Démarrer → taper "Excel" → Entrée' },
+    ppt:   { name:'PowerPoint 2019',  icon:'📽️', color:'#d97706', hint:'Démarrer → taper "PowerPoint" → Entrée' },
+    pub:   { name:'Publisher 2019',   icon:'🖨️', color:'#7c3aed', hint:'Démarrer → taper "Publisher" → Entrée' },
+  };
+  const swInfo = softwareMap[modKey];
+  const swBanner = swInfo ? `<div style="background:${swInfo.color}18;border:2px solid ${swInfo.color};border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <span style="font-size:32px;flex-shrink:0">${swInfo.icon}</span>
+    <div style="flex:1">
+      <div style="font-weight:900;font-size:16px;color:${swInfo.color}">🖥️ Ouvrez ${swInfo.name} maintenant</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:3px">${swInfo.hint}</div>
+    </div>
+    <span style="background:${swInfo.color};color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap">⚠️ À faire AVANT de commencer</span>
+  </div>` : '';
+  setEl('exModalBody', swBanner + body);
 
   // FIX #19: Attach per-step TTS listeners
   if (ex.type === 'steps') {
@@ -2033,7 +2118,11 @@ function openExModal(modKey, exId) {
 
   document.getElementById('exModal').classList.remove('hidden');
   } catch(e) { console.error('openExModal error:', e); toast('⚠️ Une erreur est survenue. Actualisez la page.'); }
-}function closeExModal() { document.getElementById('exModal').classList.add('hidden'); }
+}
+
+function closeExModal() {
+  if (window.speechSynthesis) speechSynthesis.cancel(); // P8: stop TTS when closing
+  document.getElementById('exModal').classList.add('hidden'); }
 
 function validateStep(exId, modKey, stepIdx, total) {
   const circ = document.getElementById(`stc_${exId}_${stepIdx}`);
@@ -2474,7 +2563,7 @@ function renderTestQ() {
       document.querySelectorAll('#testQuizContent .qopt')[correct].classList.add('correct');
       S.testAnswers.push(chosen === correct); // FIX #3
       const fb = document.getElementById('testfb');
-      if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; fb.textContent=chosen===correct?'✅ Correct !':'❌ ' + QUIZ_POSITIONNEMENT[S.testQuizIdx].opts[correct]; }
+      if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; const corrLabel=q.opts[correct]||''; const explTxt=q.expl?'<br><small style="opacity:.85">💡 '+q.expl+'</small>':''; fb.innerHTML=(chosen===correct?'✅ Correct !':'❌ Bonne réponse : <b>'+corrLabel+'</b>')+explTxt; }
       document.getElementById('testNext')?.classList.remove('hidden');
     });
   });
@@ -2511,7 +2600,13 @@ function renderEnvoi() {
 
   try {
   updateEnvoiExSelect(); // FIX #2: populate on render
-  setEl('envoiHist', S.travaux.map(t => `
+  // P6: Filter travaux by current user
+  const userTravaux = S.travaux.filter(t => {
+    if (!S.currentUser?.email || S.currentUser.email === 'demo') return true;
+    return t.stag === ((S.currentUser.prenom||'') + ' ' + (S.currentUser.nom||'')).trim()
+        || t.userEmail === S.currentUser.email;
+  });
+  setEl('envoiHist', userTravaux.map(t => `
     <tr>
       <td style="font-size:13px">${t.fichier}</td>
       <td><span class="tag ${t.module==='Word'?'t-blue':t.module==='Excel'?'t-green':t.module==='PowerPoint'?'t-orange':'t-purple'}">${t.module}</span></td>
@@ -2570,7 +2665,7 @@ function envoyerTravail() {
   const nomFichier = info.querySelector('b')?.textContent || 'fichier.docx';
   const d = new Date();
   const stagName = (S.currentUser?.prenom + ' ' + (S.currentUser?.nom||'')).trim(); // FIX #13
-  S.travaux.push({ id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '' });
+  S.travaux.push({ id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '', userEmail: S.currentUser?.email || '' });
   // B12: Keep max 100 travaux entries
   if (S.travaux.length > 100) S.travaux = S.travaux.slice(-100);
   safeSet('mpb_travaux', S.travaux);
@@ -2738,7 +2833,10 @@ function stagSendMsg() {
   if (!txt) { toast('⚠️ Écrivez un message avant d\'envoyer.'); return; }
   const u = S.currentUser;
   const from = u ? esc(u.prenom + ' ' + (u.nom||'')) : 'Stagiaire';
-  S.msgs.push({ id: Date.now(), from, to: 'Formatrice', text: txt, date: new Date().toLocaleDateString('fr-FR'), fromStag: true });
+  const to = document.getElementById('stagMsgTo')?.options[document.getElementById('stagMsgTo')?.selectedIndex]?.text || 'Formatrice';
+  const subject = document.getElementById('stagMsgSubject')?.value || '';
+  const fullText = subject ? '[' + subject + '] ' + txt : txt;
+  S.msgs.push({ id: Date.now(), from, to, text: fullText, date: new Date().toLocaleDateString('fr-FR'), fromStag: true });
   safeSet('mpb_msgs', S.msgs);
   document.getElementById('stagMsgTxt').value = '';
   toast('✅ Message envoyé à la formatrice !');
@@ -3799,6 +3897,114 @@ function exportPDF() {
   </body></html>`);
   w.document.close();
   setTimeout(() => { w.print(); }, 400);
+}
+
+
+// ── GLOSSAIRE MULTILINGUE ───────────────────────────
+const GLOSSAIRE = [
+  // Matériel & interface
+  {fr:'Souris',          ar:'الفأرة',         en:'Mouse',        wo:'Souris',     bm:'Sori',      tr:'Fare',         es:'Ratón',         pt:'Rato'},
+  {fr:'Clavier',         ar:'لوحة المفاتيح',   en:'Keyboard',     wo:'Clavier',   bm:'Clavier',   tr:'Klavye',       es:'Teclado',       pt:'Teclado'},
+  {fr:'Écran',           ar:'الشاشة',          en:'Screen',       wo:'Ekran',     bm:'Ɛkrani',    tr:'Ekran',        es:'Pantalla',       pt:'Ecrã'},
+  {fr:'Ordinateur',      ar:'الحاسوب',         en:'Computer',     wo:'Ordinateur',bm:'Ɔrdinatɛri',tr:'Bilgisayar',  es:'Ordenador',     pt:'Computador'},
+  {fr:'Imprimante',      ar:'الطابعة',          en:'Printer',      wo:'Imprimante',bm:'Ɛnprimanteri',tr:'Yazıcı',  es:'Impresora',     pt:'Impressora'},
+  {fr:'Clé USB',         ar:'مفتاح USB',        en:'USB key',      wo:'Clé USB',   bm:'USB bolo',  tr:'USB bellek',   es:'Llave USB',     pt:'Pen drive'},
+  // Actions communes
+  {fr:'Enregistrer',     ar:'حفظ',             en:'Save',         wo:'Dëkk',      bm:'Mara',      tr:'Kaydetmek',    es:'Guardar',       pt:'Guardar'},
+  {fr:'Ouvrir',          ar:'فتح',             en:'Open',         wo:'Ubbi',      bm:'Yele',      tr:'Açmak',        es:'Abrir',         pt:'Abrir'},
+  {fr:'Fermer',          ar:'إغلاق',           en:'Close',        wo:'Tëj',       bm:'Datugu',    tr:'Kapatmak',     es:'Cerrar',        pt:'Fechar'},
+  {fr:'Copier',          ar:'نسخ',             en:'Copy',         wo:'Copy',      bm:'Kopi',      tr:'Kopyalamak',   es:'Copiar',        pt:'Copiar'},
+  {fr:'Coller',          ar:'لصق',             en:'Paste',        wo:'Paste',     bm:'Cogo',      tr:'Yapıştırmak',  es:'Pegar',         pt:'Colar'},
+  {fr:'Couper',          ar:'قص',              en:'Cut',          wo:'Cut',       bm:'Segi',      tr:'Kesmek',       es:'Cortar',        pt:'Cortar'},
+  {fr:'Annuler',         ar:'تراجع',           en:'Undo',         wo:'Sàmm',      bm:'Daminɛ',    tr:'Geri almak',   es:'Deshacer',      pt:'Desfazer'},
+  {fr:'Imprimer',        ar:'طباعة',           en:'Print',        wo:'Sos liggéey',bm:'Printe',  tr:'Yazdırmak',    es:'Imprimir',      pt:'Imprimir'},
+  {fr:'Rechercher',      ar:'بحث',             en:'Search',       wo:'Seet',      bm:'Ɲinin',     tr:'Aramak',       es:'Buscar',        pt:'Pesquisar'},
+  {fr:'Sélectionner',    ar:'تحديد',           en:'Select',       wo:'Tàng',      bm:'Sugandi',   tr:'Seçmek',       es:'Seleccionar',   pt:'Selecionar'},
+  {fr:'Supprimer',       ar:'حذف',             en:'Delete',       wo:'Lëkkeel',   bm:'Jɔsi',      tr:'Silmek',       es:'Eliminar',      pt:'Eliminar'},
+  // Mise en forme
+  {fr:'Gras',            ar:'عريض',            en:'Bold',         wo:'Rafet',     bm:'Gɔrɔso',    tr:'Kalın',        es:'Negrita',       pt:'Negrito'},
+  {fr:'Italique',        ar:'مائل',            en:'Italic',       wo:'Italik',    bm:'Italiki',   tr:'İtalik',       es:'Cursiva',       pt:'Itálico'},
+  {fr:'Souligné',        ar:'مسطّر',           en:'Underlined',   wo:'Souliñe',   bm:'Suli',      tr:'Altı çizili',  es:'Subrayado',     pt:'Sublinhado'},
+  {fr:'Police',          ar:'الخط',            en:'Font',         wo:'Jàpp ñaam', bm:'Polisi',    tr:'Yazı tipi',    es:'Fuente',        pt:'Fonte'},
+  {fr:'Taille du texte', ar:'حجم النص',        en:'Font size',    wo:'Dëkk xel',  bm:'Sɛbɛn kɔrɔ',tr:'Yazı boyutu', es:'Tamaño de texto',pt:'Tamanho do texto'},
+  {fr:'Couleur',         ar:'اللون',           en:'Color',        wo:'Rëdd',      bm:'Kulɛri',    tr:'Renk',         es:'Color',         pt:'Cor'},
+  {fr:'Alignement',      ar:'محاذاة',          en:'Alignment',    wo:'Yëgël',     bm:'Sɛbɛn taa', tr:'Hizalama',     es:'Alineación',    pt:'Alinhamento'},
+  {fr:'Centrer',         ar:'توسيط',           en:'Center',       wo:'Addina',    bm:'Tɔgɔma',    tr:'Ortaya al',    es:'Centrar',       pt:'Centrar'},
+  {fr:'Paragraphe',      ar:'فقرة',            en:'Paragraph',    wo:'Sëñ',       bm:'Paragrafu', tr:'Paragraf',     es:'Párrafo',       pt:'Parágrafo'},
+  {fr:'Tableau',         ar:'جدول',            en:'Table',        wo:'Taablo',    bm:'Taabili',   tr:'Tablo',        es:'Tabla',         pt:'Tabela'},
+  // Word
+  {fr:'Document',        ar:'وثيقة',           en:'Document',     wo:'Dugub',     bm:'Sɛbɛn',     tr:'Belge',        es:'Documento',     pt:'Documento'},
+  {fr:'Marge',           ar:'هامش',            en:'Margin',       wo:'Marge',     bm:'Maji',      tr:'Kenar boşluğu',es:'Margen',        pt:'Margem'},
+  {fr:'En-tête',         ar:'رأس الصفحة',      en:'Header',       wo:'Kanam',     bm:'Dabali',    tr:'Üst bilgi',    es:'Encabezado',    pt:'Cabeçalho'},
+  {fr:'Pied de page',    ar:'تذييل الصفحة',    en:'Footer',       wo:'Suuf',      bm:'Sɔrɔbara',  tr:'Alt bilgi',    es:'Pie de página', pt:'Rodapé'},
+  // Excel
+  {fr:'Cellule',         ar:'خلية',            en:'Cell',         wo:'Sellul',    bm:'Seli',      tr:'Hücre',        es:'Celda',         pt:'Célula'},
+  {fr:'Formule',         ar:'صيغة',            en:'Formula',      wo:'Formul',    bm:'Formuli',   tr:'Formül',       es:'Fórmula',       pt:'Fórmula'},
+  {fr:'Feuille',         ar:'ورقة عمل',        en:'Sheet',        wo:'Fuuye',     bm:'Fuye',      tr:'Sayfa',        es:'Hoja',          pt:'Folha'},
+  {fr:'Classeur',        ar:'مصنف',            en:'Workbook',     wo:'Classeur',  bm:'Klasɛri',   tr:'Çalışma kitabı',es:'Libro',        pt:'Livro'},
+  {fr:'Graphique',       ar:'رسم بياني',       en:'Chart / Graph',wo:'Graafik',   bm:'Garafi',    tr:'Grafik',       es:'Gráfico',       pt:'Gráfico'},
+  {fr:'Filtre',          ar:'تصفية',           en:'Filter',       wo:'Filtar',    bm:'Filɛri',    tr:'Filtre',       es:'Filtro',        pt:'Filtro'},
+  // PowerPoint
+  {fr:'Diapositive',     ar:'شريحة',           en:'Slide',        wo:'Diapositiv',bm:'Slide',     tr:'Slayt',        es:'Diapositiva',   pt:'Diapositivo'},
+  {fr:'Présentation',    ar:'عرض تقديمي',      en:'Presentation', wo:'Sàmm-sàmm',bm:'Kɛnɛyɔrɔ',  tr:'Sunum',        es:'Presentación',  pt:'Apresentação'},
+  {fr:'Animation',       ar:'تأثير',           en:'Animation',    wo:'Animasyon', bm:'Animasɔn',  tr:'Animasyon',    es:'Animación',     pt:'Animação'},
+  {fr:'Transition',      ar:'انتقال',          en:'Transition',   wo:'Transition',bm:'Cɛsɛnkɔrɔ', tr:'Geçiş',       es:'Transición',    pt:'Transição'},
+  {fr:'Diaporama',       ar:'عرض الشرائح',     en:'Slideshow',    wo:'Diaporama', bm:'Slideshow', tr:'Slayt gösterisi',es:'Pase de diapositivas',pt:'Apresentação de slides'},
+];
+
+function renderGlossaire() {
+  const search = (document.getElementById('glossSearch')?.value || '').toLowerCase().trim();
+  const lang = document.getElementById('glossLang')?.value || 'all';
+  const el = document.getElementById('glossaireList');
+  if (!el) return;
+
+  const cols = [
+    {key:'fr', label:'🇫🇷 Français'},
+    {key:'ar', label:'🇸🇦 العربية'},
+    {key:'en', label:'🇬🇧 English'},
+    {key:'wo', label:'🇸🇳 Wolof'},
+    {key:'bm', label:'🇲🇱 Bambara'},
+    {key:'tr', label:'🇹🇷 Türkçe'},
+    {key:'es', label:'🇪🇸 Español'},
+    {key:'pt', label:'🇧🇷 Português'},
+  ];
+  const visibleCols = lang === 'all' ? cols : [cols[0], cols.find(c=>c.key===lang)].filter(Boolean);
+
+  const filtered = GLOSSAIRE.filter(entry => {
+    if (!search) return true;
+    return Object.values(entry).some(v => v.toLowerCase().includes(search));
+  });
+
+  if (!filtered.length) { el.innerHTML = '<div class="muted tc" style="padding:30px">Aucun terme trouvé.</div>'; return; }
+
+  // Group by category if no search
+  let html = '<div class="tw-wrap"><table><thead><tr>' +
+    visibleCols.map(c => `<th style="font-size:12px">${c.label}</th>`).join('') +
+    '</tr></thead><tbody>' +
+    filtered.map(entry => '<tr>' +
+      visibleCols.map(c => {
+        const v = entry[c.key] || '';
+        const isRTL = c.key === 'ar';
+        return `<td style="${isRTL?'direction:rtl;font-family:serif;font-size:15px':''}${c.key==='fr'?';font-weight:700':''}">${esc(v)}</td>`;
+      }).join('') +
+    '</tr>').join('') +
+    '</tbody></table></div>';
+
+  el.innerHTML = html +
+    `<div class="flex gap2 mt3"><button class="btn btn-outline btn-sm" onclick="printGlossaire()">🖨️ Imprimer le glossaire</button></div>`;
+}
+
+function printGlossaire() {
+  const w = window.open('','_blank','width=900,height=700');
+  const langs = ['fr','ar','en','wo','bm','tr','es','pt'];
+  const labels = {'fr':'🇫🇷 Français','ar':'🇸🇦 العربية','en':'🇬🇧 English','wo':'🇸🇳 Wolof','bm':'🇲🇱 Bambara','tr':'🇹🇷 Türkçe','es':'🇪🇸 Español','pt':'🇧🇷 Português'};
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Glossaire Pack Office</title>' +
+    '<style>body{font-family:Arial,sans-serif;padding:16px;font-size:12px}h1{color:#1a5ec8}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1a5ec8;color:#fff;padding:5px 6px;text-align:left}td{padding:4px 6px;border-bottom:1px solid #eee}.fr{font-weight:700}.ar{direction:rtl;font-family:serif;font-size:13px}@media print{button{display:none}}</style>' +
+    '</head><body><h1>📖 Glossaire Pack Office — 8 langues</h1>' +
+    '<table><thead><tr>' + langs.map(l=>`<th class="${l}">${labels[l]}</th>`).join('') + '</tr></thead><tbody>' +
+    GLOSSAIRE.map(e=>'<tr>'+langs.map(l=>`<td class="${l}">${e[l]||''}</td>`).join('')+'</tr>').join('') +
+    '</tbody></table><button onclick="window.print()" style="margin-top:12px;padding:8px 20px;background:#1a5ec8;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimer</button></body></html>');
+  w.document.close();
 }
 
 // ── TTS ────────────────────────────────────────
