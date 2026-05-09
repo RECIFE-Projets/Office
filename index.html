@@ -658,6 +658,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="tab-btn" onclick="fTab('contenus',this)">🧱 Contenus</button>
           <button class="tab-btn" onclick="fTab('messages',this)">💬 Messages</button>
           <button class="tab-btn" onclick="fTab('groupes',this)">👥 Groupes</button>
+          <button class="tab-btn" onclick="fTab('quiz',this)">🧪 Quiz</button>
         </div>
         <div id="formAlertZone"></div>
 <div id="ft-stagiaires">
@@ -823,6 +824,45 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               </div>
             </div>
             <div id="customExList">id="customExList"></div>
+          </div>
+        </div>
+        <div id="ft-quiz" class="hidden">
+          <div class="card">
+            <div class="card-title">🧪 Modifier le test de positionnement</div>
+            <div class="alert al-info mb3"><span>ℹ️</span><div>Les questions ajoutées ici complètent ou remplacent les questions par défaut du test de positionnement de 15 questions.</div></div>
+            <div class="flex gap2 mb3 fwrap">
+              <button class="btn btn-primary" onclick="showQuizEditForm()">➕ Ajouter une question</button>
+              <button class="btn btn-outline" onclick="resetCustomQuiz()">↺ Restaurer les questions par défaut</button>
+              <button class="btn btn-ghost btn-sm" onclick="previewQuizTest()">👁️ Aperçu du test complet</button>
+            </div>
+            <div id="quizEditForm" class="hidden card" style="border:2px solid var(--primary)">
+              <div class="card-title" id="quizEditTitle">➕ Nouvelle question</div>
+              <div class="fg"><label class="fl">Question <span style="color:var(--danger)">*</span></label>
+                <textarea class="fta" id="qEditQ" rows="3" placeholder="Ex: Pour créer un tableau dans Word, quel onglet utilisez-vous ?"></textarea>
+              </div>
+              <div class="fg"><label class="fl">Niveau CECRL</label>
+                <select class="fs" id="qEditLvl"><option value="A1">A1</option><option value="A2" selected>A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
+              </div>
+              <div style="font-weight:700;margin:12px 0 6px;font-size:14px">Propositions de réponses</div>
+              <div class="f2">
+                <div class="fg"><label class="fl">Réponse A</label><input class="fi" id="qEditA" placeholder="Proposition A"></div>
+                <div class="fg"><label class="fl">Réponse B</label><input class="fi" id="qEditB" placeholder="Proposition B"></div>
+                <div class="fg"><label class="fl">Réponse C</label><input class="fi" id="qEditC" placeholder="Proposition C"></div>
+                <div class="fg"><label class="fl">Réponse D</label><input class="fi" id="qEditD" placeholder="Proposition D (facultatif)"></div>
+              </div>
+              <div class="fg"><label class="fl">Bonne réponse <span style="color:var(--danger)">*</span></label>
+                <select class="fs" id="qEditRep"><option value="0">A (première réponse)</option><option value="1">B (deuxième réponse)</option><option value="2">C (troisième réponse)</option><option value="3">D (quatrième réponse)</option></select>
+              </div>
+              <div class="fg"><label class="fl">Explication pédagogique (affichée après la réponse)</label>
+                <textarea class="fta" id="qEditExpl" rows="2" placeholder="Ex: L'onglet Insertion contient tous les éléments à insérer..."></textarea>
+              </div>
+              <div class="flex gap2 mt3">
+                <button class="btn btn-primary" onclick="saveQuizQuestion()">💾 Enregistrer la question</button>
+                <button class="btn btn-ghost" onclick="cancelQuizEdit()">Annuler</button>
+              </div>
+              <input type="hidden" id="qEditIdx" value="-1">
+            </div>
+            <div id="customQuizList" class="mt3"></div>
           </div>
         </div>
         <div id="ft-groupes" class="hidden">
@@ -1103,6 +1143,80 @@ const QUIZ_DATA = [
   // qIdx 3 — PPT images
   {q:"Dans PowerPoint, quelle est la bonne façon d'insérer une image ?",opts:['Copier-coller depuis Internet','Insertion → Images en ligne','Insertion → Images → Cet appareil','Glisser depuis le navigateur web'],rep:2,
    expl:"⚠️ Toujours utiliser 'Cet appareil' — les images en ligne nécessitent une connexion et peuvent disparaître."}];
+// ── QUIZ SIMULATIONS — Questions spécifiques par test ──────────
+const QUIZ_SIMULATIONS = {
+  // Test Word B1-B2
+  'Test Word B1-B2 · 30 min': [
+    {q:"Dans Word, comment créer automatiquement une table des matières ?",opts:["Saisir manuellement les titres","Insertion → Table des matières → après avoir appliqué des Styles","Affichage → Structure → Table","Références → Signet"],rep:1,lvl:'B1',expl:"La table des matières se génère automatiquement si vous avez utilisé les Styles (Titre 1, Titre 2…) dans votre document."},
+    {q:"Qu'est-ce qu'un publipostage dans Word ?",opts:["Une mise en page avec deux colonnes","Une fusion d'un document type avec une liste de destinataires","Un type de correction orthographique","Un effet de style sur le texte"],rep:1,lvl:'B1',expl:"Le publipostage (Onglet Publipostage) permet de créer des lettres ou étiquettes personnalisées pour plusieurs destinataires depuis une liste Excel."},
+    {q:"Pour créer un en-tête différent pour la première page, vous allez dans :",opts:["Accueil → Paragraphe → Retrait","Mise en page → Marges → Personnalisé","Double-clic sur l'en-tête → cocher 'Première page différente'","Insertion → En-tête → Vide"],rep:2,lvl:'B1',expl:"Double-cliquez sur la zone d'en-tête pour l'activer, puis cochez 'Première page différente' dans les Options de la section En-tête."},
+    {q:"Comment appliquer un style 'Titre 1' à un paragraphe ?",opts:["Format → Style → Titre 1","Sélectionner le texte → cliquer sur 'Titre 1' dans le groupe Styles de l'onglet Accueil","Insertion → Titre → Niveau 1","Ctrl + T puis 1"],rep:1,lvl:'B1',expl:"Les styles sont dans l'onglet Accueil, groupe Styles. Ils permettent une mise en forme cohérente et facilitent la génération automatique de table des matières."},
+    {q:"Pour protéger un document Word par mot de passe, vous utilisez :",opts:["Révision → Protéger le document","Fichier → Informations → Protéger le document → Chiffrer avec un mot de passe","Affichage → Macros → Protection","Outils → Options → Sécurité"],rep:1,lvl:'B2',expl:"Fichier → Informations → Protéger le document → 'Chiffrer avec un mot de passe' permet de bloquer l'ouverture du document sans le bon mot de passe."},
+    {q:"Dans Word, un 'renvoi automatique' permet de :",opts:["Revenir au début du document","Créer un lien vers une autre partie du même document (numéro de page, titre, figure…)","Annuler la dernière action","Envoyer le document par e-mail"],rep:1,lvl:'B2',expl:"Insertion → Liens → Renvoi : permet de référencer automatiquement un titre, une figure ou un numéro de page dans votre document."},
+    {q:"La fonction 'Suivi des modifications' dans Word sert à :",opts:["Enregistrer automatiquement le document","Afficher l'historique des révisions et modifications avec le nom des auteurs","Vérifier l'orthographe en continu","Compter les mots du document"],rep:1,lvl:'B2',expl:"Révision → Suivi des modifications : indispensable pour les documents collaboratifs. Chaque modification est visible avec la couleur et le nom de son auteur."},
+    {q:"Pour créer un filigrane (ex: 'CONFIDENTIEL') dans Word :",opts:["Insertion → WordArt","Mise en page → Filigrane","Accueil → Effets de texte","Affichage → Arrière-plan"],rep:1,lvl:'B2',expl:"Mise en page → Filigrane vous permet d'ajouter un texte ou une image en arrière-plan de toutes les pages."},
+  ],
+
+  // Test Excel A1-A2
+  'Test Excel A1-A2 · 25 min': [
+    {q:"Dans Excel, que fait la formule =SOMME(A1:A10) ?",opts:["Compte le nombre de cellules","Additionne toutes les valeurs de A1 à A10","Calcule la moyenne","Affiche la valeur maximale"],rep:1,lvl:'A1',expl:"=SOMME() additionne toutes les valeurs d'une plage. =SOMME(A1:A10) additionne les 10 cellules de A1 à A10."},
+    {q:"Comment sélectionner toute une colonne dans Excel ?",opts:["Cliquer sur une cellule puis Ctrl+C","Cliquer sur la lettre de la colonne en haut","Double-cliquer sur la cellule","Appuyer sur F2"],rep:1,lvl:'A1',expl:"Cliquer sur la lettre de la colonne (A, B, C…) en haut du tableur sélectionne toute la colonne d'un coup."},
+    {q:"Pour mettre en gras une cellule dans Excel, on utilise :",opts:["Ctrl+I","Ctrl+B","Ctrl+G","Alt+B"],rep:1,lvl:'A1',expl:"Ctrl+B (Bold) met le texte en gras dans Excel, comme dans Word. Ctrl+I = Italique."},
+    {q:"Comment figer la première ligne dans Excel (pour qu'elle reste visible lors du défilement) ?",opts:["Accueil → Mise en forme → Figer","Affichage → Figer les volets → Figer la ligne supérieure","Mise en page → Imprimer les titres","Insertion → Ligne figée"],rep:1,lvl:'A2',expl:"Affichage → Figer les volets → Figer la ligne supérieure : la ligne des en-têtes reste visible quand vous faites défiler vers le bas."},
+    {q:"Dans Excel, la formule =MOYENNE(B2:B10) calcule :",opts:["Le total de B2 à B10","La valeur la plus grande","La moyenne arithmétique de B2 à B10","Le nombre de valeurs"],rep:2,lvl:'A2',expl:"=MOYENNE() divise la somme des valeurs par leur nombre. =MOYENNE(B2:B10) = somme de B2 à B10 ÷ 9."},
+    {q:"Pour créer un graphique à partir de données dans Excel :",opts:["Affichage → Graphique","Sélectionner les données → Insertion → Graphique","Fichier → Nouveau graphique","Format → Graphique"],rep:1,lvl:'A2',expl:"Sélectionnez d'abord les données, puis Insertion → section Graphiques : choisissez le type (histogramme, courbe, secteurs…)."},
+    {q:"La poignée de recopie dans Excel (petit carré en bas à droite d'une cellule) sert à :",opts:["Supprimer la cellule","Copier le contenu vers les cellules adjacentes en l'adaptant","Agrandir la cellule","Ajouter un commentaire"],rep:1,lvl:'A2',expl:"Glissez la poignée de recopie pour étendre une formule ou une série. Excel adapte automatiquement les références (A1 devient A2, A3...)."},
+    {q:"Dans Excel, que signifie l'erreur #VALEUR! ?",opts:["La formule est correcte","Un calcul est impossible (ex: additionner du texte et des nombres)","La cellule est vide","La colonne est trop étroite"],rep:1,lvl:'A2',expl:"#VALEUR! apparaît quand Excel ne peut pas effectuer le calcul demandé, souvent parce qu'une cellule contient du texte là où un nombre est attendu."},
+  ],
+
+  // Test PowerPoint A2-B1
+  'Test PowerPoint A2-B1 · 20 min': [
+    {q:"Dans PowerPoint, comment ajouter une nouvelle diapositive ?",opts:["Fichier → Nouvelle diapositive","Clic droit dans le panneau gauche → Nouvelle diapositive","Affichage → Nouvelle","Insertion → Page"],rep:1,lvl:'A2',expl:"Dans le panneau des diapositives (à gauche), faites un clic droit → 'Nouvelle diapositive'. Ou utilisez le raccourci Ctrl+M."},
+    {q:"Pour changer la couleur d'arrière-plan d'une diapositive :",opts:["Accueil → Couleur","Création → Mettre en forme l'arrière-plan","Insertion → Image d'arrière-plan","Affichage → Couleur/Niveaux de gris"],rep:1,lvl:'A2',expl:"Onglet Création → Mettre en forme l'arrière-plan (ou clic droit sur la diapo → Mettre en forme l'arrière-plan) : couleur unie, dégradé, image ou texture."},
+    {q:"Comment insérer correctement une image depuis votre ordinateur dans PPT ?",opts:["Copier-coller depuis Internet","Insertion → Images → Cet appareil","Glisser depuis le bureau (risque de liaison rompue)","Affichage → Images récentes"],rep:1,lvl:'A2',expl:"⚠️ Toujours utiliser Insertion → Images → Cet appareil. L'image est intégrée dans le fichier. Copier depuis Internet crée une dépendance qui peut rompre le lien."},
+    {q:"Dans PowerPoint, une 'transition' est :",opts:["Le changement de police entre deux zones de texte","L'animation qui se joue entre deux diapositives","L'effet sur les images d'une diapositive","La couleur de fond qui change"],rep:1,lvl:'B1',expl:"Les transitions (onglet Transitions) définissent l'animation lors du passage d'une diapositive à la suivante : fondu, glissement, zoom…"},
+    {q:"Pour présenter en mode diaporama depuis la diapo courante :",opts:["F5 (depuis la première diapo)","Maj+F5 (depuis la diapo courante)","F1","Ctrl+P"],rep:1,lvl:'B1',expl:"F5 lance depuis la première diapositive. Maj+F5 (ou le bouton en bas à droite) lance depuis la diapositive où vous êtes."},
+    {q:"Le 'Mode Présentateur' dans PowerPoint permet de :",opts:["Afficher la présentation en plein écran sur tous les écrans","Voir ses notes et la diapo suivante sur son écran pendant que le public voit la présentation","Enregistrer la présentation en vidéo","Partager la présentation sur Internet"],rep:1,lvl:'B1',expl:"En Mode Présentateur (Alt+F5 ou clic droit → Mode Présentateur) : vous voyez vos notes, le chronomètre et la diapo suivante sur votre écran, pendant que le public ne voit que la présentation."},
+    {q:"Pour aligner plusieurs objets sur une diapositive PPT :",opts:["Les déplacer manuellement un par un","Sélectionner les objets → Format de la forme → Organiser → Aligner","Clic droit → Propriétés → Alignement","Mise en page → Grille"],rep:1,lvl:'B1',expl:"Sélectionnez plusieurs objets (Ctrl+clic) → onglet Format de la forme → groupe Organiser → Aligner : gauche, droite, centré, distribuer l'espace…"},
+  ],
+
+  // Simulation Pack Office B1
+  'Pack Office complète · 45 min': [
+    {q:"Dans Word, quelle est la différence entre 'Enregistrer' et 'Enregistrer sous' ?",opts:["Aucune différence","Enregistrer met à jour le fichier existant. Enregistrer sous crée un nouveau fichier ou change l'emplacement/format","Enregistrer sous crée une copie de sauvegarde automatique","Enregistrer est pour les brouillons, Enregistrer sous pour les versions finales"],rep:1,lvl:'B1',expl:"Ctrl+S = Enregistrer (écrase le fichier actuel). Ctrl+Maj+S ou F12 = Enregistrer sous (permet de choisir un nouveau nom, un autre dossier ou format)."},
+    {q:"Dans Excel, comment fixer une référence de cellule pour qu'elle ne change pas lors de la recopie ?",opts:["Mettre le nom en majuscules : TOTAL","Ajouter des $ : =$A$1 (référence absolue)","Mettre la valeur entre guillemets : 'A1'","Utiliser la touche F4 avant la copie"],rep:1,lvl:'B1',expl:"Le $ fixe la référence : $A$1 = ligne ET colonne fixes. $A1 = colonne fixe uniquement. A$1 = ligne fixe uniquement. F4 ajoute automatiquement les $ dans la barre de formule."},
+    {q:"Dans PowerPoint, qu'est-ce qu'un masque des diapositives ?",opts:["Un diaporama avec des slides cachées","Un modèle qui définit la mise en forme de toutes les diapositives (police, couleurs, logo…)","Un mode de présentation pour les malvoyants","Une diapositive vide servant de séparateur"],rep:1,lvl:'B1',expl:"Affichage → Masque des diapositives : définit la charte graphique de toute la présentation. Modification une fois = appliqué partout. Idéal pour les logos et couleurs de l'entreprise."},
+    {q:"Pour partager un fichier Word par e-mail sans risque de modification :",opts:["Envoyer le .docx directement","Enregistrer en .pdf → envoyer le PDF","Enregistrer en .txt","Utiliser 'Enregistrer sous' → format .rtf"],rep:1,lvl:'B1',expl:"Le PDF (Fichier → Enregistrer sous → PDF ou XPS) crée une version non modifiable, avec mise en forme préservée, lisible sur tous les appareils sans Word."},
+    {q:"Dans Excel, la fonction RECHERCHEV permet de :",opts:["Chercher une valeur dans un tableau et retourner une information de la même ligne","Vérifier si une cellule est vide","Trier un tableau par ordre alphabétique","Compter les cellules avec une valeur spécifique"],rep:0,lvl:'B2',expl:"RECHERCHEV (=VLOOKUP en anglais) cherche une valeur dans la première colonne d'un tableau et retourne la valeur d'une colonne adjacente. Très utilisée pour les tableaux de correspondance."},
+    {q:"Pour créer un formulaire avec des cases à cocher dans Word :",opts:["Insertion → Cases à cocher (standard)","Développeur → Contrôles → Case à cocher (après avoir activé l'onglet Développeur)","Accueil → Listes → Cases","Format → Formulaire → Case"],rep:1,lvl:'B2',expl:"L'onglet Développeur (à activer dans Options → Personnaliser le ruban) contient les contrôles de formulaire : cases à cocher, listes déroulantes, champs de texte."},
+    {q:"Dans PowerPoint, pour que toutes les diapositives utilisent le même logo et les mêmes couleurs, la bonne méthode est :",opts:["Copier-coller le logo sur chaque diapositive","Modifier le Masque des diapositives une seule fois","Créer un groupe avec toutes les diapositives","Utiliser un thème prédéfini uniquement"],rep:1,lvl:'B1',expl:"Le Masque des diapositives (Affichage → Masque des diapositives) propage automatiquement les modifications à toutes les diapositives, y compris les nouvelles."},
+    {q:"Dans Excel, pour protéger une feuille de calcul contre les modifications :",opts:["Fichier → Options → Sécurité","Révision → Protéger la feuille (avec ou sans mot de passe)","Affichage → Figer les volets","Format → Cellules → Verrouillée"],rep:1,lvl:'B2',expl:"Révision → Protéger la feuille : bloque les modifications sur les cellules verrouillées. Par défaut, toutes les cellules sont verrouillées — déverrouillez celles que vous voulez laisser modifiables avant de protéger."},
+  ],
+
+  // Simulation Secrétariat CAP
+  'Secrétariat - Entrée en CAP · 60 min': [
+    {q:"Pour mettre en page une lettre professionnelle dans Word, quel format est le standard en France ?",opts:["A4 paysage, marges 3cm","A4 portrait, marges standard 2.5cm","A3 portrait, marges 1cm","A5 paysage, marges 2cm"],rep:1,lvl:'A2',expl:"En France, la lettre professionnelle est au format A4 portrait avec des marges standards (environ 2.5 cm). La norme AFNOR NF Z11-001 définit les règles de présentation."},
+    {q:"Dans une lettre professionnelle, la formule de politesse 'Veuillez agréer...' se place :",opts:["En haut à gauche sous la date","À la fin du corps de la lettre, avant la signature","Après le titre de la lettre","Dans l'objet de la lettre"],rep:1,lvl:'A2',expl:"La formule de politesse clôture le corps de la lettre et précède la signature. Elle doit reprendre la formule d'appel (ex: Madame → Madame dans la formule)."},
+    {q:"Pour créer une liste de publipostage pour 50 courriers personnalisés, vous utilisez :",opts:["Word seul, en copiant 50 fois la lettre","Word (document type) + Excel (liste destinataires) via Publipostage","50 fichiers Word séparés","Word Online avec partage de lien"],rep:1,lvl:'B1',expl:"Publipostage = Word (onglet Publipostage) + fichier Excel avec les données (nom, adresse...). Word fusionne automatiquement les champs pour créer 50 lettres personnalisées."},
+    {q:"Pour mettre en forme un tableau Excel avec des en-têtes colorés et des lignes alternées :",opts:["Colorier manuellement chaque cellule","Sélectionner le tableau → Insertion → Tableau → choisir un style prédéfini","Utiliser la mise en forme conditionnelle uniquement","Format → Cellules → Remplissage pour chaque ligne"],rep:1,lvl:'A2',expl:"Insertion → Tableau (ou Ctrl+T) : Excel propose des styles prédéfinis avec en-têtes et lignes alternées. Beaucoup plus rapide que la mise en forme manuelle."},
+    {q:"Un planning hebdomadaire dans Excel : pour que les week-ends apparaissent automatiquement en grisé, vous utilisez :",opts:["Les changer manuellement en gris chaque semaine","Mise en forme conditionnelle avec formule =JOURSEM(A1;2)>=6","Format → Cellules → Gris automatique","Affichage → Options → Week-end grisé"],rep:1,lvl:'B1',expl:"Mise en forme conditionnelle → Nouvelle règle → Formule : =JOURSEM(A1;2)>=6 (6=samedi, 7=dimanche avec le type 2). Appliquer un fond gris à la plage concernée."},
+    {q:"Pour créer une présentation PowerPoint d'accueil pour de nouveaux arrivants, la bonne pratique est :",opts:["Mettre le maximum de texte sur chaque slide","Utiliser des images et peu de texte (règle 1 idée par slide)","Mettre uniquement des tableaux Excel copiés-collés","Utiliser des animations complexes sur chaque élément"],rep:1,lvl:'B1',expl:"La règle des présentations efficaces : 1 idée par diapositive, peu de texte (mots-clés), des visuels. Les animations doivent être discrètes pour ne pas distraire."},
+    {q:"Dans Word, pour créer un formulaire remplissable (fiche de renseignement) à distribuer :",opts:["Laisser des lignes vides que les gens remplissent à la main","Utiliser l'onglet Développeur → Contrôles de contenu (cases, listes, champs texte)","Créer un fichier Excel à la place","Utiliser Publisher pour les formulaires"],rep:1,lvl:'B2',expl:"L'onglet Développeur → Contrôles de contenu permet de créer des formulaires interactifs : zones de texte cliquables, listes déroulantes, cases à cocher. La personne remplit directement dans Word."},
+    {q:"Vous recevez un fichier .xlsx d'un collègue qui utilise Excel 2003. Que faites-vous pour l'ouvrir ?",opts:["Impossible, incompatible","Excel 2003 peut ouvrir les .xlsx avec le Pack de compatibilité Microsoft","Vous devez le convertir en .xls d'abord","Il faut utiliser LibreOffice"],rep:1,lvl:'A2',expl:"Excel 2003 peut ouvrir les fichiers .xlsx avec le Pack de compatibilité téléchargeable sur le site Microsoft. Les versions récentes d'Excel ouvrent les anciens formats (.xls, .csv) sans problème."},
+  ],
+
+  // Simulation Titre Pro ADVF
+  'Titre Pro ADVF · 40 min': [
+    {q:"Pour créer une fiche de suivi quotidien dans Excel (activités d'une personne aidée), quelle structure est la plus adaptée ?",opts:["Un seul grand tableau avec tout","Un classeur avec une feuille par mois, et par jour une ligne d'activités","Un document Word avec des tableaux","Un fichier texte"],rep:1,lvl:'A2',expl:"Un classeur Excel avec une feuille par mois et une ligne par activité/jour permet un suivi clair et des calculs automatiques (durées, totaux, statistiques)."},
+    {q:"Vous créez une lettre de liaison pour l'équipe soignante dans Word. Pour qu'elle soit lue facilement :",opts:["Tout en majuscules pour l'emphase","Taille 12, paragraphes courts, titres en gras, marges 2.5cm","Taille 8 pour tenir sur une page","Tout en italique"],rep:1,lvl:'A1',expl:"Pour une bonne lisibilité : police 12, paragraphes courts (3-4 lignes max), titres structurés en gras, marges standard. Évitez les majuscules (difficiles à lire)."},
+    {q:"Pour créer un planning de passages hebdomadaire dans Excel :",opts:["Écrire les jours manuellement chaque semaine","Saisir Lundi dans une cellule, puis glisser la poignée de recopie sur 7 cases","Utiliser une liste déroulante pour chaque jour","Copier depuis un planning existant sur Internet"],rep:1,lvl:'A1',expl:"Excel reconnaît les séries : saisissez 'Lundi', puis glissez la poignée (coin bas-droit de la cellule) vers la droite : Excel complète automatiquement Mardi, Mercredi…"},
+    {q:"Dans Word, pour mettre en évidence les informations importantes dans une fiche de transmissions :",opts:["Tout souligner","Utiliser le Surlignage (couleur jaune) et le Gras pour les éléments urgents","Changer la couleur du texte en rouge pour tout","Utiliser uniquement l'italique"],rep:1,lvl:'A2',expl:"Le surlignage (Accueil → Surlignage) et le gras permettent de repérer rapidement les informations importantes. À utiliser avec parcimonie pour garder l'impact."},
+    {q:"Pour partager un planning PDF avec l'équipe :",opts:["Imprimer et distribuer uniquement","Word → Fichier → Enregistrer sous → PDF → partager par email ou afficher","Envoyer le .docx (risque de modification)","Faire une photo du planning"],rep:1,lvl:'A2',expl:"Le PDF préserve la mise en forme, est lisible sur tous les appareils et smartphones, et ne peut pas être modifié accidentellement. Format idéal pour la diffusion."},
+    {q:"Dans Excel, pour calculer automatiquement le nombre d'heures d'aide par semaine :",opts:["Additionner manuellement chaque jour","=SOMME(B2:B8) sur les durées de la semaine","Compter les lignes avec NB()","Utiliser la formule =HEURE()"],rep:1,lvl:'B1',expl:"=SOMME() additionne toutes les durées. Si les données sont en format horaire (8:30), les cellules doivent être formatées en 'Durée' pour que le total soit correct."},
+    {q:"Pour insérer une image du logo de l'association sur l'en-tête de tous les documents Word :",opts:["Copier-coller le logo sur chaque page","Double-cliquer sur l'en-tête → Insertion → Images → Cet appareil → redimensionner","Utiliser une macro","Insertion → Filigrane → Logo"],rep:1,lvl:'B1',expl:"Double-cliquez sur l'en-tête pour l'activer → insérez l'image depuis votre ordinateur (jamais depuis Internet) → redimensionnez. L'en-tête apparaît automatiquement sur toutes les pages."},
+  ]
+};
+
+
 
 const QUIZ_POSITIONNEMENT = [
   {q:'Qu\'est-ce que le bouton "Gras" dans Word fait à votre texte ?',opts:['Il efface le texte','Il rend le texte plus épais et foncé','Il souligne le texte','Il change la couleur'],rep:1,lvl:'A1',expl:'Le bouton Gras (G) dans la barre d\'outils rend le texte plus épais. Raccourci : Ctrl+B.'},
@@ -1648,13 +1762,19 @@ function toggleContrast() {
 
 // ── QUIZ POSITIONNEMENT ────────────────────────
 function startQuizPositionnement() {
+  // F4: Use merged questions (default + custom)
+  S.posAllQuestions = getAllQuizQuestions ? getAllQuizQuestions() : QUIZ_POSITIONNEMENT;
   S.posQuizIdx = 0; S.posAnswers = []; // FIX #3
   renderQuizQ();
 }
 function renderQuizQ() {
-  const total = QUIZ_POSITIONNEMENT.length, i = S.posQuizIdx; // FIX #3
+  const posPool = S.posAllQuestions || QUIZ_POSITIONNEMENT; // F4
+  const total = posPool.length, i = S.posQuizIdx; // FIX #3
   if (i >= total) { showQuizResult(); return; }
-  const q = QUIZ_POSITIONNEMENT[i];
+  const qRawPos2 = posPool[i];
+  // F2: Shuffle answers like in exercise quizzes
+  const { opts: qPosOpts2, rep: qPosRep2 } = shuffleOpts(qRawPos2.opts, qRawPos2.rep);
+  const q = { ...qRawPos2, opts: qPosOpts2, rep: qPosRep2 };
   setEl('quizContent', `
     <div class="flex jb mb3" style="flex-wrap:wrap;gap:8px">
       <span class="muted">Question ${i+1} / ${total}</span>
@@ -1940,7 +2060,10 @@ function answerExQuiz(el, chosen, correct, exId, modKey) {
     fb.className = 'quiz-fb show';
     fb.style.background = chosen === correct ? 'var(--accent-light)' : 'var(--danger-light)';
     fb.style.color = chosen === correct ? '#064e3b' : '#7f1d1d';
-    const qData = QUIZ_DATA[ex.qIdx] || {};
+    // F1: ex is not in scope here — look it up from MODULES_DATA
+    const exMod = MODULES_DATA[modKey];
+    const ex = exMod?.exercises.find(e => e.id === exId);
+    const qData = (ex && ex.qIdx !== undefined) ? (QUIZ_DATA[ex.qIdx] || {}) : {};
     const expl = qData.expl ? `<div style="margin-top:8px;font-size:13px;background:rgba(255,255,255,.15);border-radius:6px;padding:8px">💡 ${qData.expl}</div>` : '';
     fb.innerHTML = chosen === correct 
       ? `✅ Bonne réponse !${expl}` 
@@ -2291,22 +2414,47 @@ function renderTests() {
 function startTestMode(label) {
   const detail = document.getElementById('testDetail');
   detail.classList.remove('hidden');
-  // F4: offset based on simulation label to avoid repeated questions
-  const labelHash = label.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
-  S.testOffset = (labelHash * 3) % Math.max(1, QUIZ_POSITIONNEMENT.length - 8);
+  // F3: Use specific questions if available in QUIZ_SIMULATIONS
+  if (QUIZ_SIMULATIONS && QUIZ_SIMULATIONS[label]) {
+    S.testQuestions = QUIZ_SIMULATIONS[label]; // specific questions
+  } else {
+    // Fallback: use QUIZ_POSITIONNEMENT with offset
+    const labelHash = label.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+    S.testOffset = (labelHash * 3) % Math.max(1, QUIZ_POSITIONNEMENT.length - 8);
+    S.testQuestions = null;
+  }
   S.testQuizIdx = 0; S.testAnswers = [];
-  detail.innerHTML = `<div class="card"><div class="card-title">📝 ${label}</div><div class="alert al-info mb3"><span>⏱️</span><div>Test démarré sur la base des questions de positionnement.</div></div><div id="testQuizContent"></div></div>`;
+  const nbQ = S.testQuestions ? S.testQuestions.length : Math.min(8, QUIZ_POSITIONNEMENT.length);
+  const [testTitle, testDuration] = label.split(' · ');
+  detail.innerHTML = `<div class="card">
+    <div class="flex jb mb3">
+      <div class="card-title" style="margin-bottom:0">📝 ${testTitle}</div>
+      ${testDuration ? `<span class="tag t-orange">⏱️ ${testDuration}</span>` : ''}
+    </div>
+    <div class="alert al-info mb3"><span>🎯</span><div>${nbQ} questions · Résultats immédiats · Corrections avec explications</div></div>
+    <div id="testQuizContent"></div>
+  </div>`;
   renderTestQ();
   detail.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderTestQ() {
-  const maxQ = Math.min(8, QUIZ_POSITIONNEMENT.length); // F4: 8 questions par test
+  // F3: Use specific questions if set, otherwise use QUIZ_POSITIONNEMENT with offset
+  const questionPool = S.testQuestions || null;
+  const maxQ = questionPool ? questionPool.length : Math.min(8, QUIZ_POSITIONNEMENT.length);
   const total = maxQ, i = S.testQuizIdx;
   if (i >= total) { showTestResult(total); return; }
-  const offset = S.testOffset || 0;
-  const qIdx = (offset + i) % QUIZ_POSITIONNEMENT.length;
-  const q = QUIZ_POSITIONNEMENT[qIdx];
+  let qRawTest;
+  if (questionPool) {
+    qRawTest = questionPool[i];
+  } else {
+    const offset = S.testOffset || 0;
+    const qIdx = (offset + i) % QUIZ_POSITIONNEMENT.length;
+    qRawTest = QUIZ_POSITIONNEMENT[qIdx];
+  }
+  // F2: Shuffle answers in tests too
+  const { opts: qTestOpts, rep: qTestRep } = shuffleOpts(qRawTest.opts, qRawTest.rep);
+  const q = { ...qRawTest, opts: qTestOpts, rep: qTestRep };
   setEl('testQuizContent', `
     <div class="flex jb mb3"><span class="muted">Question ${i+1}/${total}</span><span class="lvl l${q.lvl}">${q.lvl}</span></div>
     <div class="pr-bar mb3"><div class="pr-fill fill-primary" style="width:${(i/total)*100}%"></div></div>
@@ -2614,7 +2762,7 @@ function fTabMsg() {
 function fTab(tab, btn) {
   document.querySelectorAll('#formTabs .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['stagiaires','travaux','stats','contenus','messages'].forEach(t => {
+  ['stagiaires','travaux','stats','contenus','messages','groupes','quiz'].forEach(t => {
     document.getElementById('ft-' + t)?.classList.toggle('hidden', t !== tab);
   });
   // B15: Re-render data on tab switch to avoid stale content
@@ -2624,6 +2772,7 @@ function fTab(tab, btn) {
   if (tab === 'messages') renderMsgs();
   if (tab === 'contenus') renderCustomExList();
   if (tab === 'groupes') renderGroupes();
+  if (tab === 'quiz') renderCustomQuizList();
 }
 
 function renderStagTable() {
@@ -2900,6 +3049,172 @@ function renderGrpProg() {
     '<div class="flex gap2 mt3 fwrap"><button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 Export PDF</button><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button></div>');
   setEl('evolGraph', `<div class="alert al-info"><span>📊</span><div>Progression 30 jours : <b>+9% global</b>. Semaine du 14/04 : +8% G1, +12% G2, +6% G3. <b>Meilleure progression :</b> Karim O. (+22%).</div></div>`);
   } catch(e) { console.error('renderGrpProg error:', e); }
+}
+
+// ─── GESTION DU QUIZ DE POSITIONNEMENT ──────────────────────────
+function getCustomQuizQuestions() {
+  return safeGet('mpb_custom_quiz', []);
+}
+
+function getAllQuizQuestions() {
+  // Merge: custom questions OVERRIDE built-in ones with same index, or append
+  const custom = getCustomQuizQuestions();
+  const base = [...QUIZ_POSITIONNEMENT];
+  const overrides = custom.filter(q => q.replaceIdx !== undefined && q.replaceIdx >= 0);
+  const additions = custom.filter(q => q.replaceIdx === undefined || q.replaceIdx < 0);
+  // Apply overrides
+  overrides.forEach(q => { if (q.replaceIdx < base.length) base[q.replaceIdx] = q; });
+  return [...base, ...additions];
+}
+
+function showQuizEditForm(editIdx) {
+  const form = document.getElementById('quizEditForm');
+  const titleEl = document.getElementById('quizEditTitle');
+  if (form) form.classList.remove('hidden');
+  // If editing existing custom question
+  if (editIdx !== undefined && editIdx >= 0) {
+    const custom = getCustomQuizQuestions();
+    const q = custom[editIdx];
+    if (q) {
+      document.getElementById('qEditQ').value = q.q || '';
+      document.getElementById('qEditLvl').value = q.lvl || 'A2';
+      document.getElementById('qEditA').value = q.opts?.[0] || '';
+      document.getElementById('qEditB').value = q.opts?.[1] || '';
+      document.getElementById('qEditC').value = q.opts?.[2] || '';
+      document.getElementById('qEditD').value = q.opts?.[3] || '';
+      document.getElementById('qEditRep').value = String(q.rep || 0);
+      document.getElementById('qEditExpl').value = q.expl || '';
+      document.getElementById('qEditIdx').value = String(editIdx);
+      if (titleEl) titleEl.textContent = '✏️ Modifier la question';
+    }
+  } else {
+    ['qEditQ','qEditA','qEditB','qEditC','qEditD','qEditExpl'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('qEditIdx').value = '-1';
+    document.getElementById('qEditRep').value = '0';
+    if (titleEl) titleEl.textContent = '➕ Nouvelle question';
+  }
+  document.getElementById('qEditQ')?.focus();
+}
+
+function cancelQuizEdit() {
+  document.getElementById('quizEditForm')?.classList.add('hidden');
+}
+
+function saveQuizQuestion() {
+  const q = document.getElementById('qEditQ')?.value.trim();
+  const lvl = document.getElementById('qEditLvl')?.value || 'A2';
+  const a = document.getElementById('qEditA')?.value.trim();
+  const b = document.getElementById('qEditB')?.value.trim();
+  const c = document.getElementById('qEditC')?.value.trim();
+  const d = document.getElementById('qEditD')?.value.trim();
+  const rep = parseInt(document.getElementById('qEditRep')?.value || '0');
+  const expl = document.getElementById('qEditExpl')?.value.trim() || '';
+  const editIdx = parseInt(document.getElementById('qEditIdx')?.value || '-1');
+
+  if (!q) { toast('⚠️ Saisissez la question.'); return; }
+  if (!a || !b || !c) { toast('⚠️ Remplissez au moins les réponses A, B et C.'); return; }
+
+  const opts = [a, b, c];
+  if (d) opts.push(d);
+  if (rep >= opts.length) { toast('⚠️ La bonne réponse dépasse le nombre de propositions.'); return; }
+
+  const newQ = { q, opts, rep, lvl, expl };
+  const custom = getCustomQuizQuestions();
+
+  if (editIdx >= 0) {
+    custom[editIdx] = newQ;
+    toast('✅ Question modifiée !');
+  } else {
+    custom.push(newQ);
+    toast('✅ Question ajoutée au test de positionnement !');
+  }
+  safeSet('mpb_custom_quiz', custom);
+  cancelQuizEdit();
+  renderCustomQuizList();
+}
+
+function deleteQuizQuestion(idx) {
+  if (!window.confirm('Supprimer cette question ?')) return;
+  const custom = getCustomQuizQuestions();
+  custom.splice(idx, 1);
+  safeSet('mpb_custom_quiz', custom);
+  renderCustomQuizList();
+  toast('🗑️ Question supprimée.');
+}
+
+function resetCustomQuiz() {
+  if (!window.confirm('Supprimer toutes vos questions personnalisées et restaurer les 15 questions par défaut ?')) return;
+  safeSet('mpb_custom_quiz', []);
+  renderCustomQuizList();
+  toast('↺ Questions par défaut restaurées.');
+}
+
+function renderCustomQuizList() {
+  const custom = getCustomQuizQuestions();
+  const builtIn = QUIZ_POSITIONNEMENT;
+  const el = document.getElementById('customQuizList');
+  if (!el) return;
+
+  let html = '<div class="card-title mb2">📋 Questions intégrées (' + builtIn.length + ' par défaut + ' + custom.length + ' personnalisées)</div>';
+
+  // Built-in questions (read-only, can be replaced)
+  html += '<div style="margin-bottom:16px">';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Questions par défaut (non modifiables)</div>';
+  builtIn.forEach((q, i) => {
+    html += `<div class="ex-item" style="opacity:.75">
+      <div class="ex-num"><span class="lvl l${q.lvl}" style="font-size:10px">${q.lvl}</span></div>
+      <div class="ex-body"><div class="ex-name" style="font-size:13px">${esc(q.q.substring(0,70))}${q.q.length>70?'…':''}</div>
+        <div class="muted" style="font-size:11px">✅ Bonne réponse : ${esc(q.opts[q.rep])}</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Custom questions (editable)
+  if (custom.length > 0) {
+    html += '<div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Vos questions personnalisées (' + custom.length + ')</div>';
+    custom.forEach((q, i) => {
+      html += `<div class="ex-item" style="border-left-color:var(--primary)">
+        <div class="ex-num"><span class="lvl l${q.lvl}" style="font-size:10px">${q.lvl}</span></div>
+        <div class="ex-body">
+          <div class="ex-name" style="font-size:13px">${esc(q.q.substring(0,70))}${q.q.length>70?'…':''}</div>
+          <div class="muted" style="font-size:11px">✅ ${esc(q.opts[q.rep])} · ${q.opts.length} propositions</div>
+          ${q.expl ? `<div style="font-size:11px;color:var(--text3)">💡 ${esc(q.expl.substring(0,60))}…</div>` : ''}
+        </div>
+        <div class="flex gap2">
+          <button class="btn btn-outline btn-sm" onclick="showQuizEditForm(${i})">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteQuizQuestion(${i})" style="color:var(--danger)">🗑️</button>
+        </div>
+      </div>`;
+    });
+  } else {
+    html += '<div class="muted">Aucune question personnalisée. Cliquez sur "➕ Ajouter une question" pour enrichir le test.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function previewQuizTest() {
+  const allQ = getAllQuizQuestions();
+  const w = window.open('','_blank','width=800,height=700');
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Aperçu — Test de positionnement</title>' +
+    '<style>body{font-family:Arial,sans-serif;padding:24px;max-width:750px;margin:0 auto;color:#1a1a2e}' +
+    'h1{color:#1a5ec8;border-bottom:3px solid #1a5ec8;padding-bottom:8px}' +
+    '.q{background:#f8fafc;border-radius:8px;padding:16px;margin:12px 0}' +
+    '.q h3{margin:0 0 10px;font-size:15px}' +
+    '.opt{padding:6px 12px;margin:4px 0;border:1px solid #e2e8f0;border-radius:6px;font-size:13px}' +
+    '.correct{background:#d1fae5;border-color:#0d9e6e;color:#065f46;font-weight:700}' +
+    '.lvl{background:#1a5ec8;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;float:right}' +
+    '.expl{font-size:12px;color:#4a5568;margin-top:8px;padding:8px;background:#fff3cd;border-radius:4px}' +
+    '@media print{button{display:none}}</style></head><body>' +
+    '<h1>📝 Test de positionnement — ' + allQ.length + ' questions</h1>' +
+    '<p style="color:#888;font-size:13px">Prévisualisation complète avec les bonnes réponses indiquées</p>' +
+    allQ.map((q, i) => '<div class="q"><span class="lvl">' + q.lvl + '</span><h3>Q' + (i+1) + '. ' + q.q + '</h3>' +
+      q.opts.map((o, j) => '<div class="opt ' + (j===q.rep?'correct':'') + '">' + ['A','B','C','D'][j] + '. ' + o + '</div>').join('') +
+      (q.expl ? '<div class="expl">💡 ' + q.expl + '</div>' : '') + '</div>').join('') +
+    '<button onclick="window.print()" style="margin-top:16px;padding:8px 20px;background:#1a5ec8;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimer</button>' +
+    '</body></html>');
+  w.document.close();
 }
 
 function renderGroupes() {
