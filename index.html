@@ -539,23 +539,49 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           </div>
         </div>
         <div class="card">
-          <div class="card-title">🌍 Niveau de français (CECRL)</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px" id="lvlPicker">
+          <div class="card-title">🌍 Mon niveau en langue française</div>
+          <div class="alert al-info mb3"><span>ℹ️</span><div>Choisissez votre niveau de compréhension du <b>français écrit</b>. Cela adapte les consignes. <b>Ce n'est pas votre niveau en informatique.</b></div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px" id="lvlPicker">
             <div class="lvl lA1" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('A1',this)">A1</div>
             <div class="lvl lA2" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('A2',this)">A2</div>
             <div class="lvl lB1" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('B1',this)">B1</div>
             <div class="lvl lB2" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('B2',this)">B2</div>
             <div class="lvl lC1" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('C1',this)">C1</div>
             <div class="lvl lC2" style="padding:9px 18px;cursor:pointer;font-size:14px" onclick="setLvl('C2',this)">C2</div>
+          <div style="display:grid;gap:5px;margin-bottom:10px">
+            <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:3px">📋 GUIDE RAPIDE — Quel niveau choisir ?</div>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <span class="lvl lA1" style="font-size:11px;text-align:center;align-self:center">A1</span>
+              <span style="font-size:12px">Je comprends quelques mots simples. J'ai besoin de phrases très courtes.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <span class="lvl lA2" style="font-size:11px;text-align:center;align-self:center">A2</span>
+              <span style="font-size:12px">Je comprends des phrases courtes sur la vie quotidienne (famille, courses, travail).</span>
+            </div>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <span class="lvl lB1" style="font-size:11px;text-align:center;align-self:center">B1</span>
+              <span style="font-size:12px">Je comprends l'essentiel d'une conversation normale et je lis des textes simples.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <span class="lvl lB2" style="font-size:11px;text-align:center;align-self:center">B2</span>
+              <span style="font-size:12px">Je comprends des textes variés et je m'exprime avec aisance en français.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:52px 1fr;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px">
+              <span class="lvl lC1" style="font-size:11px;text-align:center;align-self:center">C1</span>
+              <span style="font-size:12px">Je comprends presque tout en français, y compris les textes complexes.</span>
+            </div>
           </div>
+          <p style="font-size:11px;color:var(--text3)">💡 En cas de doute, votre formatrice vous aidera. Ce niveau est <u>indépendant</u> de votre niveau en informatique.</p>
+        </div>
           <button class="btn btn-outline" onclick="showPage('positionnement')">📝 Passer le test de positionnement (TCF/CECRL)</button>
         </div>
-        <div class="alert al-ok"><span>✅</span><div id="parcSaved">Parcours enregistré automatiquement.</div></div>
+        <div id="niveauInfoDisplay" style="display:none" class="alert al-ok mb3"><span>💻</span><span id="niveauInfoText"></span></div>
+          <span id="parcSaved">Parcours enregistré automatiquement.</span>
       </div>
 
       <!-- TEST POSITIONNEMENT -->
       <div class="page" id="page-positionnement">
-        <div class="ph"><div class="ph-title">📝 Test de positionnement</div><div class="ph-sub">15 questions pour évaluer votre niveau de français (CECRL)</div></div>
+        <div class="ph"><div class="ph-title">💻 Test de positionnement Pack Office</div><div class="ph-sub">Évalue votre niveau en informatique bureautique (Word, Excel, PowerPoint) — pas votre niveau en français</div></div>
         <div class="card" id="quizCard"><div id="quizContent"></div></div>
       </div>
 
@@ -1007,6 +1033,7 @@ const S = {
   settings: safeGet('mpb_settings', {
     formation:'savoirs', niveauNum:'inter',
     metiers:['general'], niveauFr:'',
+    niveauInfo:'',  // Niveau informatique Pack Office (résultat du test)
     simpleMode:false, fontSize:'n', contrast:false
   }),
   travaux: safeGet('mpb_travaux', [
@@ -1770,6 +1797,16 @@ function setLvl(lvl, el) {
 function applySavedSettings() {
   const cfg = S.settings;
   if (cfg.fontSize) { document.body.classList.remove('font-normal','font-lg','font-xl'); document.body.classList.add('font-'+cfg.fontSize); }
+  // C9: Show computing level info if already tested
+  const niEl = document.getElementById('niveauInfoDisplay');
+  const niTxt = document.getElementById('niveauInfoText');
+  const infoLbls = {A1:'Débutant',A2:'Élémentaire',B1:'Intermédiaire',B2:'Avancé',C1:'Expert',C2:'Maître'};
+  if (niEl && cfg.niveauInfo) {
+    niEl.style.display = '';
+    if (niTxt) niTxt.innerHTML = `<b>Niveau Pack Office :</b> ${infoLbls[cfg.niveauInfo]||cfg.niveauInfo} (${cfg.niveauInfo}) — <a href="#" onclick="showPage('positionnement');return false" style="color:var(--primary)">Refaire le test</a>`;
+  } else if (niEl) {
+    niEl.style.display = 'none';
+  }
   // Restore metier tags
   document.querySelectorAll('.mtag').forEach(t => {
     t.classList.toggle('on', cfg.metiers.includes(t.dataset.m));
@@ -1779,6 +1816,8 @@ function applySavedSettings() {
   if (nbLvl) {
     nbLvl.textContent = cfg.niveauFr || '? Niveau';
     nbLvl.className = cfg.niveauFr ? 'nb-lvl l' + cfg.niveauFr : 'nb-lvl';
+    const _iL={A1:'Débutant',A2:'Élémentaire',B1:'Intermédiaire',B2:'Avancé',C1:'Expert',C2:'Maître'};
+    nbLvl.title='Français: '+(cfg.niveauFr||'?')+(cfg.niveauInfo?' | Informatique: '+(_iL[cfg.niveauInfo]||cfg.niveauInfo):'');
   }
   // FIX #5: Highlight selected level in lvlPicker
   // B20: Use only onclick to identify correct level (avoids partial textContent match)
@@ -1833,8 +1872,18 @@ function toggleContrast() {
 function startQuizPositionnement() {
   // F4: Use merged questions (default + custom)
   S.posAllQuestions = getAllQuizQuestions ? getAllQuizQuestions() : QUIZ_POSITIONNEMENT;
-  S.posQuizIdx = 0; S.posAnswers = []; // FIX #3
-  renderQuizQ();
+  S.posQuizIdx = 0; S.posAnswers = [];
+  // C3: Show clear intro before questions
+  setEl('quizContent', `<div class="alert al-warn mb3">
+    <span>💻</span>
+    <div><b>Ce test mesure votre niveau en informatique bureautique</b> (Word, Excel, PowerPoint).<br>
+    Il <u>ne mesure pas</u> votre niveau en langue française.<br>
+    <span style="color:var(--text3)">Répondez honnêtement — il n'y a pas de mauvais résultat !</span></div>
+  </div>
+  <div class="flex gap2 fwrap" style="justify-content:center">
+    <button class="btn btn-primary btn-lg" onclick="renderQuizQ()">▶ Commencer le test</button>
+    <button class="btn btn-ghost" onclick="showPage('parcours')">← Retour au parcours</button>
+  </div>`);
 }
 function renderQuizQ() {
   const posPool = S.posAllQuestions || QUIZ_POSITIONNEMENT; // F4
@@ -1887,27 +1936,30 @@ function showQuizResult() {
   const score = S.posAnswers.filter(Boolean).length, total = QUIZ_POSITIONNEMENT.length; // FIX #3
   const pct = Math.round((score / total) * 100);
   const lvl = pct >= 95 ? 'C2' : pct >= 80 ? 'C1' : pct >= 67 ? 'B2' : pct >= 47 ? 'B1' : pct >= 27 ? 'A2' : 'A1';
+  // Labels lisibles pour le niveau informatique
+  const infoLabels = { A1:'Débutant', A2:'Élémentaire', B1:'Intermédiaire', B2:'Avancé', C1:'Expert', C2:'Maître' };
+  const infoLabel = infoLabels[lvl] || lvl;
   if (!S.prog.badges.includes('positionnement')) { unlockBadge('positionnement'); }
   saveState();
   setEl('quizContent', `
     <div class="tc" style="padding:20px 0">
       <div style="font-size:52px;margin-bottom:14px">${pct >= 80 ? '🏆' : pct >= 60 ? '✅' : '📚'}</div>
       <div style="font-size:24px;font-weight:900;margin-bottom:8px">${score} / ${total} — ${pct}%</div>
-      <div style="font-size:17px;margin-bottom:16px">Niveau estimé : <span class="lvl l${lvl}" style="font-size:15px;padding:6px 16px">${lvl}</span></div>
-      <div class="alert al-ok" style="text-align:left;max-width:420px;margin:0 auto 16px"><span>🎯</span><div><b>Résultat :</b> ${score}/${total} bonnes réponses. Niveau estimé <b>${lvl}</b>.<br>Votre formatrice validera lors d'un entretien individuel.</div></div>
+      <div style="font-size:17px;margin-bottom:16px">Niveau en <b>informatique bureautique</b> :<br><span class="lvl l${lvl}" style="font-size:18px;padding:8px 20px;margin-top:8px;display:inline-block">${infoLabel} — ${lvl}</span></div>
+      <div class="alert al-ok" style="text-align:left;max-width:420px;margin:0 auto 16px"><span>🎯</span><div><b>Votre niveau Pack Office :</b> ${score}/${total} bonnes réponses. Niveau estimé <b>${lvl}</b>.<br>Votre formatrice validera lors d'un entretien individuel.</div></div>
       <div class="flex gap2 fwrap" style="justify-content:center">
-        <button class="btn btn-primary btn-lg" onclick="applyTestLevel('${lvl}')">✅ Valider le niveau ${lvl}</button>
+        <button class="btn btn-primary btn-lg" onclick="applyTestLevel('${lvl}')">✅ Valider mon niveau Pack Office : ${infoLabel}</button>
         <button class="btn btn-ghost" onclick="showPage('parcours')">← Retour au parcours</button>
         <button class="btn btn-outline" onclick="startQuizPositionnement()">🔄 Recommencer</button>
       </div>
     </div>`);
 }
 function applyTestLevel(lvl) {
-  S.settings.niveauFr = lvl;
+  S.settings.niveauInfo = lvl; // C5: Test positionnement = niveau INFORMATIQUE, pas français
   saveParc();
   document.getElementById('nbLvl').textContent = lvl;
   document.getElementById('nbLvl').className = 'nb-lvl l' + lvl;
-  toast('✅ Niveau ' + lvl + ' appliqué à votre parcours !');
+  toast('✅ Niveau informatique ' + lvl + ' appliqué à votre parcours !');
   showPage('parcours');
 }
 
@@ -1968,7 +2020,9 @@ function renderExList() {
   if (!S.activeModule) return;
   const m = MODULES_DATA[S.activeModule];
   const lvlOrder = { A1:0, A2:1, B1:2, B2:3, C1:4, C2:5 };
-  const userLvlIdx = lvlOrder[S.settings.niveauFr] || 2;
+  // C6: Use niveauInfo (computing level) to filter exercises, not niveauFr (French level)
+  const niveauInfo = S.settings.niveauInfo || S.settings.niveauFr || 'B1';
+  const userLvlIdx = lvlOrder[niveauInfo] || 2;
   const exs = S.activeFilter === 'all' ? m.exercises : m.exercises.filter(e => e.lvl === S.activeFilter);
 
   setEl('exList', exs.map(ex => {
