@@ -1893,6 +1893,7 @@ function renderQuizQ() {
   // F2: Shuffle answers like in exercise quizzes
   const { opts: qPosOpts2, rep: qPosRep2 } = shuffleOpts(qRawPos2.opts, qRawPos2.rep);
   const q = { ...qRawPos2, opts: qPosOpts2, rep: qPosRep2 };
+  S.currentPosQuestion = q; // STORE: answerQuizPos will use this, no re-shuffle
   setEl('quizContent', `
     <div class="flex jb mb3" style="flex-wrap:wrap;gap:8px">
       <span class="muted">Question ${i+1} / ${total}</span>
@@ -1911,14 +1912,42 @@ function renderQuizQ() {
       <button class="btn btn-primary hidden" id="qNext" onclick="S.posQuizIdx++;renderQuizQ()">Suivante →</button>
     </div>`);
 }
+function answerTestQ(chosen) {
+  // Separate from answerQuizPos — uses S.currentTestQuestion, not posQuestion
+  const q = S.currentTestQuestion;
+  if (!q) { console.error('answerTestQ: no currentTestQuestion'); return; }
+  const correct = q.rep;
+  document.querySelectorAll('#testQuizContent .qopt').forEach(el => el.classList.add('disabled'));
+  const chosenEl = document.querySelectorAll('#testQuizContent .qopt')[chosen];
+  const correctEl = document.querySelectorAll('#testQuizContent .qopt')[correct];
+  if (chosenEl) chosenEl.classList.add(chosen === correct ? 'correct' : 'wrong');
+  if (correctEl) correctEl.classList.add('correct');
+  S.testAnswers.push(chosen === correct);
+  // Feedback
+  const fb = document.getElementById('testfb');
+  if (fb) {
+    fb.className = 'quiz-fb show';
+    fb.style.background = chosen === correct ? 'var(--accent-light)' : 'var(--danger-light)';
+    fb.style.color = chosen === correct ? '#064e3b' : '#7f1d1d';
+    const expl = q.expl ? `<br><small style="opacity:.85">💡 ${q.expl}</small>` : '';
+    const corrLabel = q.opts[correct] || '';
+    fb.innerHTML = (chosen === correct ? '✅ Correct !' : `❌ Bonne réponse : <b>${corrLabel}</b>`) + expl;
+  }
+  const nxt = document.getElementById('testNext');
+  if (nxt) nxt.classList.remove('hidden');
+}
+
 function answerQuizPos(chosen) {
-  const qRawPos = QUIZ_POSITIONNEMENT[S.posQuizIdx]; // FIX #3
-  const { opts: qPosOpts, rep: qPosRep } = shuffleOpts(qRawPos.opts, qRawPos.rep);
-  const q = { ...qRawPos, opts: qPosOpts, rep: qPosRep };
+  // FIX: Use the question ALREADY shuffled when rendered — DO NOT re-shuffle
+  const q = S.currentPosQuestion;
+  if (!q) { console.error('answerQuizPos: no currentPosQuestion'); return; }
+  const correct = q.rep; // correct index in the DISPLAYED (shuffled) order
   document.querySelectorAll('#quizContent .qopt').forEach(el => el.classList.add('disabled'));
-  document.querySelectorAll('#quizContent .qopt')[chosen].classList.add(chosen === q.rep ? 'correct' : 'wrong');
-  document.querySelectorAll('#quizContent .qopt')[q.rep].classList.add('correct');
-  S.posAnswers.push(chosen === q.rep); // FIX #3
+  const chosenEl = document.querySelectorAll('#quizContent .qopt')[chosen];
+  const correctEl = document.querySelectorAll('#quizContent .qopt')[correct];
+  if (chosenEl) chosenEl.classList.add(chosen === correct ? 'correct' : 'wrong');
+  if (correctEl) correctEl.classList.add('correct');
+  S.posAnswers.push(chosen === correct);
   const fb = document.getElementById('qfb');
   if (fb) {
     fb.className = 'quiz-fb show';
@@ -2598,29 +2627,32 @@ function renderTestQ() {
   // F2: Shuffle answers in tests too
   const { opts: qTestOpts, rep: qTestRep } = shuffleOpts(qRawTest.opts, qRawTest.rep);
   const q = { ...qRawTest, opts: qTestOpts, rep: qTestRep };
+  S.currentTestQuestion = q; // STORE: answerTestQ will use this, no re-shuffle
   setEl('testQuizContent', `
     <div class="flex jb mb3"><span class="muted">Question ${i+1}/${total}</span><span class="lvl l${q.lvl}">${q.lvl}</span></div>
     <div class="pr-bar mb3"><div class="pr-fill fill-primary" style="width:${(i/total)*100}%"></div></div>
     <button class="tts-btn mb2" onclick="ttsSpeak(this.dataset.t)" data-t="${q.q.replace(/"/g,'')}">🔊 Écouter</button>
     <div class="quiz-q">${q.q}</div>
     <div class="quiz-opts">
-      ${q.opts.map((o, j) => `<div class="qopt" data-tidx="${j}" data-trep="${q.rep}"><div class="qopt-letter">${['A','B','C','D'][j]}</div><span>${o}</span></div>`).join('')}
+      ${q.opts.map((o, j) => `<div class="qopt" onclick="answerTestQ(${j})"><div class="qopt-letter">${['A','B','C','D'][j]}</div><span>${o}</span></div>`).join('')}
     </div>
     <div id="testfb" class="quiz-fb"></div>
     <div class="quiz-nav"><span class="quiz-prog">Question ${i+1}/${total}</span><button class="btn btn-primary hidden" id="testNext" onclick="S.testQuizIdx++;renderTestQ()">Suivante →</button></div>`);
 
-  document.querySelectorAll('#testQuizContent .qopt').forEach(opt => {
-    opt.addEventListener('click', () => {
-      const chosen = parseInt(opt.dataset.tidx), correct = parseInt(opt.dataset.trep);
-      document.querySelectorAll('#testQuizContent .qopt').forEach(el => el.classList.add('disabled'));
+  // F4: onclick="answerTestQ(j)" handles clicks — no separate listeners needed
+  // Legacy listeners removed to prevent double-firing
+  // document.querySelectorAll('#testQuizContent .qopt').forEach(opt => {
+  if (false) { // placeholder to maintain structure
+    const opt = null;
+    const chosen = 0, correct = 0;
+    document.querySelectorAll('#testQuizContent .qopt').forEach(el => el.classList.add('disabled'));
       opt.classList.add(chosen === correct ? 'correct' : 'wrong');
       document.querySelectorAll('#testQuizContent .qopt')[correct].classList.add('correct');
       S.testAnswers.push(chosen === correct); // FIX #3
       const fb = document.getElementById('testfb');
       if (fb) { fb.className='quiz-fb show'; fb.style.background=chosen===correct?'var(--accent-light)':'var(--danger-light)'; fb.style.color=chosen===correct?'#064e3b':'#7f1d1d'; const corrLabel=q.opts[correct]||''; const explTxt=q.expl?'<br><small style="opacity:.85">💡 '+q.expl+'</small>':''; fb.innerHTML=(chosen===correct?'✅ Correct !':'❌ Bonne réponse : <b>'+corrLabel+'</b>')+explTxt; }
       document.getElementById('testNext')?.classList.remove('hidden');
-    });
-  });
+  }
 }
 
 function showTestResult(total) {
