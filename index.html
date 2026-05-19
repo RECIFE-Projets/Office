@@ -363,12 +363,22 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <button class="auth-tab" onclick="authTab('login',this)">Connexion</button>
     </div>
     <div class="auth-panel" id="apLogin" style="display:none">
-      <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email"></div>
+      <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')loginAs(null)"></div>
       <div class="fg"><label class="fl">Mot de passe</label>
-        <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
+        <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe" onkeydown="if(event.key==='Enter')loginAs(null)"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
       </div>
       <div id="lErr" class="f-err hidden"></div>
-      <p style="font-size:12px;color:var(--text3);margin-top:4px">Mot de passe oublié ? Contactez votre formatrice pour réinitialiser votre compte.</p>
+      <button type="button" class="btn btn-primary w100 mt2" onclick="loginAs(null)" id="btnLogin" style="font-size:16px;padding:12px">
+        🔓 Se connecter
+      </button>
+      <div class="flex gap2 mt2" style="justify-content:center">
+        <span style="font-size:12px;color:var(--text3)">Ou connectez-vous en tant que :</span>
+      </div>
+      <div style="margin-top:8px">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:12px;padding:4px 10px" onclick="showForgotHelp()">
+          🔑 J'ai oublié mes codes →
+        </button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
         <button class="btn btn-primary btn-full" style="padding:13px" onclick="loginAs('stagiaire')">🎓 Stagiaire</button>
         <button class="btn btn-outline btn-full" style="padding:13px" onclick="loginAs('formateur')">👨‍🏫 Formateur</button>
@@ -478,9 +488,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <div class="card-title">✉️ Contacter la formatrice</div>
           <div class="f2" style="margin-bottom:8px">
               <div class="fg"><label class="fl">À</label>
-                <select class="fs" id="stagMsgTo">
-                  <option value="formatrice">Ma formatrice</option>
-                  <option value="equipe">Toute l'équipe pédagogique</option>
+                <select class="fs" id="stagMsgTo" onclick="populateFormateurSelect()">
+                  <option value="formatrice">Ma formatrice (par défaut)</option>
                 </select>
               </div>
               <div class="fg"><label class="fl">Objet</label>
@@ -709,7 +718,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <!-- FORMATEUR -->
       <div class="page" id="page-formateur">
         <div class="ph flex jb fwrap gap2">
-          <div><div class="ph-title">👨‍🏫 Dashboard Formateur</div><div class="ph-sub">Suivi et analyse de vos groupes</div></div>
+          <div><div class="ph-title" id="formDashTitle">👨‍🏫 Espace Formateur</div><div class="ph-sub" id="formDashSub">Gestion de vos stagiaires et contenus</div></div>
           <div class="flex gap2 fwrap">
             <button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 Exporter PDF</button>
             <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button>
@@ -796,7 +805,11 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               </div>
               <div class="f2">
                 <div class="fg"><label class="fl">Niveau</label>
-                  <select class="fs" id="pdfNiv"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+                  <select class="fs" id="pdfDispositif">
+                    <option value="savoirs">Savoirs Essentiels</option>
+                    <option value="avenir">#Avenir</option>
+                    <option value="les_deux">Les deux dispositifs</option>
+                  </select>
                 </div>
                 <div class="fg"><label class="fl">Découpage automatique par</label>
                   <select class="fs" id="pdfSplit">
@@ -897,7 +910,9 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div class="alert al-info mb3"><span>ℹ️</span><div>Les questions ajoutées ici complètent ou remplacent les questions par défaut du test de positionnement de 15 questions.</div></div>
             <div class="flex gap2 mb3 fwrap">
               <button class="btn btn-primary" onclick="showQuizEditForm()">➕ Ajouter une question</button>
-              <button class="btn btn-outline" onclick="resetCustomQuiz()">↺ Restaurer les questions par défaut</button>
+              <button class="btn btn-outline" onclick="resetCustomQuiz()">↺ Restaurer par défaut</button>
+              <button class="btn btn-outline" onclick="document.getElementById('quizDocImport').click()">📄 Importer un document</button>
+              <input type="file" id="quizDocImport" style="display:none" accept=".txt,.docx,.pdf" onchange="importQuizDoc(this)">
               <button class="btn btn-ghost btn-sm" onclick="previewQuizTest()">👁️ Aperçu du test complet</button>
             </div>
             <div id="quizEditForm" class="hidden card" style="border:2px solid var(--primary)">
@@ -926,6 +941,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
                 <button class="btn btn-ghost" onclick="cancelQuizEdit()">Annuler</button>
               </div>
               <input type="hidden" id="qEditIdx" value="-1">
+              <input type="hidden" id="qEditReplaceIdx" value="-1">
             </div>
             <div id="customQuizList" class="mt3"></div>
           </div>
@@ -1375,6 +1391,35 @@ function authTab(tab, el) {
   document.getElementById('apRegister').classList.toggle('active', tab === 'register');
 }
 
+function showForgotHelp() {
+  const isForm = S.role === 'formateur';
+  const msg = isForm
+    ? `<h3 style="margin-top:0">🔑 Codes formateur oubliés</h3>
+       <p>Vos identifiants sont stockés localement sur cet appareil.</p>
+       <p><b>Solutions :</b></p>
+       <ul style="padding-left:20px">
+         <li>Essayez différents mots de passe que vous utilisez habituellement.</li>
+         <li>Si vous avez un autre navigateur ou appareil, essayez de vous y connecter.</li>
+         <li>En dernier recours : créez un nouveau compte formateur.</li>
+       </ul>`
+    : `<h3 style="margin-top:0">🔑 Codes stagiaire oubliés</h3>
+       <p>Vous avez oublié votre e-mail ou mot de passe ?</p>
+       <p><b>Solutions :</b></p>
+       <ul style="padding-left:20px">
+         <li>Demandez à votre <b>formatrice</b> de vérifier votre inscription.</li>
+         <li>Essayez l'e-mail avec lequel vous vous êtes inscrit(e).</li>
+         <li>Si vous avez oublié votre mot de passe, votre formatrice peut vous créer un nouveau compte.</li>
+       </ul>
+       <p style="margin-top:12px"><button class="btn btn-outline btn-sm" onclick="authTab('inscription',document.querySelector('.auth-tab:last-child'))">Créer un nouveau compte</button></p>`;
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `<div style="background:var(--surface);border-radius:14px;padding:24px;max-width:420px;width:100%">
+    ${msg}
+    <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="this.closest('[style*=fixed]').remove()">Fermer</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
 function togglePwd(idOrBtn, btn2) {
   // Accept togglePwd(btn) for connexion or togglePwd('id', btn) for inscription
   const realBtn = btn2 || idOrBtn;
@@ -1402,13 +1447,31 @@ function loginAfterRegister(pre, nom, email, role) {
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('demoBanner')?.remove();
   initApp(role, user);
-  toast('✅ Bienvenue ' + esc(pre) + ' ! Commencez par le test de positionnement.');
-  // Redirect to test de positionnement after first registration
-  setTimeout(() => showPage('positionnement'), 1200);
+  if (role === 'stagiaire' || role === 'Stagiaire') {
+    toast('✅ Bienvenue ' + esc(pre) + ' ! Commencez par le test de positionnement.');
+    setTimeout(() => showPage('positionnement'), 1200);
+  } else { // formateur
+    toast('✅ Bienvenue ' + esc(pre) + ' ! Vous êtes connecté(e) en tant que formateur(trice).');
+  }
 }
 
 function loginAs(role) {
-  // B1: Try to match real credentials if filled
+  // [12] If role is null (Se connecter button), detect from stored users
+  if (!role) {
+    const email2 = document.getElementById('lEmail')?.value?.trim();
+    const mdp2 = document.getElementById('lMdp')?.value;
+    if (email2 && mdp2) {
+      const found = S.users.find(u => u.email === email2 && u.mdp === mdp2);
+      role = found ? (found.role || 'stagiaire') : null;
+      if (!role) {
+        showErr(document.getElementById('lErr'), '⚠️ Identifiants non reconnus. Choisissez ci-dessous : Stagiaire ou Formateur(trice).');
+        return;
+      }
+    } else {
+      // Demo mode — default to stagiaire
+      role = 'stagiaire';
+    }
+  }
   const emailEl = document.getElementById('lEmail');
   const mdpEl = document.getElementById('lMdp');
   const email = emailEl ? emailEl.value.trim() : '';
@@ -1570,6 +1633,11 @@ function initApp(role, user) {
     sbS.classList.add('hidden'); sbF.classList.remove('hidden');
     nbLvl.classList.add('hidden');
     renderFormateur(); showPage('formateur');
+    // [2] Update formateur dashboard title with real name
+    const fTitle = document.getElementById('formDashTitle');
+    const fSub = document.getElementById('formDashSub');
+    if (fTitle && u) fTitle.textContent = '👨‍🏫 Espace de ' + esc(u.prenom + (u.nom ? ' ' + u.nom : ''));
+    if (fSub && u) fSub.textContent = 'Connecté(e) en tant que formateur(trice)';
   } else {
     sbS.classList.remove('hidden'); sbF.classList.add('hidden');
     nbLvl.classList.remove('hidden');
@@ -2914,6 +2982,20 @@ function renderFormateur() {
   } catch(e) { console.error('renderFormateur error:', e); }
 }
 
+function populateFormateurSelect() {
+  const sel = document.getElementById('stagMsgTo');
+  if (!sel || sel.options.length > 1) return;
+  const formateurs = S.users.filter(u => u.role === 'formateur');
+  const equipeOpt = `<option value="equipe">Toute l’équipe pédagogique</option>`;
+  if (formateurs.length > 0) {
+    sel.innerHTML = formateurs.map(f =>
+      `<option value="${esc(f.prenom + ' ' + (f.nom||''))}">${esc(f.prenom)} ${esc(f.nom||'')}</option>`
+    ).join('') + equipeOpt;
+  } else {
+    sel.innerHTML = `<option value="formatrice">Ma formatrice</option>${equipeOpt}`;
+  }
+}
+
 function stagSendMsg() {
   const txt = document.getElementById('stagMsgTxt')?.value?.trim();
   if (!txt) { toast('⚠️ Écrivez un message avant d\'envoyer.'); return; }
@@ -2985,7 +3067,8 @@ function renderStagTable() {
     groupe: 'Groupe 1',
     detail: { word:0, excel:0, ppt:0, pub:0, temps:'0min', exFaits:0 }
   }));
-  const allStagiaires = [...realUsers, ...DEMO_STAGIAIRES];
+  const hiddenIds = safeGet('mpb_hidden_stags', []);
+  const allStagiaires = [...realUsers, ...DEMO_STAGIAIRES].filter(s => !hiddenIds.includes(s.id));
   const filtered2 = allStagiaires.filter(s => {
     const ms = !search || (s.prenom + ' ' + s.nom).toLowerCase().includes(search);
     const mg = grp === 'all' || s.groupe === grp;
@@ -3005,6 +3088,8 @@ function renderStagTable() {
       <td class="muted">${s.acces}</td>
       <td class="flex gap2">
         <button class="btn btn-ghost btn-sm" onclick="openFiche(${s.id})">Voir fiche</button>
+        <button class="btn btn-ghost btn-sm" onclick="archiverStag(${s.id},'${s.prenom} ${s.nom}')" title="Archiver" style="color:var(--warn)">📁</button>
+        <button class="btn btn-ghost btn-sm" onclick="supprimerStag(${s.id},'${s.prenom} ${s.nom}')" title="Supprimer" style="color:var(--danger)">🗑️</button>
         <button class="btn btn-outline btn-sm" onclick="imprimerFiche(${s.id})">🖨️</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" class="muted tc" style="padding:20px">Aucun stagiaire trouvé.</td></tr>');
@@ -3013,6 +3098,8 @@ function renderStagTable() {
 
 // FIX #3: FORM_TRAVAUX merges demo data + real submissions from localStorage
 function getFormTravaux() {
+  // [3] Return real travaux from S.travaux + demo fallback
+  const realTravaux = S.travaux || [];
   const demo = [
     { id:1, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04' },
     { id:2, stag:'Amara Diallo', fichier:'Diallo_G2_Lettre.docx', module:'Word', date:'17/04' },
@@ -3024,8 +3111,11 @@ function getFormTravaux() {
   // Merge: real submissions first, then demo
   const all = [...fromLS, ...demo];
   // B10: Deduplicate by id (not fichier — two students can submit same filename)
+  // [3] Merge real S.travaux first (they take priority over demo)
+  const realT = S.travaux && S.travaux.length > 0 ? S.travaux : [];
+  const combined = realT.length > 0 ? [...realT, ...all.filter(d => !realT.some(r => r.id === d.id))] : all;
   const seen = new Set();
-  return all.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+  return combined.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
 }
 
 function renderTravTable() {
@@ -3251,6 +3341,23 @@ function getAllQuizQuestions() {
   return [...base, ...additions];
 }
 
+function replaceBuiltInQ(idx) {
+  // Pre-fill form with the built-in question to replace
+  const q = QUIZ_POSITIONNEMENT[idx];
+  if (!q) return;
+  const fields = { qEditQ: q.q, qEditLvl: q.lvl, qEditA: q.opts[0], qEditB: q.opts[1], qEditC: q.opts[2] || '', qEditD: q.opts[3] || '', qEditExpl: q.expl || '' };
+  Object.entries(fields).forEach(([id, val]) => { const el=document.getElementById(id); if(el) el.value=val; });
+  document.getElementById('qEditRep').value = String(q.rep);
+  document.getElementById('qEditIdx').value = String(-1); // New custom
+  document.getElementById('qEditReplaceIdx').value = String(idx); // Will replace built-in at idx
+  const form = document.getElementById('quizEditForm');
+  if (form) form.classList.remove('hidden');
+  const btn = form?.querySelector('.btn-primary');
+  if (btn) btn.textContent = '💾 Remplacer la question ' + (idx+1);
+  document.getElementById('quizEditTitle').textContent = '✏️ Remplacer la question ' + (idx+1);
+  document.getElementById('qEditQ')?.focus();
+}
+
 function showQuizEditForm(editIdx) {
   const form = document.getElementById('quizEditForm');
   const titleEl = document.getElementById('quizEditTitle');
@@ -3302,7 +3409,9 @@ function saveQuizQuestion() {
   if (d) opts.push(d);
   if (rep >= opts.length) { toast('⚠️ La bonne réponse dépasse le nombre de propositions.'); return; }
 
+  const replaceIdx = parseInt(document.getElementById('qEditReplaceIdx')?.value ?? '-1');
   const newQ = { q, opts, rep, lvl, expl };
+  if (replaceIdx >= 0) newQ.replaceIdx = replaceIdx; // Marks which built-in Q to replace
   const custom = getCustomQuizQuestions();
 
   if (editIdx >= 0) {
@@ -3313,6 +3422,7 @@ function saveQuizQuestion() {
     toast('✅ Question ajoutée au test de positionnement !');
   }
   safeSet('mpb_custom_quiz', custom);
+  const ri = document.getElementById('qEditReplaceIdx'); if(ri) ri.value='-1';
   cancelQuizEdit();
   renderCustomQuizList();
 }
@@ -3345,10 +3455,14 @@ function renderCustomQuizList() {
   html += '<div style="margin-bottom:16px">';
   html += '<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Questions par défaut (non modifiables)</div>';
   builtIn.forEach((q, i) => {
-    html += `<div class="ex-item" style="opacity:.75">
+    const replacedByQ = custom.find(c => c.replaceIdx === i);
+    html += `<div class="ex-item" style="${replacedByQ ? 'opacity:.4;text-decoration:line-through' : 'opacity:.85'}">
       <div class="ex-num"><span class="lvl l${q.lvl}" style="font-size:10px">${q.lvl}</span></div>
       <div class="ex-body"><div class="ex-name" style="font-size:13px">${esc(q.q.substring(0,70))}${q.q.length>70?'…':''}</div>
         <div class="muted" style="font-size:11px">✅ Bonne réponse : ${esc(q.opts[q.rep])}</div>
+      </div>
+      <div class="flex gap2">
+        ${replacedBy ? `<span style="font-size:11px;color:var(--warn)">Remplacée</span>` : `<button class="btn btn-ghost btn-sm" onclick="replaceBuiltInQ(${i})" title="Remplacer cette question">✏️ Remplacer</button>`}
       </div>
     </div>`;
   });
@@ -3401,6 +3515,36 @@ function previewQuizTest() {
   w.document.close();
 }
 
+function importQuizDoc(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const showExtracted = (text) => {
+    // Extract questions: lines starting with numbers or '?' or at least 20 chars
+    const lines = text.split(/\n|\r/).map(l=>l.trim()).filter(l=>l.length>10);
+    const potential_q = lines.filter(l => /^[\d]+[.)\s]/.test(l) || l.includes('?') || l.length > 30);
+    if (potential_q.length === 0) { toast('⚠️ Aucune question détectée. Vérifiez le format du fichier.'); return; }
+    // Pre-fill the first extracted question in the form
+    document.getElementById('qEditQ').value = potential_q[0].replace(/^[\d]+[.)\s]+/,'').trim();
+    document.getElementById('quizEditForm').classList.remove('hidden');
+    document.getElementById('quizEditTitle').textContent = '📄 Question importée — à compléter';
+    toast('✅ ' + potential_q.length + ' question(s) détectée(s). Complétez les propositions de réponses.', 4000);
+  };
+  const reader = new FileReader();
+  if (file.name.endsWith('.txt')) {
+    reader.onload = e => showExtracted(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else if (file.name.endsWith('.docx')) {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', () => {
+      reader.onload = e => mammoth.extractRawText({arrayBuffer:e.target.result}).then(r=>showExtracted(r.value));
+      reader.readAsArrayBuffer(file);
+    });
+  } else {
+    toast('💡 Format .txt ou .docx recommandé. Saisissez la question manuellement.');
+    document.getElementById('quizEditForm').classList.remove('hidden');
+  }
+  input.value = '';
+}
+
 function renderGroupes() {
   const groups = safeGet('mpb_groups', ['Groupe 1','Groupe 2','Groupe 3']);
   const el = document.getElementById('groupList');
@@ -3416,6 +3560,31 @@ function renderGroupes() {
         <button class="btn btn-ghost btn-sm" onclick="deleteGroup(${i})" style="color:var(--danger)">🗑️</button>
       </div>
     </div>`).join('') || '<div class="muted">Aucun groupe.</div>';
+}
+
+function archiverStag(id, nom) {
+  if (!window.confirm('Archiver le stagiaire ' + nom + ' ? Il n\'apparaîtra plus dans la liste active mais ses données sont conservées.')) return;
+  const archived = safeGet('mpb_archived_stags', []);
+  archived.push({ id, nom, date: new Date().toLocaleDateString('fr-FR') });
+  safeSet('mpb_archived_stags', archived);
+  const hiddenIds = safeGet('mpb_hidden_stags', []);
+  hiddenIds.push(id);
+  safeSet('mpb_hidden_stags', hiddenIds);
+  renderStagTable();
+  renderFormateur();
+  toast('📁 ' + nom + ' archivé(e). Visible dans Stagiaires archivés.', 4000);
+}
+
+function supprimerStag(id, nom) {
+  if (!window.confirm('⚠️ Supprimer définitivement ' + nom + ' ? Cette action est irréversible.')) return;
+  S.users = S.users.filter((u, i) => (900 + i) !== id);
+  safeSet('mpb_users', S.users);
+  const hiddenIds = safeGet('mpb_hidden_stags', []);
+  hiddenIds.push(id);
+  safeSet('mpb_hidden_stags', hiddenIds);
+  renderStagTable();
+  renderFormateur();
+  toast('🗑️ Stagiaire supprimé(e).');
 }
 
 function assignGroup(stagId, groupName) {
@@ -3438,6 +3607,7 @@ function createGroup() {
   safeSet('mpb_groups', groups);
   document.getElementById('newGroupName').value = '';
   renderGroupes();
+  renderStagTable();
   toast('✅ Groupe "' + name + '" créé !');
 }
 
@@ -3457,7 +3627,9 @@ function deleteGroup(idx) {
   groups.splice(idx, 1);
   safeSet('mpb_groups', groups);
   renderGroupes();
-  toast('🗑️ Groupe supprimé.');
+  renderStagTable();
+  renderFormateur();
+  toast('🗑️ Groupe supprimé.'); // [8]
 }
 
 function replyToStag(fromName) {
@@ -3778,7 +3950,9 @@ function previewPdfManuel() {
 function savePdfManuel() {
   const titre = document.getElementById('pdfTitle')?.value?.trim();
   const mod = document.getElementById('pdfMod')?.value || 'autre';
-  const niv = document.getElementById('pdfNiv')?.value || 'B1';
+  const dispositif = document.getElementById('pdfDispositif')?.value || 'les_deux';
+  const niv = dispositif === 'savoirs' ? 'A2' : dispositif === 'avenir' ? 'B1' : 'A2';
+  const dispositifLabel = dispositif === 'savoirs' ? 'Savoirs Essentiels' : dispositif === 'avenir' ? '#Avenir' : 'Savoirs Essentiels & #Avenir';
 
   // Récupérer les étapes depuis la zone preview OU la zone manuelle
   const fromPreview = document.getElementById('pdfSteps')?.value?.trim();
@@ -3809,6 +3983,7 @@ function savePdfManuel() {
     const newEx = {
       id: 'pdf' + Date.now() + '_' + part,
       num: customExs.length + 1 + part,
+      dispositif: dispositif || 'les_deux',
       name: partTitle,
       lvl: niv,
       time: Math.ceil(partSteps.length * 3) + ' min estimé',
