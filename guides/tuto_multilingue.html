@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutoriel — Ma Plateforme Bureautique</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #0f1f3d; --gold: #c9960c; --gold-lt: #f0c040;
+  --teal: #0d7d6b; --teal-lt: #e6f7f4;
+  --bg: #080e1c; --white: #fff;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px 40px;
+}
+
+.page-head { text-align: center; margin-bottom: 20px; }
+.page-head h1 { font-size: 18px; font-weight: 800; color: #6ee7d4; margin-bottom: 4px; }
+.page-head p  { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+/* ── PLAYER ── */
+.player {
+  width: 100%; max-width: 860px;
+  background: #0f1929;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Progress */
+.progress-bar { height: 4px; background: rgba(255,255,255,0.07); }
+.progress-fill { height:100%; background: linear-gradient(90deg, var(--teal), #2bb89e); transition: width 0.4s ease; }
+
+/* Scene header */
+.scene-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 16px 5px; background: #0f1929;
+}
+.scene-dots { display: flex; gap: 5px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.12); transition: all 0.3s; cursor: pointer; }
+.dot.active { background: var(--gold-lt); transform: scale(1.3); }
+.dot.done   { background: rgba(240,192,64,0.4); }
+.scene-label { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── VIEWPORT ── */
+.viewport { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #0a1525; }
+.scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ── LANGUAGE SELECTOR SCENE ── */
+.lang-screen {
+  background: linear-gradient(140deg, #0a1628 0%, #0d2240 60%, #0a1628 100%);
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.lang-icon { font-size: 48px; margin-bottom: 12px; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);} }
+.lang-screen h2 { font-size: 22px; font-weight: 900; color: #6ee7d4; margin-bottom: 6px; text-align: center; }
+.lang-screen .lang-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px; text-align: center; }
+.lang-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+}
+.lang-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 12px 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: white;
+}
+.lang-btn:hover, .lang-btn.selected {
+  border-color: var(--gold-lt);
+  background: rgba(240,192,64,0.1);
+  transform: translateY(-2px);
+}
+.lang-btn .lf { font-size: 24px; }
+.lang-btn .ln { font-size: 11px; font-weight: 800; text-align: center; line-height: 1.3; }
+.lang-btn .lns { font-size: 9px; color: rgba(255,255,255,0.45); text-align: center; }
+.start-lang-btn {
+  margin-top: 16px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  display: none;
+}
+.start-lang-btn.visible { display: block; animation: pop 0.3s ease; }
+.start-lang-btn:hover { background: #0a6558; transform: scale(1.04); }
+@keyframes pop { 0%{transform:scale(0.8);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+
+/* ── MOCK BROWSER ── */
+.mock-browser {
+  background: #1e2d3d; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.browser-bar { background: #263547; padding: 7px 12px; display: flex; align-items: center; gap: 8px; }
+.btr { width: 9px; height: 9px; border-radius: 50%; }
+.btr.r{background:#ff5f57;}.btr.y{background:#ffbd2e;}.btr.g{background:#28ca41;}
+.url-bar { flex:1; background:rgba(255,255,255,0.07); border-radius:4px; padding:3px 10px; font-size:11px; color:rgba(255,255,255,0.45); font-family:monospace; }
+.browser-content { overflow: hidden; }
+
+/* ── MPB MOCK SCREENS ── */
+.mpb-screen { background:#f7f8fc; color:#1a202c; padding:14px; font-family:'Plus Jakarta Sans',sans-serif; }
+.mpb-navbar { background:#0f1f3d; padding:9px 14px; display:flex; align-items:center; justify-content:space-between; }
+.mpb-logo { color:#f0c040; font-weight:900; font-size:14px; }
+.mpb-hero { background:linear-gradient(135deg,#0f1f3d,#1a3260); padding:22px 14px; text-align:center; color:white; }
+.mpb-hero h2 { font-size:16px; font-weight:900; margin-bottom:6px; }
+.mpb-hero p  { font-size:11px; color:rgba(255,255,255,0.55); margin-bottom:12px; }
+.btn-row { display:flex; gap:10px; justify-content:center; }
+.mpb-btn { padding:7px 16px; border-radius:7px; font-size:12px; font-weight:800; cursor:pointer; border:none; font-family:inherit; }
+.mpb-btn.primary   { background:#0d7d6b; color:white; }
+.mpb-btn.secondary { background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); }
+.mpb-btn.pulse { animation: btn-pulse 1.2s ease-in-out infinite; }
+@keyframes btn-pulse { 0%{box-shadow:0 0 0 0 rgba(13,125,107,0.7);}70%{box-shadow:0 0 0 12px rgba(13,125,107,0);}100%{box-shadow:0 0 0 0 rgba(13,125,107,0);} }
+
+.form-card { background:white; border-radius:9px; padding:13px 15px; margin:10px auto; box-shadow:0 4px 16px rgba(0,0,0,0.1); border:1px solid #e2e8f0; }
+.form-card h3 { font-size:13px; font-weight:800; margin-bottom:9px; color:#0f1f3d; text-align:center; }
+.fake-input { background:#f2f4f8; border:1.5px solid #dde3ee; border-radius:5px; padding:6px 9px; font-size:11px; color:#4a5568; margin-bottom:6px; width:100%; display:block; }
+.fake-input.filled { border-color:#0d7d6b; color:#0f1f3d; font-weight:700; }
+
+.levels-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:8px; }
+.lv-card { border-radius:7px; padding:8px 4px; text-align:center; border:2px solid transparent; font-size:10px; font-weight:700; color:white; transition:all 0.2s; cursor:pointer; }
+.lv-card.a1{background:#22c55e;}.lv-card.a2{background:#86efac;color:#166534;}
+.lv-card.b1{background:#3b82f6;}.lv-card.b2{background:#6366f1;}
+.lv-card.c1{background:#f59e0b;color:#78350f;}.lv-card.c2{background:#ef4444;}
+.lv-card .lv-b { font-size:14px; font-weight:900; display:block; margin-bottom:2px; }
+.lv-card .lv-n { font-size:8px; }
+.lv-card.selected { border-color:white; transform:scale(1.06); box-shadow:0 4px 14px rgba(0,0,0,0.3); }
+
+.module-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; }
+.module-card { background:white; border:2px solid #dde3ee; border-radius:8px; padding:8px 11px; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:#0f1f3d; cursor:pointer; flex:1; min-width:60px; transition:all 0.2s; }
+.module-card.selected { border-color:#0d7d6b; background:#e6f7f4; }
+.module-card .mod-icon { font-size:15px; }
+
+.quiz-card { background:white; border-radius:9px; padding:13px; box-shadow:0 4px 16px rgba(0,0,0,0.08); border:1px solid #e2e8f0; }
+.quiz-prog { font-size:10px; color:#888; margin-bottom:6px; font-weight:700; }
+.quiz-q { font-size:12px; font-weight:700; color:#0f1f3d; margin-bottom:10px; line-height:1.5; }
+.quiz-options { display:flex; flex-direction:column; gap:6px; }
+.quiz-opt { background:#f7f8fc; border:2px solid #dde3ee; border-radius:7px; padding:7px 11px; font-size:11px; cursor:pointer; font-weight:600; color:#1a202c; transition:all 0.2s; }
+.quiz-opt.correct { background:#e6f9f1; border-color:#16a34a; color:#14532d; }
+.quiz-opt.highlight { border-color:#0d7d6b; background:#e6f7f4; }
+.success-banner { background:#e6f9f1; border:2px solid #16a34a; border-radius:7px; padding:7px 11px; margin-top:8px; font-size:11px; font-weight:700; color:#14532d; display:flex; align-items:center; gap:7px; }
+
+.prog-card { background:white; border-radius:9px; padding:13px; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.prog-item { margin-bottom:10px; }
+.prog-label { font-size:11px; font-weight:700; color:#4a5568; margin-bottom:4px; display:flex; justify-content:space-between; }
+.prog-bar-bg { background:#e2e8f0; border-radius:10px; height:7px; overflow:hidden; }
+.prog-bar-fill { height:100%; border-radius:10px; transition:width 1s ease; }
+.prog-bar-fill.w{background:linear-gradient(90deg,#0d7d6b,#2bb89e);}
+.prog-bar-fill.e{background:linear-gradient(90deg,#1d6fa8,#3b82f6);}
+.prog-bar-fill.p{background:linear-gradient(90deg,#b45309,#f59e0b);}
+
+/* Cursor */
+.cursor { position:absolute; width:20px; height:20px; pointer-events:none; z-index:50; transition: top 0.6s cubic-bezier(.4,0,.2,1), left 0.6s cubic-bezier(.4,0,.2,1); }
+.cursor svg { filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.cursor.clicking { animation:click-anim 0.3s ease; }
+@keyframes click-anim{0%{transform:scale(1);}50%{transform:scale(0.75);}100%{transform:scale(1);}}
+
+.highlight-ring { position:absolute; border:3px solid #2bb89e; border-radius:8px; pointer-events:none; z-index:40; animation:ring-pulse 1.5s ease-in-out infinite; }
+@keyframes ring-pulse{0%,100%{box-shadow:0 0 0 0 rgba(43,184,158,0.5);}50%{box-shadow:0 0 0 8px rgba(43,184,158,0);}}
+
+/* Intro + Outro */
+.intro-screen {
+  background: linear-gradient(140deg, #0a1628, #0f2d4a);
+  width:100%; height:100%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:40px;
+}
+.intro-icon { font-size:50px; margin-bottom:14px; animation:float 3s ease-in-out infinite; }
+.intro-screen h2 { font-size:26px; font-weight:900; color:#6ee7d4; margin-bottom:8px; }
+.intro-screen p { font-size:14px; color:rgba(255,255,255,0.6); max-width:360px; }
+.chips { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+.chip-sm { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:rgba(255,255,255,0.7); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+
+.outro-screen {
+  background:linear-gradient(135deg,#064e3b,#0d7d6b);
+  width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:40px;
+}
+.outro-screen .big-check{font-size:58px;margin-bottom:14px;animation:pop-anim 0.5s ease;}
+@keyframes pop-anim{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+.outro-screen h2{font-size:26px;font-weight:900;color:white;margin-bottom:8px;}
+.outro-screen p{font-size:14px;color:rgba(255,255,255,0.75);max-width:360px;}
+.replay-btn{margin-top:16px;background:white;color:#064e3b;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:800;cursor:pointer;transition:transform 0.2s;font-family:inherit;}
+.replay-btn:hover{transform:scale(1.05);}
+
+/* Submit scene */
+.submit-form { background:white; border-radius:9px; padding:13px 15px; box-shadow:0 4px 16px rgba(0,0,0,0.1); border:1px solid #e2e8f0; }
+.submit-form .sf-title { font-size:13px; font-weight:800; color:#0f1f3d; margin-bottom:10px; }
+.upload-zone { border:2px dashed #0d7d6b; border-radius:8px; padding:13px; text-align:center; background:#e6f7f4; margin-bottom:9px; }
+.upload-zone .uz-icon { font-size:20px; }
+.upload-zone p { font-size:10px; color:#0d7d6b; font-weight:700; margin-top:3px; }
+.upload-zone small { font-size:9px; color:#888; }
+
+/* ── CAPTION ── */
+.caption-bar {
+  background:#0c1526; border-top:1px solid rgba(255,255,255,0.05);
+  padding:11px 18px; min-height:58px; display:flex; align-items:center; gap:11px;
+}
+.caption-icon { font-size:18px; flex-shrink:0; }
+.caption-text { font-size:14px; color:rgba(255,255,255,0.88); line-height:1.55; font-weight:600; flex:1; }
+.caption-text .kw { background:rgba(43,184,158,0.18); color:#6ee7d4; border-radius:4px; padding:0 5px; font-weight:800; }
+
+/* RTL support */
+.caption-text.rtl { direction: rtl; text-align: right; font-size: 13px; }
+
+/* ── CONTROLS ── */
+.controls {
+  background:#080f1c; padding:11px 16px; display:flex; align-items:center; gap:11px;
+  border-top:1px solid rgba(255,255,255,0.04);
+}
+.ctrl-btn { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:8px; padding:7px 13px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit; display:flex; align-items:center; gap:6px; }
+.ctrl-btn:hover { background:rgba(255,255,255,0.12); }
+.ctrl-btn.play-btn { background:var(--teal); border-color:var(--teal); }
+.ctrl-btn.play-btn:hover { background:#0a6558; }
+.ctrl-btn.lang-btn-ctrl { background:rgba(240,192,64,0.12); border-color:rgba(240,192,64,0.3); color:var(--gold-lt); }
+.ctrl-spacer { flex:1; }
+.step-indicator { font-size:12px; color:rgba(255,255,255,0.3); font-weight:700; }
+
+/* lang indicator pill */
+.lang-pill {
+  background:rgba(240,192,64,0.15); border:1px solid rgba(240,192,64,0.3);
+  color:var(--gold-lt); font-size:11px; font-weight:800;
+  padding:4px 11px; border-radius:20px; display:flex; align-items:center; gap:5px;
+}
+
+@media(max-width:600px){
+  .lang-grid { grid-template-columns:repeat(3,1fr); }
+  .intro-screen h2 { font-size:20px; }
+  .caption-text { font-size:12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>🎬 Tutoriel Interactif — Ma Plateforme Bureautique</h1>
+  <p>Choisissez votre langue · Choose your language · اختر لغتك · Escolha o idioma · Elige tu idioma</p>
+</div>
+
+<div class="player" id="player">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="scene-header">
+    <div class="scene-dots" id="sceneDots"></div>
+    <div class="scene-label" id="sceneLabel">—</div>
+  </div>
+
+  <div class="viewport" id="viewport">
+
+    <!-- ════ SCENE 0 — LANGUAGE SELECTOR ════ -->
+    <div class="scene active" id="s0">
+      <div class="lang-screen">
+        <div class="lang-icon">🌍</div>
+        <h2>Ma Plateforme Bureautique</h2>
+        <p class="lang-sub">Choisissez votre langue / Choose your language</p>
+        <div class="lang-grid">
+          <div class="lang-btn" data-lang="fr" onclick="selectLang('fr',this)">
+            <span class="lf">🇫🇷</span>
+            <span class="ln">Français</span>
+            <span class="lns">French</span>
+          </div>
+          <div class="lang-btn" data-lang="en" onclick="selectLang('en',this)">
+            <span class="lf">🇬🇧</span>
+            <span class="ln">English</span>
+            <span class="lns">Anglais</span>
+          </div>
+          <div class="lang-btn" data-lang="ar" onclick="selectLang('ar',this)" style="direction:rtl">
+            <span class="lf">🇲🇦</span>
+            <span class="ln">العربية</span>
+            <span class="lns">Arabe</span>
+          </div>
+          <div class="lang-btn" data-lang="pt" onclick="selectLang('pt',this)">
+            <span class="lf">🇵🇹</span>
+            <span class="ln">Português</span>
+            <span class="lns">Portugais</span>
+          </div>
+          <div class="lang-btn" data-lang="es" onclick="selectLang('es',this)">
+            <span class="lf">🇪🇸</span>
+            <span class="ln">Español</span>
+            <span class="lns">Espagnol</span>
+          </div>
+        </div>
+        <button class="start-lang-btn" id="startLangBtn" onclick="launchTutorial()">
+          Démarrer le tutoriel →
+        </button>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 1 — INTRO ════ -->
+    <div class="scene" id="s1">
+      <div class="intro-screen">
+        <div class="intro-icon">🖥️</div>
+        <h2 id="intro-title">Bienvenue sur MPB !</h2>
+        <p id="intro-body">Ce tutoriel vous guide pas à pas pour apprendre Word, Excel, PowerPoint et Publisher.</p>
+        <div class="chips">
+          <span class="chip-sm">📝 Word</span>
+          <span class="chip-sm">📊 Excel</span>
+          <span class="chip-sm">📽️ PowerPoint</span>
+          <span class="chip-sm">📰 Publisher</span>
+          <span class="chip-sm" id="intro-level-chip">🎯 A1 → C2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 2 — LOGIN ════ -->
+    <div class="scene" id="s2">
+      <div class="mock-browser" style="width:84%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar">https://office2019.netlify.app/</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-navbar"><div class="mpb-logo">MPB</div></div>
+          <div class="mpb-hero">
+            <h2>Ma Plateforme Bureautique</h2>
+            <p id="s2-sub">Choisissez votre profil pour commencer</p>
+            <div class="btn-row">
+              <button class="mpb-btn secondary">👩‍🏫 <span id="s2-formateur">Formateur</span></button>
+              <button class="mpb-btn primary pulse" id="btn-stagiaire">🎓 <span id="s2-stagiaire">Stagiaire</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="highlight-ring" id="ring2" style="display:none"></div>
+      <div class="cursor" id="cursor2" style="display:none; position:absolute; left:20%; top:40%">
+        <svg width="20" height="20" viewBox="0 0 20 20"><path d="M4 2l12 7-6 1.5-3 5.5z" fill="white" stroke="#000" stroke-width="1"/></svg>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 3 — REGISTER ════ -->
+    <div class="scene" id="s3">
+      <div class="mock-browser" style="width:70%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar">office2019.netlify.app/</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-hero" style="padding:13px 14px 16px">
+            <div class="form-card" style="margin:0 auto;max-width:260px">
+              <h3 id="s3-title">🎓 Créer un compte</h3>
+              <div class="fake-input filled" id="s3-f1">Marie</div>
+              <div class="fake-input filled" id="s3-f2">marie_2024</div>
+              <div class="fake-input filled" style="letter-spacing:3px">••••••••</div>
+              <button class="mpb-btn primary pulse" style="width:100%;margin-top:4px;font-size:11px" id="s3-btn">✓ Créer mon compte</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 4 — LEVEL ════ -->
+    <div class="scene" id="s4">
+      <div class="mock-browser" style="width:82%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar" id="s4-url">Choisir mon niveau</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-screen">
+            <p id="s4-title" style="font-size:12px;font-weight:800;color:#0f1f3d;margin-bottom:8px">📊 Choisissez votre niveau CECRL :</p>
+            <div class="levels-grid">
+              <div class="lv-card a1"><span class="lv-b">A1</span><span class="lv-n" id="lv-a1-n">Débutant total</span></div>
+              <div class="lv-card a2 selected" id="lv-a2"><span class="lv-b">A2</span><span class="lv-n" id="lv-a2-n">Débutant</span></div>
+              <div class="lv-card b1"><span class="lv-b">B1</span><span class="lv-n" id="lv-b1-n">Intermédiaire</span></div>
+              <div class="lv-card b2"><span class="lv-b">B2</span><span class="lv-n" id="lv-b2-n">Interm. avancé</span></div>
+              <div class="lv-card c1"><span class="lv-b">C1</span><span class="lv-n" id="lv-c1-n">Avancé</span></div>
+              <div class="lv-card c2"><span class="lv-b">C2</span><span class="lv-n" id="lv-c2-n">Expert</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 5 — MODULES ════ -->
+    <div class="scene" id="s5">
+      <div class="mock-browser" style="width:86%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar">office2019.netlify.app — Modules</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-navbar">
+            <div class="mpb-logo">MPB</div>
+            <div style="display:flex;gap:12px">
+              <span style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600">📚 <span id="nav-modules">Modules</span></span>
+              <span style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600">📤 <span id="nav-travaux">Travaux</span></span>
+              <span style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600">💬 <span id="nav-messages">Messages</span></span>
+            </div>
+          </div>
+          <div class="mpb-screen">
+            <p id="s5-title" style="font-size:12px;font-weight:700;color:#0f1f3d;margin-bottom:8px">Choisissez un logiciel :</p>
+            <div class="module-row">
+              <div class="module-card selected"><span class="mod-icon">📝</span> Word</div>
+              <div class="module-card"><span class="mod-icon">📊</span> Excel</div>
+              <div class="module-card"><span class="mod-icon">📽️</span> PowerPoint</div>
+              <div class="module-card"><span class="mod-icon">📰</span> Publisher</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 6 — QCM ════ -->
+    <div class="scene" id="s6">
+      <div class="mock-browser" style="width:80%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar" id="s6-url">Exercice QCM · Word A2</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-screen">
+            <div class="quiz-card">
+              <div class="quiz-prog" id="s6-prog">Question 2 / 5 — Word A2</div>
+              <div class="quiz-q" id="s6-q">Comment mettre un texte en <strong>gras</strong> dans Word ?</div>
+              <div class="quiz-options">
+                <div class="quiz-opt" id="qo1">Appuyer sur F5</div>
+                <div class="quiz-opt correct" id="qo2" style="display:none">✅ <span id="s6-correct-text">Appuyer sur Ctrl+G</span></div>
+                <div class="quiz-opt" id="qo3" id="s6-opt3">Fichier → Format</div>
+              </div>
+              <div class="success-banner" id="quiz-success" style="display:none">
+                🎉 <span id="s6-bravo">Bravo ! Bonne réponse !</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 7 — CAS PRATIQUE ════ -->
+    <div class="scene" id="s7">
+      <div class="mock-browser" style="width:82%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar" id="s7-url">Cas pratique — Word A2</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-screen" style="font-size:11px;">
+            <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:7px;padding:9px 11px;margin-bottom:8px">
+              <strong id="s7-title">📋 Cas pratique — Word A2</strong><br>
+              <span id="s7-desc" style="color:#4a5568">Créez une lettre de motivation simple.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid #dde3ee;border-radius:6px;padding:7px 10px">
+                <span style="color:#16a34a;font-size:13px">✅</span>
+                <span id="step1-text" style="color:#4a5568;text-decoration:line-through">Ouvrir Microsoft Word</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid #dde3ee;border-radius:6px;padding:7px 10px">
+                <span style="color:#16a34a;font-size:13px">✅</span>
+                <span id="step2-text" style="color:#4a5568;text-decoration:line-through">Taper votre nom en haut</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#e6f7f4;border:2px solid #0d7d6b;border-radius:6px;padding:7px 10px">
+                <span>⬜</span>
+                <span id="step3-text" style="color:#0f1f3d;font-weight:700">Écrire l'objet en gras</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid #dde3ee;border-radius:6px;padding:7px 10px;opacity:0.5">
+                <span>⬜</span>
+                <span id="step4-text" style="color:#4a5568">Enregistrer le fichier</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 8 — SUBMIT ════ -->
+    <div class="scene" id="s8">
+      <div class="mock-browser" style="width:72%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar" id="s8-url">Mes Travaux</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-screen">
+            <p id="s8-title" style="font-size:13px;font-weight:800;color:#0f1f3d;margin-bottom:8px">📤 Déposer mon travail</p>
+            <div class="submit-form">
+              <div class="fake-input filled" style="background:#f7f8fc;font-size:10px;margin-bottom:8px" id="s8-exercise">Cas pratique — Word A2 · Lettre de motivation</div>
+              <div class="upload-zone">
+                <div class="uz-icon">📎</div>
+                <p id="s8-filename">lettre_motivation_marie.docx</p>
+                <small id="s8-ok">✓ Fichier sélectionné</small>
+              </div>
+              <button class="mpb-btn primary pulse" style="width:100%;font-size:11px" id="s8-btn">📤 Envoyer au formateur</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 9 — PROGRESSION ════ -->
+    <div class="scene" id="s9">
+      <div class="mock-browser" style="width:78%">
+        <div class="browser-bar">
+          <div class="btr r"></div><div class="btr y"></div><div class="btr g"></div>
+          <div class="url-bar" id="s9-url">Ma Progression</div>
+        </div>
+        <div class="browser-content">
+          <div class="mpb-screen">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <div style="width:36px;height:36px;background:#0d7d6b;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:16px">M</div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#0f1f3d">Marie Dupont</div>
+                <div style="font-size:10px;color:#0d7d6b;font-weight:700" id="s9-level">Niveau A2 · 3 exercices complétés</div>
+              </div>
+            </div>
+            <div class="prog-card" style="padding:12px">
+              <div class="prog-item">
+                <div class="prog-label"><span>📝 Word</span><span>65%</span></div>
+                <div class="prog-bar-bg"><div class="prog-bar-fill w" id="pb-w" style="width:0%"></div></div>
+              </div>
+              <div class="prog-item">
+                <div class="prog-label"><span>📊 Excel</span><span>30%</span></div>
+                <div class="prog-bar-bg"><div class="prog-bar-fill e" id="pb-e" style="width:0%"></div></div>
+              </div>
+              <div class="prog-item" style="margin-bottom:0">
+                <div class="prog-label"><span>📽️ PowerPoint</span><span>10%</span></div>
+                <div class="prog-bar-bg"><div class="prog-bar-fill p" id="pb-p" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SCENE 10 — OUTRO ════ -->
+    <div class="scene" id="s10">
+      <div class="outro-screen">
+        <div class="big-check" id="outro-icon">🎉</div>
+        <h2 id="outro-title">Vous êtes prêt(e) !</h2>
+        <p id="outro-body">Vous savez maintenant utiliser Ma Plateforme Bureautique. Bonne formation !</p>
+        <button class="replay-btn" onclick="restart()" id="replay-btn">↺ Revoir le tutoriel</button>
+      </div>
+    </div>
+
+  </div><!-- /viewport -->
+
+  <!-- Caption -->
+  <div class="caption-bar">
+    <span class="caption-icon" id="captionIcon">🌍</span>
+    <div class="caption-text" id="captionText">Choisissez votre langue pour commencer · Choose your language to start</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn" onclick="prevScene()">◀</button>
+    <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()" disabled>▶ Démarrer</button>
+    <button class="ctrl-btn" onclick="nextScene()">▶</button>
+    <div class="ctrl-spacer"></div>
+    <div class="lang-pill" id="langPill" style="display:none"></div>
+    <button class="ctrl-btn lang-btn-ctrl" onclick="changeLang()" id="changeLangBtn" style="display:none">🌍</button>
+    <div class="step-indicator" id="stepIndicator">— / —</div>
+  </div>
+</div>
+
+<script>
+// ── TRANSLATIONS ──────────────────────────────────────────────────────
+const T = {
+  fr: {
+    flag: '🇫🇷', name: 'Français',
+    play: '▶ Démarrer', pause: '⏸ Pause', resume: '▶ Reprendre', replay: '↺ Rejouer',
+    step: 'Étape',
+    scenes: [
+      { icon:'🌍', text:'Choisissez votre langue pour commencer.' },
+      { icon:'🎬', text:'Bienvenue sur <span class="kw">Ma Plateforme Bureautique</span> ! Ce tutoriel vous guide pas à pas.', dur:4000 },
+      { icon:'🖱️', text:'Allez sur le site et cliquez sur <span class="kw">Stagiaire</span> — pas sur Formateur, c\'est réservé à votre enseignant.', dur:5000, action:'animLogin' },
+      { icon:'✏️', text:'La première fois, créez votre compte : prénom, <span class="kw">nom d\'utilisateur</span> et <span class="kw">mot de passe</span>.', dur:5000 },
+      { icon:'📊', text:'Choisissez votre <span class="kw">niveau CECRL</span>. Si vous débutez, cliquez sur <span class="kw">A1</span> ou <span class="kw">A2</span>.', dur:5000 },
+      { icon:'📚', text:'Choisissez un <span class="kw">module</span> : Word, Excel, PowerPoint ou Publisher.', dur:4500 },
+      { icon:'🧩', text:'Dans un <span class="kw">QCM</span>, lisez la question et cliquez votre réponse. La correction s\'affiche immédiatement.', dur:5500, action:'animQuiz' },
+      { icon:'🛠️', text:'Dans un <span class="kw">cas pratique</span>, suivez les étapes numérotées et cochez chaque point réalisé.', dur:5000 },
+      { icon:'📤', text:'Quand c\'est fini, cliquez sur <span class="kw">Déposer mon travail</span> pour envoyer votre fichier au formateur.', dur:5000 },
+      { icon:'📈', text:'Dans <span class="kw">Ma Progression</span>, vous suivez votre avancement module par module.', dur:4500, action:'animProgress' },
+      { icon:'🎉', text:'<span class="kw">Bravo !</span> Vous savez maintenant utiliser la plateforme. Bonne formation !', dur:4000 },
+    ],
+    ui: {
+      'intro-title':'Bienvenue sur MPB !', 'intro-body':'Ce tutoriel vous guide pour apprendre Word, Excel, PowerPoint et Publisher.',
+      's2-sub':'Choisissez votre profil pour commencer','s2-formateur':'Formateur','s2-stagiaire':'Stagiaire',
+      's3-title':'🎓 Créer un compte','s3-f1':'Marie','s3-f2':'marie_2024','s3-btn':'✓ Créer mon compte',
+      's4-title':'📊 Choisissez votre niveau CECRL :','lv-a1-n':'Débutant total','lv-a2-n':'Débutant','lv-b1-n':'Intermédiaire','lv-b2-n':'Interm. avancé','lv-c1-n':'Avancé','lv-c2-n':'Expert',
+      's5-title':'Choisissez un logiciel :','nav-modules':'Modules','nav-travaux':'Travaux','nav-messages':'Messages',
+      's6-prog':'Question 2 / 5','s6-q':'Comment mettre un texte en <strong>gras</strong> dans Word ?','s6-correct-text':'Appuyer sur Ctrl+G','s6-bravo':'Bravo ! Bonne réponse !',
+      's7-title':'📋 Cas pratique — Word A2','s7-desc':'Créez une lettre de motivation simple.',
+      'step1-text':'Ouvrir Microsoft Word','step2-text':'Taper votre nom en haut','step3-text':'Écrire l\'objet en gras','step4-text':'Enregistrer le fichier',
+      's8-title':'📤 Déposer mon travail','s8-filename':'lettre_marie.docx','s8-ok':'✓ Fichier sélectionné','s8-btn':'📤 Envoyer au formateur',
+      's9-url':'Ma Progression','s9-level':'Niveau A2 · 3 exercices complétés',
+      'outro-title':'Vous êtes prêt(e) !','outro-body':'Vous savez maintenant utiliser Ma Plateforme Bureautique. Bonne formation !','replay-btn':'↺ Revoir','outro-icon':'🎉',
+    }
+  },
+  en: {
+    flag: '🇬🇧', name: 'English',
+    play: '▶ Start', pause: '⏸ Pause', resume: '▶ Resume', replay: '↺ Replay',
+    step: 'Step',
+    scenes: [
+      { icon:'🌍', text:'Choose your language to start.' },
+      { icon:'🎬', text:'Welcome to <span class="kw">Ma Plateforme Bureautique</span>! This tutorial will guide you step by step.', dur:4000 },
+      { icon:'🖱️', text:'Go to the website and click <span class="kw">Stagiaire</span> — that means Learner. Do NOT click Formateur (that\'s for your trainer).', dur:5500, action:'animLogin' },
+      { icon:'✏️', text:'First time? Create your account: enter your name, a <span class="kw">username</span> and a <span class="kw">password</span>.', dur:5000 },
+      { icon:'📊', text:'Choose your level. <span class="kw">A1</span> = complete beginner. <span class="kw">A2</span> = basic user. Start low if unsure!', dur:5000 },
+      { icon:'📚', text:'Choose a <span class="kw">module</span>: Word, Excel, PowerPoint or Publisher.', dur:4500 },
+      { icon:'🧩', text:'A <span class="kw">QCM</span> is a multiple-choice quiz. Read the question and click your answer. The correct answer appears straight away.', dur:5500, action:'animQuiz' },
+      { icon:'🛠️', text:'A <span class="kw">cas pratique</span> is a practical exercise. Follow the numbered steps and tick each one as you complete it.', dur:5000 },
+      { icon:'📤', text:'When done, click <span class="kw">Déposer mon travail</span> (= Submit my work) to send your file to your trainer.', dur:5000 },
+      { icon:'📈', text:'In <span class="kw">Ma Progression</span> (= My Progress), you can track your advancement module by module.', dur:4500, action:'animProgress' },
+      { icon:'🎉', text:'<span class="kw">Well done!</span> You now know how to use Ma Plateforme Bureautique. Good luck with your training!', dur:4000 },
+    ],
+    ui: {
+      'intro-title':'Welcome to MPB!', 'intro-body':'This tutorial guides you to learn Word, Excel, PowerPoint and Publisher.',
+      's2-sub':'Choose your profile to start','s2-formateur':'Formateur (Trainer)','s2-stagiaire':'Stagiaire (YOU)',
+      's3-title':'🎓 Create an account','s3-f1':'Alex','s3-f2':'alex_learner','s3-btn':'✓ Create my account',
+      's4-title':'📊 Choose your level:','lv-a1-n':'Beginner','lv-a2-n':'Basic','lv-b1-n':'Intermediate','lv-b2-n':'Upper int.','lv-c1-n':'Advanced','lv-c2-n':'Expert',
+      's5-title':'Choose a software:','nav-modules':'Modules','nav-travaux':'My Work','nav-messages':'Messages',
+      's6-prog':'Question 2 / 5','s6-q':'How do you make text <strong>bold</strong> in Word?','s6-correct-text':'Press Ctrl+B (= Ctrl+G in French)','s6-bravo':'Well done! Correct answer!',
+      's7-title':'📋 Practical exercise — Word A2','s7-desc':'Create a simple cover letter.',
+      'step1-text':'Open Microsoft Word','step2-text':'Type your name at the top','step3-text':'Write the subject in bold','step4-text':'Save the file',
+      's8-title':'📤 Submit my work','s8-filename':'cover_letter_alex.docx','s8-ok':'✓ File selected','s8-btn':'📤 Send to trainer',
+      's9-url':'My Progress','s9-level':'Level A2 · 3 exercises completed',
+      'outro-title':'You\'re ready!','outro-body':'You now know how to use Ma Plateforme Bureautique. Good luck!','replay-btn':'↺ Watch again','outro-icon':'🎉',
+    }
+  },
+  ar: {
+    flag: '🇲🇦', name: 'العربية', rtl: true,
+    play: '▶ ابدأ', pause: '⏸ إيقاف', resume: '▶ استمرار', replay: '↺ إعادة',
+    step: 'خطوة',
+    scenes: [
+      { icon:'🌍', text:'اختر لغتك للبدء.' },
+      { icon:'🎬', text:'مرحباً بك في <span class="kw">منصة المكتبية</span>! سيرشدك هذا الدرس خطوة بخطوة.', dur:4000 },
+      { icon:'🖱️', text:'اذهب إلى الموقع وانقر على <span class="kw">Stagiaire</span> — أي "متدرب". لا تنقر على Formateur، ذلك للمدرب.', dur:5500, action:'animLogin' },
+      { icon:'✏️', text:'أول مرة؟ أنشئ حسابك: أدخل اسمك و<span class="kw">اسم المستخدم</span> و<span class="kw">كلمة المرور</span>.', dur:5000 },
+      { icon:'📊', text:'اختر <span class="kw">مستواك</span>. A1 = مبتدئ كلياً. A2 = مستخدم أساسي. ابدأ من الأدنى إن لم تكن متأكداً!', dur:5000 },
+      { icon:'📚', text:'اختر <span class="kw">البرنامج</span>: Word أو Excel أو PowerPoint أو Publisher.', dur:4500 },
+      { icon:'🧩', text:'<span class="kw">QCM</span> هو اختبار من متعدد. اقرأ السؤال وانقر على إجابتك. تظهر الإجابة الصحيحة فوراً.', dur:5500, action:'animQuiz' },
+      { icon:'🛠️', text:'<span class="kw">التمرين العملي</span>: اتبع الخطوات المرقمة وضع علامة على كل خطوة منجزة.', dur:5000 },
+      { icon:'📤', text:'عند الانتهاء، انقر على <span class="kw">إرسال عملي</span> لإرسال ملفك إلى المدرب.', dur:5000 },
+      { icon:'📈', text:'في <span class="kw">تقدمي</span> يمكنك متابعة تطورك في كل برنامج.', dur:4500, action:'animProgress' },
+      { icon:'🎉', text:'<span class="kw">أحسنت!</span> أنت الآن تعرف كيف تستخدم المنصة. حظاً موفقاً في تدريبك!', dur:4000 },
+    ],
+    ui: {
+      'intro-title':'مرحباً بك في MPB!', 'intro-body':'سيرشدك هذا الدرس لتعلم Word وExcel وPowerPoint وPublisher.',
+      's2-sub':'اختر ملفك الشخصي للبدء','s2-formateur':'Formateur (المدرب)','s2-stagiaire':'Stagiaire (أنت)',
+      's3-title':'🎓 إنشاء حساب','s3-f1':'أحمد','s3-f2':'ahmed_2024','s3-btn':'✓ إنشاء الحساب',
+      's4-title':'📊 اختر مستواك:','lv-a1-n':'مبتدئ تماماً','lv-a2-n':'مبتدئ','lv-b1-n':'متوسط','lv-b2-n':'متوسط متقدم','lv-c1-n':'متقدم','lv-c2-n':'خبير',
+      's5-title':'اختر برنامجاً:','nav-modules':'الوحدات','nav-travaux':'أعمالي','nav-messages':'الرسائل',
+      's6-prog':'سؤال 2 / 5','s6-q':'كيف تجعل النص <strong>غامقاً</strong> في Word؟','s6-correct-text':'اضغط Ctrl+G','s6-bravo':'أحسنت! إجابة صحيحة!',
+      's7-title':'📋 تمرين عملي — Word A2','s7-desc':'أنشئ رسالة تقديم بسيطة.',
+      'step1-text':'فتح Microsoft Word','step2-text':'اكتب اسمك في الأعلى','step3-text':'اكتب الموضوع بالخط العريض','step4-text':'احفظ الملف',
+      's8-title':'📤 تسليم عملي','s8-filename':'رسالة_أحمد.docx','s8-ok':'✓ تم اختيار الملف','s8-btn':'📤 إرسال إلى المدرب',
+      's9-url':'تقدمي','s9-level':'المستوى A2 · 3 تمارين مكتملة',
+      'outro-title':'أنت مستعد!','outro-body':'أنت الآن تعرف كيف تستخدم المنصة. حظاً موفقاً!','replay-btn':'↺ مشاهدة مجدداً','outro-icon':'🎉',
+    }
+  },
+  pt: {
+    flag: '🇵🇹', name: 'Português',
+    play: '▶ Começar', pause: '⏸ Pausa', resume: '▶ Retomar', replay: '↺ Rever',
+    step: 'Passo',
+    scenes: [
+      { icon:'🌍', text:'Escolha o seu idioma para começar.' },
+      { icon:'🎬', text:'Bem-vindo(a) à <span class="kw">Ma Plateforme Bureautique</span>! Este tutorial guia-o(a) passo a passo.', dur:4000 },
+      { icon:'🖱️', text:'Aceda ao site e clique em <span class="kw">Stagiaire</span> — significa Aprendiz. NÃO clique em Formateur (é para o formador).', dur:5500, action:'animLogin' },
+      { icon:'✏️', text:'Primeira vez? Crie a sua conta: nome, <span class="kw">nome de utilizador</span> e <span class="kw">palavra-passe</span>.', dur:5000 },
+      { icon:'📊', text:'Escolha o seu <span class="kw">nível</span>. A1 = principiante total. Se não tiver certeza, comece pelo A1!', dur:5000 },
+      { icon:'📚', text:'Escolha um <span class="kw">módulo</span>: Word, Excel, PowerPoint ou Publisher.', dur:4500 },
+      { icon:'🧩', text:'Um <span class="kw">QCM</span> é um quiz de escolha múltipla. Leia a pergunta e clique na sua resposta.', dur:5500, action:'animQuiz' },
+      { icon:'🛠️', text:'Um <span class="kw">exercício prático</span>: siga os passos numerados e assinale cada um ao concluí-lo.', dur:5000 },
+      { icon:'📤', text:'Quando terminar, clique em <span class="kw">Entregar o trabalho</span> para enviar o ficheiro ao formador.', dur:5000 },
+      { icon:'📈', text:'Em <span class="kw">O meu progresso</span>, acompanhe o seu avanço módulo a módulo.', dur:4500, action:'animProgress' },
+      { icon:'🎉', text:'<span class="kw">Parabéns!</span> Agora sabe usar a plataforma. Boa formação!', dur:4000 },
+    ],
+    ui: {
+      'intro-title':'Bem-vindo(a) ao MPB!', 'intro-body':'Este tutorial guia-o(a) para aprender Word, Excel, PowerPoint e Publisher.',
+      's2-sub':'Escolha o seu perfil para começar','s2-formateur':'Formateur (Formador)','s2-stagiaire':'Stagiaire (VOCÊ)',
+      's3-title':'🎓 Criar conta','s3-f1':'Maria','s3-f2':'maria_2024','s3-btn':'✓ Criar a minha conta',
+      's4-title':'📊 Escolha o seu nível:','lv-a1-n':'Principiante','lv-a2-n':'Básico','lv-b1-n':'Intermédio','lv-b2-n':'Int. avançado','lv-c1-n':'Avançado','lv-c2-n':'Especialista',
+      's5-title':'Escolha um software:','nav-modules':'Módulos','nav-travaux':'Os meus trabalhos','nav-messages':'Mensagens',
+      's6-prog':'Pergunta 2 / 5','s6-q':'Como colocar o texto a <strong>negrito</strong> no Word?','s6-correct-text':'Pressionar Ctrl+N (= Ctrl+G em francês)','s6-bravo':'Muito bem! Resposta certa!',
+      's7-title':'📋 Exercício prático — Word A2','s7-desc':'Crie uma carta de apresentação simples.',
+      'step1-text':'Abrir o Microsoft Word','step2-text':'Escrever o seu nome em cima','step3-text':'Escrever o assunto a negrito','step4-text':'Guardar o ficheiro',
+      's8-title':'📤 Entregar o meu trabalho','s8-filename':'carta_maria.docx','s8-ok':'✓ Ficheiro selecionado','s8-btn':'📤 Enviar ao formador',
+      's9-url':'O meu progresso','s9-level':'Nível A2 · 3 exercícios concluídos',
+      'outro-title':'Está pronto(a)!','outro-body':'Agora sabe usar a plataforma. Boa formação!','replay-btn':'↺ Ver de novo','outro-icon':'🎉',
+    }
+  },
+  es: {
+    flag: '🇪🇸', name: 'Español',
+    play: '▶ Empezar', pause: '⏸ Pausa', resume: '▶ Reanudar', replay: '↺ Repetir',
+    step: 'Paso',
+    scenes: [
+      { icon:'🌍', text:'Elige tu idioma para empezar.' },
+      { icon:'🎬', text:'¡Bienvenido(a) a <span class="kw">Ma Plateforme Bureautique</span>! Este tutorial te guiará paso a paso.', dur:4000 },
+      { icon:'🖱️', text:'Ve al sitio web y haz clic en <span class="kw">Stagiaire</span> — significa Alumno. NO hagas clic en Formateur (es para tu formador).', dur:5500, action:'animLogin' },
+      { icon:'✏️', text:'¿Primera vez? Crea tu cuenta: nombre, <span class="kw">nombre de usuario</span> y <span class="kw">contraseña</span>.', dur:5000 },
+      { icon:'📊', text:'Elige tu <span class="kw">nivel</span>. A1 = principiante total. ¡Empieza bajo si no estás seguro(a)!', dur:5000 },
+      { icon:'📚', text:'Elige un <span class="kw">módulo</span>: Word, Excel, PowerPoint o Publisher.', dur:4500 },
+      { icon:'🧩', text:'Un <span class="kw">QCM</span> es un cuestionario de opción múltiple. Lee la pregunta y haz clic en tu respuesta.', dur:5500, action:'animQuiz' },
+      { icon:'🛠️', text:'Un <span class="kw">caso práctico</span>: sigue los pasos numerados y marca cada uno al completarlo.', dur:5000 },
+      { icon:'📤', text:'Cuando termines, haz clic en <span class="kw">Entregar mi trabajo</span> para enviar tu archivo al formador.', dur:5000 },
+      { icon:'📈', text:'En <span class="kw">Mi progreso</span>, puedes ver tu avance módulo por módulo.', dur:4500, action:'animProgress' },
+      { icon:'🎉', text:'<span class="kw">¡Felicidades!</span> Ya sabes cómo usar la plataforma. ¡Buena formación!', dur:4000 },
+    ],
+    ui: {
+      'intro-title':'¡Bienvenido(a) a MPB!', 'intro-body':'Este tutorial te enseña a usar Word, Excel, PowerPoint y Publisher.',
+      's2-sub':'Elige tu perfil para empezar','s2-formateur':'Formateur (Formador)','s2-stagiaire':'Stagiaire (TÚ)',
+      's3-title':'🎓 Crear cuenta','s3-f1':'María','s3-f2':'maria_2024','s3-btn':'✓ Crear mi cuenta',
+      's4-title':'📊 Elige tu nivel:','lv-a1-n':'Principiante','lv-a2-n':'Básico','lv-b1-n':'Intermedio','lv-b2-n':'Int. avanzado','lv-c1-n':'Avanzado','lv-c2-n':'Experto',
+      's5-title':'Elige un software:','nav-modules':'Módulos','nav-travaux':'Mis trabajos','nav-messages':'Mensajes',
+      's6-prog':'Pregunta 2 / 5','s6-q':'¿Cómo poner un texto en <strong>negrita</strong> en Word?','s6-correct-text':'Presionar Ctrl+N (= Ctrl+G en francés)','s6-bravo':'¡Muy bien! ¡Respuesta correcta!',
+      's7-title':'📋 Caso práctico — Word A2','s7-desc':'Crea una carta de presentación simple.',
+      'step1-text':'Abrir Microsoft Word','step2-text':'Escribe tu nombre arriba','step3-text':'Escribe el asunto en negrita','step4-text':'Guardar el archivo',
+      's8-title':'📤 Entregar mi trabajo','s8-filename':'carta_maria.docx','s8-ok':'✓ Archivo seleccionado','s8-btn':'📤 Enviar al formador',
+      's9-url':'Mi progreso','s9-level':'Nivel A2 · 3 ejercicios completados',
+      'outro-title':'¡Estás listo(a)!','outro-body':'Ya sabes usar la plataforma. ¡Buena formación!','replay-btn':'↺ Ver de nuevo','outro-icon':'🎉',
+    }
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let lang = null, current = 0, playing = false, timer = null;
+const TOTAL_SCENES = 11; // 0=lang, 1=intro, 2-10=content
+
+function selectLang(l, el) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('startLangBtn');
+  const t = T[l];
+  btn.textContent = (l === 'ar') ? '→ ابدأ الدرس' : (l === 'pt') ? '→ Começar o tutorial' : (l === 'es') ? '→ Empezar el tutorial' : (l === 'en') ? '→ Start the tutorial' : '→ Démarrer le tutoriel';
+  btn.classList.add('visible');
+}
+
+function launchTutorial() {
+  if (!lang) return;
+  applyLanguage();
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('playBtn').textContent = T[lang].play;
+  document.getElementById('changeLangBtn').style.display = 'flex';
+  document.getElementById('langPill').style.display = 'flex';
+  document.getElementById('langPill').textContent = T[lang].flag + ' ' + T[lang].name;
+  goTo(1);
+}
+
+function applyLanguage() {
+  const t = T[lang];
+  // Apply all UI strings
+  Object.entries(t.ui).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = val;
+  });
+  // RTL
+  document.getElementById('captionText').className = 'caption-text' + (t.rtl ? ' rtl' : '');
+  // replay button text
+  document.getElementById('replay-btn').textContent = t.replay;
+}
+
+function buildDots() {
+  const c = document.getElementById('sceneDots');
+  c.innerHTML = '';
+  for (let i = 1; i < TOTAL_SCENES; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === current ? ' active' : '');
+    d.onclick = () => { if (lang) { stopPlay(); goTo(i); } };
+    c.appendChild(d);
+  }
+}
+
+function goTo(n) {
+  if (n < 0 || n >= TOTAL_SCENES) return;
+  document.getElementById('s' + current).classList.remove('active');
+  current = n;
+  document.getElementById('s' + current).classList.add('active');
+  updateUI();
+  handleSceneAction();
+  if (n === 9) triggerProgress();
+}
+
+function updateUI() {
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    const sn = i + 1;
+    d.className = 'dot' + (sn === current ? ' active' : sn < current ? ' done' : '');
+  });
+  if (!lang) return;
+  const t = T[lang];
+  const sc = t.scenes[current];
+  if (sc) {
+    document.getElementById('captionIcon').textContent = sc.icon;
+    document.getElementById('captionText').innerHTML = sc.text;
+  }
+  document.getElementById('sceneLabel').textContent = current === 0 ? '—' : `${t.step} ${current} / ${TOTAL_SCENES - 1}`;
+  document.getElementById('stepIndicator').textContent = current === 0 ? '— / —' : `${current} / ${TOTAL_SCENES - 1}`;
+  document.getElementById('progressFill').style.width = current === 0 ? '0%' : ((current / (TOTAL_SCENES - 1)) * 100) + '%';
+}
+
+function handleSceneAction() {
+  if (!lang) return;
+  const sc = T[lang].scenes[current];
+  if (!sc || !sc.action) return;
+  if (sc.action === 'animLogin') animLogin();
+  if (sc.action === 'animQuiz') animQuiz();
+  if (sc.action === 'animProgress') triggerProgress();
+}
+
+function animLogin() {
+  const vp = document.getElementById('viewport');
+  const btn = document.getElementById('btn-stagiaire');
+  const cursor = document.getElementById('cursor2');
+  const ring = document.getElementById('ring2');
+  if (!btn || !cursor) return;
+  const vpR = vp.getBoundingClientRect();
+  const btnR = btn.getBoundingClientRect();
+  const cx = btnR.left - vpR.left + btnR.width / 2 - 10;
+  const cy = btnR.top - vpR.top + btnR.height / 2 - 10;
+  cursor.style.display = 'block'; cursor.style.position = 'absolute';
+  cursor.style.left = '20%'; cursor.style.top = '40%';
+  ring.style.display = 'block';
+  ring.style.left = (btnR.left - vpR.left - 4) + 'px';
+  ring.style.top = (btnR.top - vpR.top - 4) + 'px';
+  ring.style.width = (btnR.width + 8) + 'px';
+  ring.style.height = (btnR.height + 8) + 'px';
+  setTimeout(() => {
+    cursor.style.left = cx + 'px'; cursor.style.top = cy + 'px';
+    setTimeout(() => cursor.classList.add('clicking'), 700);
+    setTimeout(() => cursor.classList.remove('clicking'), 1000);
+  }, 400);
+}
+
+function animQuiz() {
+  const s = document.getElementById('quiz-success');
+  const o2 = document.getElementById('qo2');
+  if (s) s.style.display = 'none';
+  if (o2) { o2.style.display = 'none'; o2.classList.remove('correct'); }
+  setTimeout(() => {
+    if (o2) { o2.style.display = 'block'; o2.classList.add('correct'); }
+    setTimeout(() => { if (s) s.style.display = 'flex'; }, 800);
+  }, 1500);
+}
+
+function triggerProgress() {
+  setTimeout(() => {
+    const pw = document.getElementById('pb-w');
+    const pe = document.getElementById('pb-e');
+    const pp = document.getElementById('pb-p');
+    if (pw) pw.style.width = '65%';
+    if (pe) pe.style.width = '30%';
+    if (pp) pp.style.width = '10%';
+  }, 400);
+}
+
+function togglePlay() { playing ? stopPlay() : startPlay(); }
+function startPlay() {
+  playing = true;
+  document.getElementById('playBtn').textContent = T[lang].pause;
+  scheduleNext();
+}
+function stopPlay() {
+  playing = false; clearTimeout(timer);
+  document.getElementById('playBtn').textContent = T[lang].resume;
+}
+function scheduleNext() {
+  if (!playing) return;
+  const sc = T[lang].scenes[current];
+  const dur = sc && sc.dur ? sc.dur : 4000;
+  timer = setTimeout(() => {
+    if (current < TOTAL_SCENES - 1) { goTo(current + 1); scheduleNext(); }
+    else { playing = false; document.getElementById('playBtn').textContent = T[lang].replay; }
+  }, dur);
+}
+function nextScene() { if (!lang) return; stopPlay(); if (current < TOTAL_SCENES - 1) goTo(current + 1); }
+function prevScene() { if (!lang) return; stopPlay(); if (current > 1) goTo(current - 1); }
+function restart() { stopPlay(); goTo(1); document.getElementById('playBtn').textContent = T[lang].play; }
+function changeLang() {
+  stopPlay();
+  goTo(0);
+  lang = null;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('startLangBtn').classList.remove('visible');
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('changeLangBtn').style.display = 'none';
+  document.getElementById('langPill').style.display = 'none';
+  document.getElementById('captionIcon').textContent = '🌍';
+  document.getElementById('captionText').innerHTML = 'Choisissez votre langue pour commencer · Choose your language to start';
+  document.getElementById('captionText').className = 'caption-text';
+  document.getElementById('sceneLabel').textContent = '—';
+  document.getElementById('stepIndicator').textContent = '— / —';
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+buildDots();
+</script>
+</body>
+</html>
