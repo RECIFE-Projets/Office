@@ -363,27 +363,40 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <button class="auth-tab" onclick="authTab('login',this)">Connexion</button>
     </div>
     <div class="auth-panel" id="apLogin" style="display:none">
-      <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')loginAs(null)"></div>
+      <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('lMdp').focus()"></div>
       <div class="fg"><label class="fl">Mot de passe</label>
-        <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe" onkeydown="if(event.key==='Enter')loginAs(null)"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
+        <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe" onkeydown="if(event.key==='Enter')loginAs(S._loginRole||null)"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
       </div>
       <div id="lErr" class="f-err hidden"></div>
-      <button type="button" class="btn btn-primary w100 mt2" onclick="loginAs(null)" id="btnLogin" style="font-size:16px;padding:12px">
-        🔓 Se connecter
-      </button>
-      <div class="flex gap2 mt2" style="justify-content:center">
-        <span style="font-size:12px;color:var(--text3)">Ou connectez-vous en tant que :</span>
+
+      <!-- ÉTAPE 1 : Choisir son rôle -->
+      <div style="margin-top:14px;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px">1. Je suis :</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button class="btn btn-outline btn-full role-btn" id="roleBtn_stagiaire" style="padding:12px;border-width:2px" onclick="selectLoginRole('stagiaire',this)">🎓 Stagiaire</button>
+          <button class="btn btn-outline btn-full role-btn" id="roleBtn_formateur" style="padding:12px;border-width:2px" onclick="selectLoginRole('formateur',this)">👨‍🏫 Formateur</button>
+        </div>
       </div>
-      <div style="margin-top:8px">
-        <button type="button" class="btn btn-ghost btn-sm" style="font-size:12px;padding:4px 10px" onclick="showForgotHelp()">
-          🔑 J'ai oublié mes codes →
+
+      <!-- ÉTAPE 2 : Se connecter (activé après choix du rôle) -->
+      <div style="margin-top:6px;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px">2. Je me connecte :</div>
+        <button type="button" class="btn btn-primary w100" id="btnLogin" onclick="loginAs(S._loginRole||null)" style="font-size:15px;padding:12px;opacity:.45;cursor:not-allowed" disabled>
+          🔓 Se connecter
         </button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
-        <button class="btn btn-primary btn-full" style="padding:13px" onclick="loginAs('stagiaire')">🎓 Stagiaire</button>
-        <button class="btn btn-outline btn-full" style="padding:13px" onclick="loginAs('formateur')">👨‍🏫 Formateur</button>
+
+      <div style="margin-top:10px;text-align:center">
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:12px" onclick="showForgotHelp()">🔑 J'ai oublié mes codes →</button>
       </div>
-      <p class="muted tc" style="margin-top:12px">💡 Démo (sans compte) : cliquez sur un bouton<br><small style="color:var(--danger)">Données non sauvegardées en mode démo</small></p>
+
+      <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+        <p class="muted tc" style="margin-bottom:0;font-size:12px">💡 <b>Démo sans compte</b> : cliquez directement sur Stagiaire ou Formateur<br><small style="color:var(--danger)">Données non sauvegardées en mode démo</small></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="loginAs('stagiaire')">🎓 Démo Stagiaire</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="loginAs('formateur')">👨‍🏫 Démo Formateur</button>
+        </div>
+      </div>
     </div>
     <div class="auth-panel" id="apRegister">
       <div class="f2">
@@ -1382,6 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── AUTH ──────────────────────────────────────
 function authTab(tab, el) {
+  if (tab === 'login') { S._loginRole = null; }
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   // FIX: simple, direct panel switching
@@ -1389,6 +1403,21 @@ function authTab(tab, el) {
   document.getElementById('apLogin').classList.toggle('active', tab === 'login');
   document.getElementById('apRegister').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('apRegister').classList.toggle('active', tab === 'register');
+}
+
+function selectLoginRole(role, btn) {
+  S._loginRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => {
+    b.classList.remove('btn-primary'); b.classList.add('btn-outline'); b.style.opacity='0.7';
+  });
+  btn.classList.remove('btn-outline'); btn.classList.add('btn-primary'); btn.style.opacity='1';
+  const loginBtn = document.getElementById('btnLogin');
+  if (loginBtn) {
+    loginBtn.disabled = false; loginBtn.style.opacity='1'; loginBtn.style.cursor='pointer';
+    loginBtn.innerHTML = '🔓 Se connecter en tant que ' + (role==='stagiaire' ? 'Stagiaire' : 'Formateur');
+  }
+  const mdpField = document.getElementById('lMdp');
+  if (mdpField) mdpField.onkeydown = e => { if(e.key==='Enter') loginAs(role); };
 }
 
 function showForgotHelp() {
@@ -4332,4 +4361,3 @@ function toast(msg, dur = 3000) {
 
   <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--text3);pointer-events:none;z-index:50" id="lsIndicator">💾 Local</div></body>
 </html>
-<script src="welcome_modal.js"></script>
