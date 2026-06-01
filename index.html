@@ -1549,39 +1549,64 @@ function doRegister(btn) {
   if (btn && btn.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Création…'; }
   const _reEnable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; } };
-  try { _doRegisterWork(btn, _reEnable); } catch(e) { _reEnable(); console.error('Register error:',e); toast('⚠️ Erreur. Réessayez.'); }
+  try { _doRegisterWork(btn, _reEnable); } catch(e) { if(typeof _reEnable==='function') _reEnable(); console.error('Register error:',e); toast('⚠️ Erreur inscription. Réessayez.'); }
 }
 
 function _doRegisterWork(btn, _reEnable) {
   const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp'),
     emailConf = val('rEmailConf'), mdpConf = val('rMdpConf');
   const err = document.getElementById('rErr');
-  // _reEnable injected from doRegister wrapper — called on all error paths
-  if (emailConf && email !== emailConf) { showErr(err, '⚠️ Les e-mails ne correspondent pas.'); return; }
-  if (mdpConf && mdp !== mdpConf) { showErr(err, '⚠️ Les mots de passe ne correspondent pas.'); return; }
-  if (!pre || !nom || !email || !mdp) { showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.'); re_enable(); return; }
-  if (mdp.length < 6) { showErr(err, '⚠️ Mot de passe trop court (minimum 6 caractères).'); re_enable(); return; }
-  if (S.users.find(u => u.email === email)) { showErr(err, '⚠️ Cet e-mail est déjà utilisé.'); re_enable(); return; }
-  const role = document.querySelector('#apRegister .role-card.selected')?.dataset.role || 'stagiaire';
-  const user = { prenom: pre, nom, email, role, createdAt: Date.now() };
-  // Never store passwords in plain text — store hash simulation
-  S.users.push({ ...user, mdp: btoa(mdp) });
+
+  // ── Validations (FIX BUG 1: _reEnable() et non _reEnable()) ──
+  if (!pre || !nom || !email || !mdp) {
+    showErr(err, '⚠️ Veuillez remplir tous les champs obligatoires.');
+    _reEnable(); return;
+  }
+  if (mdp.length < 6) {
+    showErr(err, '⚠️ Mot de passe trop court (minimum 6 caractères).');
+    _reEnable(); return;
+  }
+  if (emailConf && email.trim() !== emailConf.trim()) {
+    showErr(err, '⚠️ Les adresses e-mail ne correspondent pas.');
+    _reEnable(); return;
+  }
+  if (mdpConf && mdp !== mdpConf) {
+    showErr(err, '⚠️ Les mots de passe ne correspondent pas.');
+    _reEnable(); return;
+  }
+  if (S.users.find(u => u.email === email.trim())) {
+    showErr(err, '⚠️ Cet e-mail est déjà utilisé. Connectez-vous ou utilisez un autre e-mail.');
+    _reEnable(); return;
+  }
+
+  // ── Sauvegarde (FIX BUG 3: stocker le mdp en clair pour que le login fonctionne) ──
+  const role = document.querySelector('input[name="rRole"]:checked')?.value || 'stagiaire';
+  const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim(), mdp, role, createdAt: Date.now() };
+  S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
   err.classList.add('hidden');
-  S.currentUser = { prenom: pre, nom, initials: (pre[0] + nom[0]).toUpperCase() };
-  // FIX #4: Show credentials clearly before redirect
-  const confirmHtml = `<div style="background:#f0fdf4;border:2px solid var(--accent);border-radius:12px;padding:18px;margin-top:12px">
-    <div style="font-size:15px;font-weight:800;color:#065f46;margin-bottom:8px">✅ Compte créé avec succès !</div>
-    <div style="font-size:13px;color:#065f46;margin-bottom:12px">📌 <b>Notez vos identifiants :</b></div>
-    <div style="background:#fff;border-radius:8px;padding:12px;font-size:14px;font-family:monospace">
-      📧 ${esc(email)}<br>🔑 ${esc(mdp).replace(/./g,'•')}
-    </div>
-    <button class="btn btn-success btn-full mt3" onclick="this.closest('div.card,div[style]').remove();loginAfterRegister('${pre}','${nom}','${email}','${role}')">
-      ▶ Accéder à la plateforme
-    </button>
-  </div>`;
-  document.getElementById('apRegister').insertAdjacentHTML('beforeend', confirmHtml);
+
+  // ── FIX BUG 2: Re-activer le bouton + afficher confirmation VISIBLE ──
+  _reEnable();
+
+  // FIX BUG 2 & 4: Remplacer le contenu du formulaire par la confirmation
+  const panel = document.getElementById('apRegister');
+  if (panel) {
+    panel.innerHTML = `<div style="text-align:center;padding:20px 10px">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-size:18px;font-weight:900;color:var(--accent);margin-bottom:8px">Compte créé avec succès !</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Notez vos identifiants :</div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:left;margin-bottom:20px;font-size:13px">
+        <div style="margin-bottom:6px">📧 <b>E-mail :</b> ${esc(email.trim())}</div>
+        <div>🔑 <b>Mot de passe :</b> ${'•'.repeat(mdp.length)} <span style="font-size:11px;color:var(--text3)">(celui que vous venez de choisir)</span></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px"
+        onclick="loginAfterRegister('${esc(pre.trim())}','${esc(nom.trim())}','${esc(email.trim())}','${role}')">
+        ▶ Accéder à la plateforme
+      </button>
+    </div>`;
+  }
 }
 
 function logout() {
