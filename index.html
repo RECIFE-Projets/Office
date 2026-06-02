@@ -349,6 +349,39 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 </style>
 </head>
 <body>
+<!-- DEMO BANNER -->
+<style>
+#pnh-demo{position:fixed;top:0;left:0;right:0;z-index:99999;background:#1B3A6B;color:white;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Arial,sans-serif;font-size:13px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+#pnh-demo b{color:#F59E0B}#pnh-demo a{color:#93C5FD;font-size:11px}
+#pnh-demo button{background:rgba(255,255,255,.15);border:none;color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+body{padding-top:56px!important}
+</style>
+<div id="pnh-demo">
+  <div>
+    <span style="background:#F59E0B;color:#1B3A6B;font-weight:800;font-size:11px;padding:3px 10px;border-radius:20px;margin-right:8px">DEMO</span>
+    <b>Portfolio Phare Numerique Havre</b> &mdash; Site de demonstration uniquement. Inscriptions desactivees.
+    &nbsp;<a href="https://pharenumeriquehavre.fr" target="_blank">pharenumeriquehavre.fr</a>
+  </div>
+  <button onclick="document.getElementById('pnh-demo').style.display='none';document.body.style.paddingTop='0'">X Fermer</button>
+</div>
+<script>
+(function(){
+  var M="Demonstration uniquement.\nInscriptions desactivees.\npharenumeriquehavre.fr";
+  function blk(e){e.preventDefault();e.stopPropagation();alert(M);return false;}
+  document.addEventListener("submit",blk,true);
+  document.addEventListener("click",function(e){
+    var el=e.target||{};
+    var id=(el.id||"").toLowerCase();
+    var tx=(el.textContent||"").trim().toLowerCase();
+    if(id.indexOf("commencer")>=0||id.indexOf("register")>=0||id.indexOf("inscription")>=0||
+       tx==="s'inscrire"||tx==="inscription"||tx==="commencer"){
+      blk(e);
+    }
+  },true);
+})();
+</script>
+<!-- FIN DEMO BANNER -->
+
 
 <!-- AUTH -->
 <div id="authScreen">
