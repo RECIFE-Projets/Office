@@ -432,6 +432,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     <button class="mob-btn" onclick="toggleSidebar()" aria-label="Ouvrir le menu">☰</button>
     <div class="nb-brand" onclick="goHome()"><div class="nb-logo">B</div><span>Ma Plateforme Bureautique</span></div>
     <div class="nb-spacer"></div>
+    <span id="sbSyncBadge" style="font-size:11px;color:var(--text3);margin-right:6px" title="Dernière sync Supabase"></span>
     <button id="pwaInstallBtn" style="display:none;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;margin-right:8px" onclick="installPWA()">📲 Installer</button>
     <div style="position:relative;flex:1;max-width:260px;margin:0 8px">
       <input id="globalSearch" class="fi" style="padding:6px 32px 6px 10px;font-size:12px;height:32px" 
@@ -800,7 +801,8 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               </div>
               <div class="flex gap2" style="align-items:center">
                 <span id="sbStatusBadge"></span>
-                <button id="sbConfigBtn" class="btn btn-outline btn-sm" onclick="configurerSupabase()">☁️ Configurer Supabase</button>
+                <button class="btn btn-sm btn-primary" onclick="syncNow()" title="Synchroniser maintenant">🔄 Sync</button>
+                <button id="sbConfigBtn" class="btn btn-outline btn-sm" onclick="configurerSupabase()">☁️ Supabase ✅</button>
               </div>
             </div>
           </div>
@@ -1711,6 +1713,11 @@ function _doRegisterWork(btn, _reEnable) {
   S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
+  // Sync to Supabase
+  if (SB.enabled) {
+    const u = newUser;
+    SB.req('POST', 'mpb_users', { email_hash: btoa(u.email).replace(/=/g,''), prenom: u.prenom, nom: u.nom||'', role: u.role, groupe: u.groupe||'', created_at: new Date().toISOString() }, 'resolution=merge-duplicates').catch(()=>{});
+  }
   err.classList.add('hidden');
 
   // ── FIX BUG 2: Re-activer le bouton + afficher confirmation VISIBLE ──
@@ -1811,6 +1818,22 @@ function initApp(role, user) {
         const backup = JSON.parse(localStorage.getItem('mpb_prog_backup') || 'null');
         if (backup && typeof backup === 'object') { S.prog = backup; safeSet(pKey, backup); }
       } catch(e) {}
+    }
+    // Supabase: async cloud restore (runs in background, updates if cloud has more data)
+    if (SB.enabled) {
+      SB.loadProgress(user.email).then(cloudProg => {
+        if (!cloudProg) return;
+        const cc = Object.keys(cloudProg?.exercises || {}).length;
+        const lc = Object.keys(S.prog?.exercises || {}).length;
+        if (cc > lc) {
+          S.prog = cloudProg;
+          safeSet(pKey, cloudProg);
+          renderDashboard();
+          const badge = document.getElementById('sbSyncBadge');
+          if (badge) { badge.textContent = '☁️ Sync'; badge.style.color = 'var(--accent)'; }
+          console.log('✅ Progression restaurée depuis Supabase:', cc, 'exercices');
+        }
+      }).catch(() => {});
     }
   }
 
@@ -2579,6 +2602,8 @@ function completeExercise(exId, modKey) {
   renderDashboard();
   setTimeout(updateSBStatus, 500); // LOT 10
   EMAILJS.init(); // LOT 12: EmailJS
+  // Supabase auto-init if preconfigured
+  if (SB.url && SB.key) { SB.enabled = true; safeSet('mpb_sb_url', SB.url); safeSet('mpb_sb_key', SB.key); safeSet('mpb_sb_enabled', true); }
   updateBadgeCounter();
 }
 
@@ -4577,38 +4602,63 @@ function toggleGuidedMode() {
 // ── SUPABASE SYNC OPTIONNEL ──────────────────────────────────
 // Sync cloud optionnel — fonctionne sans Supabase (localStorage fallback)
 const SB = {
-  url: safeGet('mpb_sb_url', ''),
-  key: safeGet('mpb_sb_key', ''),
-  enabled: safeGet('mpb_sb_enabled', false),
+  url: safeGet('mpb_sb_url', 'https://pwfmgerinueolcurtqkf.supabase.co'),
+  key: safeGet('mpb_sb_key', 'sb_publishable_xTRncCfW3z3tUn1dypRmbw_9-0Za7sO'),
+  enabled: safeGet('mpb_sb_enabled', true), // Préconfigured
 
-  async req(method, path, body) {
+  async req(method, path, body, prefer) {
     if (!this.url || !this.key) return null;
     try {
+      const headers = {
+        'apikey': this.key,
+        'Authorization': 'Bearer ' + this.key,
+        'Content-Type': 'application/json',
+      };
+      if (prefer) headers['Prefer'] = prefer;
       const res = await fetch(this.url + '/rest/v1/' + path, {
-        method, headers: {
-          'apikey': this.key, 'Authorization': 'Bearer ' + this.key,
-          'Content-Type': 'application/json', 'Prefer': 'return=minimal'
-        },
+        method, headers,
         body: body ? JSON.stringify(body) : undefined
       });
-      if (!res.ok) return null;
-      return method === 'GET' ? await res.json() : true;
-    } catch(e) { return null; }
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const err = await res.text().catch(()=>'');
+        console.warn('Supabase error', res.status, err);
+        return null;
+      }
+      const text = await res.text();
+      if (!text) return true;
+      try { return JSON.parse(text); } catch(e) { return true; }
+    } catch(e) { console.warn('Supabase fetch error:', e); return null; }
   },
 
   async syncProgress(email, prog) {
     if (!this.enabled || !email) return;
-    const emailHash = btoa(email).replace(/=/g,'');
-    await this.req('POST', `mpb_progress?on_conflict=user_hash`, {
-      user_hash: emailHash, email, progress: JSON.stringify(prog), updated_at: new Date().toISOString()
-    });
+    try {
+      const emailHash = btoa(email).replace(/=/g,'');
+      const payload = {
+        user_hash: emailHash,
+        email,
+        progress: JSON.stringify(prog),
+        updated_at: new Date().toISOString()
+      };
+      // Upsert: insert or update if user_hash already exists
+      const result = await this.req('POST', 'mpb_progress', payload, 'resolution=merge-duplicates');
+      if (result !== null) {
+        const badge = document.getElementById('sbSyncBadge');
+        if (badge) { badge.textContent = '☁️ ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); badge.style.color='var(--accent)'; }
+      }
+    } catch(e) { console.warn('syncProgress error:', e); }
   },
 
   async loadProgress(email) {
     if (!this.enabled || !email) return null;
-    const emailHash = btoa(email).replace(/=/g,'');
-    const rows = await this.req('GET', `mpb_progress?user_hash=eq.${emailHash}&select=progress`);
-    if (rows?.length > 0) return JSON.parse(rows[0].progress);
+    try {
+      const emailHash = btoa(email).replace(/=/g,'');
+      const rows = await this.req('GET', `mpb_progress?user_hash=eq.${encodeURIComponent(emailHash)}&select=progress,updated_at&limit=1`);
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].progress) {
+        return typeof rows[0].progress === 'string' ? JSON.parse(rows[0].progress) : rows[0].progress;
+      }
+    } catch(e) { console.warn('loadProgress error:', e); }
     return null;
   },
 
@@ -4643,6 +4693,14 @@ function configurerSupabase() {
     toast('Supabase désactivé — stockage local uniquement.');
   }
   updateSBStatus();
+}
+
+async function syncNow() {
+  if (!SB.enabled || !S.currentUser?.email) { toast('⚠️ Connectez-vous pour synchroniser.'); return; }
+  toast('⏳ Synchronisation en cours…');
+  await SB.syncProgress(S.currentUser.email, S.prog);
+  await SB.syncUsers(S.users);
+  toast('✅ Données synchronisées avec Supabase !', 4000);
 }
 
 function updateSBStatus() {
