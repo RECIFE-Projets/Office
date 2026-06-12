@@ -349,6 +349,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 </style>
 </head>
 <body>
+
 <!-- AUTH -->
 <div id="authScreen">
   <div class="auth-card">
@@ -1113,7 +1114,7 @@ const MODULES_DATA = {
       {id:'w3',num:3,name:'Gras, italique, souligné',lvl:'A2',time:'25 min',type:'quiz',qIdx:0},
       {id:'w4',num:4,name:'⚠️ Insérer une image (depuis l\'ordi)',lvl:'A2',time:'30 min',type:'steps',steps:['Onglet Insertion → cliquez sur Images','Choisissez UNIQUEMENT "Cet appareil" (jamais en ligne !)','Naviguez vers vos images → double-cliquez','Redimensionnez en tirant les coins','Clic droit → Habillage du texte pour positionner']},
       {id:'w5',num:5,name:'Créer un tableau',lvl:'B1',time:'35 min',type:'quiz',qIdx:1},
-      {id:'w6',num:6,name:'Mise en page et marges',lvl:'B1',time:'30 min',type:'steps',steps:['Onglet Mise en page → Marges → Normales (2,5 cm)','Orientation : Portrait (vertical) ou Paysage (horizontal)','Taille de papier : A4','Fichier → Imprimer pour prévisualiser','Ajustez selon le rendu souhaité']},
+      {id:'w6',num:6,name:'Mise en page et marges',lvl:'B1',time:'30 min',type:'steps',steps:['🖥️ Ouvrez Word 2019 → ouvrez ou créez un document','Onglet Mise en page → cliquez sur Marges','Choisissez Normales (2,5 cm tout autour) ou Personnalisées pour vos propres valeurs','Orientation : cliquez sur Portrait (vertical) ou Paysage (horizontal)','Taille du papier : vérifiez que c\'est A4 (valeur standard en France)','Sauvegardez : Ctrl+S → nom du fichier : Votre_Groupe_MiseEnPage.docx']},
       {id:'w7',num:7,name:'En-tête, pied de page, numérotation',lvl:'B1',time:'30 min',type:'steps',steps:['Insertion → En-tête → choisir un modèle','Tapez votre nom ou le titre du document','Insertion → Pied de page → même démarche','Insertion → Numéro de page → Bas de page → centré','Double-cliquez hors zone pour quitter l\'en-tête']},
       {id:'w8',num:8,name:'Styles et table des matières',lvl:'B2',time:'45 min',type:'steps',steps:['Sélectionnez un titre → style Titre 1 (onglet Accueil)','Sous-titres → style Titre 2','Références → Table des matières → Automatique 1','La table se génère automatiquement !','Clic droit sur la table → Mettre à jour pour actualiser']},
       {id:'w9',num:9,name:'Publipostage de base',lvl:'C1',time:'55 min',type:'steps',steps:[
@@ -1378,8 +1379,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Session restore
-  const sess = sessionStorage.getItem('mpb_sess');
+  // B2: Session restore — sessionStorage (tab) or localStorage (persistent)
+  const sess = sessionStorage.getItem('mpb_sess') || localStorage.getItem('mpb_sess_persist');
   if (sess) {
     const d = JSON.parse(sess);
     S.role = d.role;
@@ -1470,7 +1471,9 @@ function loginAfterRegister(pre, nom, email, role) {
   const initials = (pre[0] + (nom?nom[0]:'')).toUpperCase();
   const user = { prenom: pre, nom, initials, email };
   S.currentUser = user;
-  sessionStorage.setItem('mpb_sess', JSON.stringify({ role, user }));
+  const sessData2 = JSON.stringify({ role, user });
+  sessionStorage.setItem('mpb_sess', sessData2);
+  localStorage.setItem('mpb_sess_persist', sessData2); // B2: persist
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('demoBanner')?.remove();
@@ -1514,13 +1517,18 @@ function loginAs(role) {
     }
   }
   S.role = role;
-  const demoUser = role === 'formateur'
-    ? { prenom: 'Formatrice', nom: '', initials: 'FO' }
-    : matchedUser
-      ? { prenom: matchedUser.prenom, nom: matchedUser.nom, initials: (matchedUser.prenom[0]+(matchedUser.nom?matchedUser.nom[0]:'')).toUpperCase() }
+  // B1: Always use real user data if found — never hardcode 'Formatrice' or 'Jean'
+  const demoUser = matchedUser
+    ? { prenom: matchedUser.prenom, nom: matchedUser.nom || '',
+        initials: (matchedUser.prenom[0] + (matchedUser.nom ? matchedUser.nom[0] : '')).toUpperCase(),
+        email: matchedUser.email, role: matchedUser.role }
+    : role === 'formateur'
+      ? { prenom: 'Formateur', nom: '', initials: 'FO' }
       : { prenom: 'Jean', nom: 'Dupont', initials: 'JD' };
   S.currentUser = demoUser;
-  sessionStorage.setItem('mpb_sess', JSON.stringify({ role, user: demoUser }));
+  const sessData = JSON.stringify({ role, user: demoUser });
+  sessionStorage.setItem('mpb_sess', sessData);
+  localStorage.setItem('mpb_sess_persist', sessData); // B2: persist across page refresh
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('demoBanner')?.remove();
@@ -1609,6 +1617,7 @@ function _doRegisterWork(btn, _reEnable) {
 }
 
 function logout() {
+  localStorage.removeItem('mpb_sess_persist'); // B2: clear persistent session
   // FIX #2 #9: Close everything, reset all UI sections before hiding app
   closeExModal();
   closeFicheModal();
@@ -1675,7 +1684,15 @@ function initApp(role, user) {
   if (user && user.email) {
     const pKey = 'mpb_prog_' + btoa(user.email).replace(/=/g,'');
     const userProg = safeGet(pKey, null);
-    if (userProg) S.prog = userProg;
+    if (userProg && typeof userProg === 'object') {
+      S.prog = userProg;
+    } else {
+      // B5: Try backup if no user progress found
+      try {
+        const backup = JSON.parse(localStorage.getItem('mpb_prog_backup') || 'null');
+        if (backup && typeof backup === 'object') { S.prog = backup; safeSet(pKey, backup); }
+      } catch(e) {}
+    }
   }
 
   // FIX #5: Always use currentUser for display
@@ -2237,7 +2254,15 @@ function openExModal(modKey, exId) {
     <div class="alert al-info mb3"><span>🎯</span><div><b>Objectif :</b> ${ex.name} — <span class="lvl l${ex.lvl}">${ex.lvl}</span> — ⏱ ${ex.time}</div></div>`;
 
   if (ex.type === 'steps') {
-    const doneSteps = S.prog.exercises[exId + '_steps'] || []; // FIX #9
+    // B5: Restore done steps with backup fallback
+  let doneSteps = S.prog.exercises[exId + '_steps'] || [];
+  if (doneSteps.length === 0) {
+    try {
+      const bk = JSON.parse(localStorage.getItem('mpb_prog_backup') || '{}');
+      const bkSteps = (bk.exercises || {})[exId + '_steps'];
+      if (bkSteps?.length > 0) { doneSteps = bkSteps; S.prog.exercises[exId + '_steps'] = bkSteps; }
+    } catch(e) {}
+  } // FIX #9
     // FIX #2: Adapt step display to simpleMode
     const isSimple = S.settings.simpleMode;
     body += `<div class="steps" id="stepsWrap_${exId}">` +
@@ -2338,7 +2363,9 @@ function validateStep(exId, modKey, stepIdx, total) {
   if (!S.prog.exercises[exId + '_steps']) S.prog.exercises[exId + '_steps'] = [];
   const done = S.prog.exercises[exId + '_steps'];
   if (!done.includes(stepIdx)) done.push(stepIdx);
-  saveState();
+  saveState(); // B4: save immediately
+  // B4: Direct localStorage backup in case of session issues
+  try { localStorage.setItem('mpb_prog_backup', JSON.stringify(S.prog)); } catch(e){}
 
   if (done.length >= total) completeExercise(exId, modKey);
   else toast('✅ Étape ' + (stepIdx + 1) + ' validée !');
@@ -4362,12 +4389,25 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
 function getUserKey() {
-  // A13: Namespace localStorage by user email to isolate data between users
-  const u = S.currentUser;
+  // B4/B5: Use current user OR restore from persisted session
+  let u = S.currentUser;
+  if (!u || !u.email || u.email === 'demo') {
+    // Try to get user from persisted session
+    try {
+      const persisted = localStorage.getItem('mpb_sess_persist');
+      if (persisted) { const pd = JSON.parse(persisted); u = pd.user; }
+    } catch(e) {}
+  }
   if (u && u.email && u.email !== 'demo') return 'mpb_prog_' + btoa(u.email).replace(/=/g,'');
   return 'mpb_prog';
 }
-function saveState() { safeSet(getUserKey(), S.prog); }
+function saveState() {
+  // B4/B5: Ensure user is loaded before saving
+  const key = getUserKey();
+  safeSet(key, S.prog);
+  // Also save a backup with timestamp for debugging
+  if (key !== 'mpb_prog') safeSet(key + '_ts', Date.now());
+}
 
 let tTimer; let tQueue = [];
 function toast(msg, dur = 3000) {
