@@ -1500,6 +1500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  checkVersion(); // Vérifier version + migrer si nécessaire
   // B2: Session restore — sessionStorage (tab) or localStorage (persistent)
   const sess = sessionStorage.getItem('mpb_sess') || localStorage.getItem('mpb_sess_persist');
   if (sess) {
@@ -3126,6 +3127,14 @@ function printExercices() {
         <div style="background:var(--surface);border-radius:16px;max-width:500px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
           <div id="onboardingContent" style="padding:28px"></div>
         </div>
+      </div>
+
+      <!-- BANNIÈRE MISE À JOUR -->
+      <div id="updateBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a5ec8;color:#fff;padding:12px 20px;z-index:999;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:18px">🔄</span>
+        <span style="flex:1;font-size:14px"><b>Nouvelle version disponible !</b> Rechargez la page pour bénéficier des dernières améliorations.</span>
+        <button onclick="applyUpdate()" style="background:#fff;color:#1a5ec8;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Recharger maintenant</button>
+        <button onclick="document.getElementById('updateBanner').style.display='none'" style="background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px">Plus tard</button>
       </div>
 </body></html>`);
   w.document.close();
@@ -5120,11 +5129,73 @@ function runGlobalSearch() {
   el.href = URL.createObjectURL(blob);
   // Service Worker (inline blob — works on most modern browsers)
   if ('serviceWorker' in navigator) {
-    const sw = `const CACHE='mpb-v2';
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/']))));
-self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('/')))));`;
-    const swBlob = new Blob([sw], {type:'application/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    // ── SERVICE WORKER v3.0.0 ─────────────────────────────────────
+  // Le numéro de version DOIT être mis à jour à chaque déploiement
+  const APP_VERSION = '3.0.0';
+  const CACHE_NAME = 'mpb-v3-' + APP_VERSION;
+
+  const sw = `
+    const CACHE = '3.0.0';
+    const CACHE_NAME = 'mpb-v3-' + CACHE;
+
+    // À l'installation : mettre en cache et activer immédiatement
+    self.addEventListener('install', e => {
+      e.waitUntil(
+        caches.open(CACHE_NAME).then(c => c.addAll(['/'])).then(() => self.skipWaiting())
+      );
+    });
+
+    // À l'activation : supprimer les anciens caches
+    self.addEventListener('activate', e => {
+      e.waitUntil(
+        caches.keys().then(keys => Promise.all(
+          keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        )).then(() => self.clients.claim())
+      );
+    });
+
+    // Stratégie : Network First (toujours essayer le réseau avant le cache)
+    // Si offline, utiliser le cache. Si aucun des deux, erreur.
+    self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
+      e.respondWith(
+        fetch(e.request.clone()).then(res => {
+          if (res && res.status === 200 && res.type !== 'opaque') {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(e.request, resClone));
+          }
+          return res;
+        }).catch(() => caches.match(e.request))
+      );
+    });
+
+    // Message pour forcer la mise à jour
+    self.addEventListener('message', e => {
+      if (e.data === 'skipWaiting') self.skipWaiting();
+    });
+  `;
+  const swBlob = new Blob([sw], {type:'application/javascript'});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+      .then(reg => {
+        // Détecter les mises à jour du service worker
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              showUpdateBanner();
+            }
+          });
+        });
+        // Vérifier s'il y a une mise à jour disponible
+        reg.update().catch(() => {});
+      }).catch(() => {});
+
+    // Écouter les messages du SW
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
   }
 })();
 
@@ -5143,6 +5214,95 @@ function installPWA() {
   if (!deferredPrompt) { toast('💡 Sur Chrome : Menu → "Installer Ma Plateforme Bureautique"'); return; }
   deferredPrompt.prompt();
   deferredPrompt.userChoice.then(r => { if (r.outcome==='accepted') toast('✅ Installation en cours !'); deferredPrompt=null; });
+}
+
+
+
+// ── MIGRATION DONNÉES ────────────────────────────────────────
+function migrateLocalStorage() {
+  // Récupérer toutes les clés de progression
+  const progKeys = Object.keys(localStorage).filter(k => k.startsWith('mpb_prog_') && !k.endsWith('_ts') && !k.endsWith('_backup'));
+
+  progKeys.forEach(key => {
+    try {
+      const prog = JSON.parse(localStorage.getItem(key) || '{}');
+      let changed = false;
+
+      // Migration 1: Assurer que exercises existe
+      if (!prog.exercises) { prog.exercises = {}; changed = true; }
+
+      // Migration 2: Assurer que word/excel/ppt/pub/cas existent
+      ['word','excel','ppt','pub','cas'].forEach(mod => {
+        if (prog[mod] === undefined) { prog[mod] = 0; changed = true; }
+      });
+
+      // Migration 3: Assurer que badges existe
+      if (!prog.badges) { prog.badges = []; changed = true; }
+
+      if (changed) localStorage.setItem(key, JSON.stringify(prog));
+    } catch(e) {}
+  });
+
+  // Migration settings: ajouter les nouveaux champs si absents
+  const settingsKeys = Object.keys(localStorage).filter(k => k.startsWith('mpb_settings'));
+  settingsKeys.forEach(key => {
+    try {
+      const cfg = JSON.parse(localStorage.getItem(key) || '{}');
+      let changed = false;
+      if (cfg.niveauInfo === undefined) { cfg.niveauInfo = ''; changed = true; }
+      if (cfg.guidedMode === undefined) { cfg.guidedMode = false; changed = true; }
+      if (cfg.fontSize === undefined) { cfg.fontSize = 'normal'; changed = true; }
+      if (changed) localStorage.setItem(key, JSON.stringify(cfg));
+    } catch(e) {}
+  });
+
+  // Migration session: format ancien → nouveau
+  const oldSess = sessionStorage.getItem('mpb_sess');
+  if (oldSess) {
+    try {
+      const d = JSON.parse(oldSess);
+      // Copier aussi dans localStorage pour la persistance
+      if (!localStorage.getItem('mpb_sess_persist')) {
+        localStorage.setItem('mpb_sess_persist', oldSess);
+      }
+    } catch(e) {}
+  }
+
+  console.log('✅ Migration localStorage v' + CURRENT_APP_VERSION + ' terminée');
+}
+
+// ── GESTION DES MISES À JOUR ────────────────────────────────
+const CURRENT_APP_VERSION = '3.0.0';
+
+function showUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function applyUpdate() {
+  // Dire au nouveau SW de prendre le contrôle immédiatement
+  navigator.serviceWorker?.controller?.postMessage('skipWaiting');
+  // Vider les caches obsolètes puis recharger
+  caches.keys().then(keys => {
+    const oldCaches = keys.filter(k => !k.includes('3.0.0'));
+    return Promise.all(oldCaches.map(k => caches.delete(k)));
+  }).then(() => window.location.reload(true));
+}
+
+// Vérifier la version au chargement — si différente, forcer le rechargement
+function checkVersion() {
+  const storedVersion = localStorage.getItem('mpb_app_version');
+  if (storedVersion && storedVersion !== CURRENT_APP_VERSION) {
+    // Nouvelle version détectée
+    localStorage.setItem('mpb_app_version', CURRENT_APP_VERSION);
+    // Vider les anciens caches
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(()=>{});
+    // Migrer les données si nécessaire
+    migrateLocalStorage();
+    console.log('✅ Mise à jour vers v' + CURRENT_APP_VERSION + ' détectée — migration effectuée');
+  } else if (!storedVersion) {
+    localStorage.setItem('mpb_app_version', CURRENT_APP_VERSION);
+  }
 }
 
 // ── GLOSSAIRE MULTILINGUE ───────────────────────────

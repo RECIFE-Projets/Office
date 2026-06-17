@@ -1,0 +1,17 @@
+# ══════════════════════════════════════════════════════
+# Netlify _headers — Ma Plateforme Bureautique
+# Empêche le navigateur de mettre en cache index.html
+# Les assets statiques peuvent être cachés normalement
+# ══════════════════════════════════════════════════════
+
+# Page principale : jamais de cache navigateur
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# Index.html : idem
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
