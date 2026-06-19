@@ -804,6 +804,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="tab-btn" onclick="fTab('planning_form',this)">📅 Planning</button>
           <button class="tab-btn" onclick="fTab('session_form',this)">🖥️ Session</button>
           <button class="tab-btn" onclick="fTab('impression',this)">🖨️ Impression</button>
+          <button class="tab-btn" onclick="fTab('metiers_form',this)">🏭 Métiers</button>
           <button class="tab-btn" onclick="fTab('quiz',this)">🧪 Quiz</button>
         </div>
         <div id="formAlertZone"></div>
@@ -890,6 +891,9 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <div class="fg"><label class="fl">Titre de l'exercice</label><input class="fi" id="cfTitre" placeholder="Ex: Créer un en-tête professionnel"></div>
               <div class="fg"><label class="fl">Niveau</label><select class="fs" id="cfNiv"><option value="A1">A1</option><option value="A2">A2</option><option value="B1" selected>B1</option><option value="B2">B2</option><option value="C1">C1</option></select></div>
               <div class="fg"><label class="fl">Durée estimée</label><input class="fi" id="cfDuree" placeholder="Ex: 25 min"></div>
+              <div class="fg"><label class="fl">🏭 Assigner à un métier (facultatif)</label>
+                <select class="fs" id="cfMetier" onfocus="populateCfMetierSelect()"><option value="">— Aucun métier —</option></select>
+              </div>
               <div class="fg"><label class="fl">Étapes (une par ligne)</label><textarea class="fta" id="cfSteps" rows="6" placeholder="Étape 1 : Ouvrez Word"></textarea></div>
               <div class="flex gap2 mt3">
                 <button class="btn btn-primary" onclick="saveContenu()">💾 Enregistrer</button>
@@ -926,6 +930,11 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
                     <option value="savoirs">Savoirs Essentiels</option>
                     <option value="avenir">#Avenir</option>
                     <option value="les_deux">Les deux dispositifs</option>
+                  </select>
+                </div>
+                <div class="fg"><label class="fl">🏭 Assigner à un métier (facultatif)</label>
+                  <select class="fs" id="pdfMetier" onfocus="populatePdfMetierSelect()">
+                    <option value="">— Aucun métier —</option>
                   </select>
                 </div>
                 <div class="fg"><label class="fl">Découpage automatique par</label>
@@ -1061,6 +1070,42 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
               <input type="hidden" id="qEditReplaceIdx" value="-1">
             </div>
             <div id="customQuizList" class="mt3"></div>
+          </div>
+        </div>
+        <div id="ft-metiers_form" class="hidden">
+          <div class="card">
+            <div class="flex jb" style="align-items:center;margin-bottom:14px">
+              <div class="card-title" style="margin-bottom:0">🏭 Parcours métiers</div>
+              <button class="btn btn-primary btn-sm" onclick="showMetierForm()">➕ Nouveau métier</button>
+            </div>
+            <div class="alert al-info mb3"><span>ℹ️</span><div>Créez vos propres parcours métiers, ou ajoutez du vocabulaire et des manuels importés à un métier existant (intégré ou personnalisé).</div></div>
+
+            <div id="metierEditForm" class="hidden card" style="border:2px solid var(--primary)">
+              <div class="card-title" id="metierFormTitle">➕ Nouveau métier</div>
+              <div class="f2">
+                <div class="fg"><label class="fl">Nom du métier</label><input class="fi" id="mfNom" placeholder="Ex: Coiffure / Esthétique"></div>
+                <div class="fg"><label class="fl">Icône (emoji)</label><input class="fi" id="mfIcon" placeholder="💇" maxlength="4" style="text-align:center;font-size:18px"></div>
+              </div>
+              <div class="fg"><label class="fl">Description courte</label><input class="fi" id="mfDesc" placeholder="Ex: Devis, fiches client, prise de rendez-vous"></div>
+              <div class="fg"><label class="fl">Couleur</label>
+                <input type="color" id="mfColor" value="#1a5ec8" style="width:60px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+              </div>
+
+              <div style="font-weight:700;margin:14px 0 6px;font-size:14px">📖 Vocabulaire métier</div>
+              <div id="mfVocabList" style="display:grid;gap:6px;margin-bottom:8px"></div>
+              <button class="btn btn-outline btn-sm" onclick="addVocabRow()">+ Ajouter un terme</button>
+
+              <div style="font-weight:700;margin:14px 0 6px;font-size:14px">🎯 Exercices liés (intégrés + manuels importés)</div>
+              <div id="mfExerciceList" style="display:grid;gap:5px;max-height:240px;overflow-y:auto;background:var(--surface2);border-radius:8px;padding:10px"></div>
+
+              <div class="flex gap2 mt3">
+                <button class="btn btn-primary" onclick="saveMetier()">💾 Enregistrer le métier</button>
+                <button class="btn btn-ghost" onclick="cancelMetierForm()">Annuler</button>
+              </div>
+              <input type="hidden" id="mfKey" value="">
+            </div>
+
+            <div id="metiersFormateurList"></div>
           </div>
         </div>
         <div id="ft-impression" class="hidden">
@@ -3418,7 +3463,7 @@ function fTabMsg() {
 function fTab(tab, btn) {
   document.querySelectorAll('#formTabs .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['stagiaires','travaux','stats','contenus','messages','groupes','quiz','planning_form','session_form','impression'].forEach(t => {
+  ['stagiaires','travaux','stats','contenus','messages','groupes','quiz','planning_form','session_form','impression','metiers_form'].forEach(t => {
     document.getElementById('ft-' + t)?.classList.toggle('hidden', t !== tab);
   });
   // B15: Re-render data on tab switch to avoid stale content
@@ -3431,6 +3476,7 @@ function fTab(tab, btn) {
   if (tab === 'planning_form') renderPlanningFormateur();
   if (tab === 'stats') renderSuiviAvance();
   if (tab === 'impression') updateImpExerciceList();
+  if (tab === 'metiers_form') renderMetiersFormateur();
   if (tab === 'session_form') { /* ready */ }
   if (tab === 'quiz') renderCustomQuizList();
 }
@@ -4068,6 +4114,7 @@ function renderMsgs() {
 }
 
 function resetPdfForm() {
+  const pdfMetierEl = document.getElementById('pdfMetier'); if (pdfMetierEl) pdfMetierEl.value = '';
   ['pdfTitle','pdfSteps','pdfManualText'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const prog = document.getElementById('pdfProgress');
   if (prog) prog.classList.add('hidden');
@@ -4347,6 +4394,7 @@ function savePdfManuel() {
   const dispositif = document.getElementById('pdfDispositif')?.value || 'les_deux';
   const niv = dispositif === 'savoirs' ? 'A2' : dispositif === 'avenir' ? 'B1' : 'A2';
   const dispositifLabel = dispositif === 'savoirs' ? 'Savoirs Essentiels' : dispositif === 'avenir' ? '#Avenir' : 'Savoirs Essentiels & #Avenir';
+  const metierChoisi = document.getElementById('pdfMetier')?.value || '';
 
   // Récupérer les étapes depuis la zone preview OU la zone manuelle
   const fromPreview = document.getElementById('pdfSteps')?.value?.trim();
@@ -4393,6 +4441,7 @@ function savePdfManuel() {
     if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e => e.id === newEx.id)) {
       MODULES_DATA[mod].exercises.push(newEx);
     }
+    if (metierChoisi) assignExerciseToMetier(metierChoisi, newEx.id);
   }
 
   try {
@@ -4406,9 +4455,10 @@ function savePdfManuel() {
   resetPdfForm();
   renderCustomExList();
 
-  const msg = splitN > 1
+  const metierMsg = metierChoisi ? ' Assigné au métier « ' + (getAllMetiers()[metierChoisi]?.name || '') + ' ».' : '';
+  const msg = (splitN > 1
     ? '✅ Manuel "' + titre + '" créé en ' + splitN + ' parties (' + allSteps.length + ' étapes au total) !'
-    : '✅ Manuel "' + titre + '" créé avec ' + allSteps.length + ' étapes — visible dans les Modules !';
+    : '✅ Manuel "' + titre + '" créé avec ' + allSteps.length + ' étapes — visible dans les Modules !') + metierMsg;
   toast(msg, 5000);
   confetti();
 }
@@ -4446,6 +4496,8 @@ function saveContenu() {
   if (MODULES_DATA[mod] && !MODULES_DATA[mod].exercises.find(e=>e.id===newEx.id)) {
     MODULES_DATA[mod].exercises.push(newEx);
   }
+  const cfMetierChoisi = document.getElementById('cfMetier')?.value || '';
+  if (cfMetierChoisi) assignExerciseToMetier(cfMetierChoisi, newEx.id);
   const formEl = document.getElementById('contenuForm');
   if (formEl) { 
     formEl.classList.add('hidden');
@@ -4453,9 +4505,10 @@ function saveContenu() {
     const saveBtn = formEl.querySelector('.btn-primary');
     if (saveBtn) saveBtn.textContent = '💾 Enregistrer';
   }
-  ['cfTitre','cfDuree','cfSteps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['cfTitre','cfDuree','cfSteps','cfMetier'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   renderCustomExList();
-  toast('✅ Exercice ajouté à ' + MODULES_DATA[mod]?.name + ' — niveau ' + niv);
+  const cfMetierMsg = cfMetierChoisi ? ' · Assigné à ' + (getAllMetiers()[cfMetierChoisi]?.name || '') : '';
+  toast('✅ Exercice ajouté à ' + MODULES_DATA[mod]?.name + ' — niveau ' + niv + cfMetierMsg);
 }
 
 function renderCustomExList() {
@@ -5539,6 +5592,178 @@ function genererImpression() {
   }
 }
 
+
+
+// ── LIEN MÉTIER ↔ MANUEL/EXERCICE IMPORTÉ ────────────────────
+function populatePdfMetierSelect() {
+  const sel = document.getElementById('pdfMetier');
+  if (!sel || sel.dataset.populated) return;
+  const all = getAllMetiers();
+  sel.innerHTML = '<option value="">— Aucun métier —</option>' +
+    Object.entries(all).map(([k,m]) => `<option value="${k}">${m.icon} ${esc(m.name)}</option>`).join('');
+  sel.dataset.populated = '1';
+}
+
+function populateCfMetierSelect() {
+  const sel = document.getElementById('cfMetier');
+  if (!sel || sel.dataset.populated) return;
+  const all = getAllMetiers();
+  sel.innerHTML = '<option value="">— Aucun métier —</option>' +
+    Object.entries(all).map(([k,m]) => `<option value="${k}">${m.icon} ${esc(m.name)}</option>`).join('');
+  sel.dataset.populated = '1';
+}
+
+function assignExerciseToMetier(metierKey, exId) {
+  if (!metierKey) return;
+  const all = getAllMetiers();
+  const m = all[metierKey];
+  if (!m) return;
+  if (m.builtIn) {
+    const extra = getMetierExtraEx();
+    extra[metierKey] = [...new Set([...(extra[metierKey]||[]), exId])];
+    safeSet('mpb_metier_extra_exercises', extra);
+  } else {
+    const custom = getCustomMetiers();
+    const idx = custom.findIndex(c => c.key === metierKey);
+    if (idx >= 0) {
+      custom[idx].exercices = [...new Set([...(custom[idx].exercices||[]), exId])];
+      safeSet('mpb_custom_metiers', custom);
+    }
+  }
+}
+
+// ── MÉTIERS : GESTION FORMATEUR (création / édition / suppression) ──
+let _mfVocabRows = [];
+
+function showMetierForm(editKey) {
+  const form = document.getElementById('metierEditForm');
+  const titleEl = document.getElementById('metierFormTitle');
+  form.classList.remove('hidden');
+
+  if (editKey) {
+    const m = getAllMetiers()[editKey];
+    if (!m) return;
+    document.getElementById('mfNom').value = m.name;
+    document.getElementById('mfIcon').value = m.icon;
+    document.getElementById('mfDesc').value = m.desc;
+    document.getElementById('mfColor').value = m.color;
+    document.getElementById('mfKey').value = editKey;
+    _mfVocabRows = m.vocab.map(v => ({...v}));
+    titleEl.textContent = (m.builtIn ? '✏️ Compléter le métier intégré : ' : '✏️ Modifier : ') + m.name;
+  } else {
+    ['mfNom','mfIcon','mfDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('mfColor').value = '#1a5ec8';
+    document.getElementById('mfKey').value = '';
+    _mfVocabRows = [{terme:'', def:''}];
+    titleEl.textContent = '➕ Nouveau métier';
+  }
+  renderVocabRows();
+  renderExerciceCheckboxes(editKey);
+  form.scrollIntoView({behavior:'smooth'});
+}
+
+function renderVocabRows() {
+  const el = document.getElementById('mfVocabList');
+  if (!el) return;
+  el.innerHTML = _mfVocabRows.map((v, i) => `
+    <div style="display:grid;grid-template-columns:1fr 1.5fr auto;gap:6px">
+      <input class="fi" style="font-size:13px" placeholder="Terme" value="${esc(v.terme)}" oninput="_mfVocabRows[${i}].terme=this.value">
+      <input class="fi" style="font-size:13px" placeholder="Définition" value="${esc(v.def)}" oninput="_mfVocabRows[${i}].def=this.value">
+      <button class="btn btn-ghost btn-sm" onclick="removeVocabRow(${i})" style="color:var(--danger)">✕</button>
+    </div>`).join('');
+}
+
+function addVocabRow() { _mfVocabRows.push({terme:'', def:''}); renderVocabRows(); }
+function removeVocabRow(i) { _mfVocabRows.splice(i, 1); renderVocabRows(); }
+
+function renderExerciceCheckboxes(editKey) {
+  const el = document.getElementById('mfExerciceList');
+  if (!el) return;
+  const catalog = getAllExercicesCatalog();
+  const assigned = editKey ? getMetierExercises(editKey) : [];
+  // Grouper par module pour la lisibilité
+  const byMod = {};
+  catalog.forEach(e => { (byMod[e.modName] = byMod[e.modName] || []).push(e); });
+  el.innerHTML = Object.entries(byMod).map(([modName, exs]) => `
+    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-top:6px">${modName}</div>
+    ${exs.map(e => `<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:3px 0">
+      <input type="checkbox" class="mf-ex-cb" value="${e.id}" ${assigned.includes(e.id)?'checked':''}>
+      ${esc(e.name)} ${e.custom ? '<span style="color:var(--primary)">📄</span>' : ''}
+      <span class="lvl l${e.lvl}" style="font-size:9px">${e.lvl}</span>
+    </label>`).join('')}
+  `).join('');
+}
+
+function cancelMetierForm() {
+  document.getElementById('metierEditForm')?.classList.add('hidden');
+}
+
+function saveMetier() {
+  const nom = document.getElementById('mfNom')?.value?.trim();
+  const icon = document.getElementById('mfIcon')?.value?.trim() || '💼';
+  const desc = document.getElementById('mfDesc')?.value?.trim() || '';
+  const color = document.getElementById('mfColor')?.value || '#1a5ec8';
+  const editKey = document.getElementById('mfKey')?.value;
+  const vocab = _mfVocabRows.filter(v => v.terme.trim());
+  const selectedEx = [...document.querySelectorAll('.mf-ex-cb:checked')].map(cb => cb.value);
+
+  if (!nom) { toast('⚠️ Donnez un nom au métier.'); return; }
+
+  const isBuiltIn = editKey && PARCOURS_METIERS[editKey];
+
+  if (isBuiltIn) {
+    // Métier intégré : on stocke un "overlay" (vocab additionnel + exercices additionnels)
+    // sans modifier le const PARCOURS_METIERS d'origine
+    const extra = getMetierExtraEx();
+    extra[editKey] = selectedEx.filter(id => !(PARCOURS_METIERS[editKey].exercices||[]).includes(id));
+    safeSet('mpb_metier_extra_exercises', extra);
+    // Vocabulaire additionnel pour métier intégré
+    const extraVocab = safeGet('mpb_metier_extra_vocab', {});
+    extraVocab[editKey] = vocab.filter(v => !(PARCOURS_METIERS[editKey].vocab||[]).some(bv => bv.terme === v.terme));
+    safeSet('mpb_metier_extra_vocab', extraVocab);
+    toast('✅ Métier « ' + PARCOURS_METIERS[editKey].name + ' » complété !');
+  } else {
+    // Métier personnalisé : créer ou mettre à jour
+    const custom = getCustomMetiers();
+    const key = editKey || ('metier_' + Date.now());
+    const newMetier = { key, icon, name: nom, color, desc, vocab, exercices: selectedEx };
+    const idx = custom.findIndex(m => m.key === key);
+    if (idx >= 0) custom[idx] = newMetier; else custom.push(newMetier);
+    safeSet('mpb_custom_metiers', custom);
+    toast(editKey ? '✅ Métier modifié !' : '✅ Métier « ' + nom + ' » créé !');
+  }
+
+  cancelMetierForm();
+  renderMetiersFormateur();
+}
+
+function deleteMetier(key) {
+  if (!window.confirm('Supprimer ce métier personnalisé ?')) return;
+  const custom = getCustomMetiers().filter(m => m.key !== key);
+  safeSet('mpb_custom_metiers', custom);
+  renderMetiersFormateur();
+  toast('🗑️ Métier supprimé.');
+}
+
+function renderMetiersFormateur() {
+  const el = document.getElementById('metiersFormateurList');
+  if (!el) return;
+  const all = getAllMetiers();
+  el.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text3);margin:14px 0 8px;text-transform:uppercase">Tous les métiers (' + Object.keys(all).length + ')</div>' +
+    Object.entries(all).map(([key, m]) => `
+      <div class="ex-item" style="border-left-color:${m.color}">
+        <div class="ex-num" style="background:${m.color}22">${m.icon}</div>
+        <div class="ex-body">
+          <div class="ex-name">${esc(m.name)} ${!m.builtIn ? '<span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:8px">Personnalisé</span>' : '<span style="font-size:10px;color:var(--text3)">Intégré</span>'}</div>
+          <div class="muted" style="font-size:11px">${m.vocab.length} termes · ${getMetierExercises(key).length} exercices</div>
+        </div>
+        <div class="flex gap2">
+          <button class="btn btn-outline btn-sm" onclick="showMetierForm('${key}')" title="${m.builtIn ? 'Compléter (vocabulaire/exercices additionnels)' : 'Modifier'}">✏️</button>
+          ${!m.builtIn ? `<button class="btn btn-ghost btn-sm" onclick="deleteMetier('${key}')" style="color:var(--danger)">🗑️</button>` : ''}
+        </div>
+      </div>`).join('');
+}
+
 // ── SUIVI FORMATEUR AVANCÉ (alertes décrochage, classement) ─
 let _suiviSortMode = 'progression';
 
@@ -5703,6 +5928,35 @@ function renderFAQ() {
     </div>`).join('');
 }
 
+
+// ── MÉTIERS : MOTEUR (intégrés + personnalisés) ──────────────
+function getCustomMetiers() { return safeGet('mpb_custom_metiers', []); }
+function getMetierExtraEx() { return safeGet('mpb_metier_extra_exercises', {}); }
+
+function getAllMetiers() {
+  // Fusion : métiers intégrés (PARCOURS_METIERS, lecture seule) + personnalisés (modifiables)
+  const extraVocab = safeGet('mpb_metier_extra_vocab', {});
+  const builtIn = Object.fromEntries(Object.entries(PARCOURS_METIERS).map(([k,v]) =>
+    [k, { ...v, key:k, builtIn:true, vocab: [...v.vocab, ...(extraVocab[k] || [])] }]
+  ));
+  const custom = Object.fromEntries(getCustomMetiers().map(m => [m.key, {...m, builtIn:false}]));
+  return { ...builtIn, ...custom };
+}
+
+function getMetierExercises(key) {
+  const all = getAllMetiers();
+  const m = all[key];
+  if (!m) return [];
+  const extra = getMetierExtraEx()[key] || [];
+  return [...new Set([...(m.exercices || []), ...extra])];
+}
+
+function getAllExercicesCatalog() {
+  // Catalogue complet : intégrés + personnalisés (pour les sélecteurs)
+  const native = Object.values(MODULES_DATA).flatMap(m => m.exercises.map(e => ({...e, modName: m.name, modIcon: m.icon})));
+  return native;
+}
+
 // ── PARCOURS MÉTIERS ─────────────────────────────────────────
 const PARCOURS_METIERS = {
   secretariat: {
@@ -5794,25 +6048,29 @@ const PARCOURS_METIERS = {
 function renderMetiersGrid() {
   const el = document.getElementById('metiersGrid');
   if (!el) return;
-  el.innerHTML = Object.entries(PARCOURS_METIERS).map(([key, m]) => `
-    <div class="card" style="cursor:pointer;border-top:4px solid ${m.color}" onclick="openMetier('${key}')">
+  const all = getAllMetiers();
+  el.innerHTML = Object.entries(all).map(([key, m]) => `
+    <div class="card" style="cursor:pointer;border-top:4px solid ${m.color};position:relative" onclick="openMetier('${key}')">
+      ${!m.builtIn ? '<span style="position:absolute;top:8px;right:8px;font-size:10px;background:var(--primary);color:#fff;padding:2px 7px;border-radius:8px">Personnalisé</span>' : ''}
       <div style="font-size:36px;margin-bottom:8px">${m.icon}</div>
       <div style="font-weight:900;font-size:15px;margin-bottom:4px">${m.name}</div>
       <div style="font-size:12px;color:var(--text2)">${m.desc}</div>
-      <div style="margin-top:10px;font-size:11px;color:${m.color};font-weight:700">${m.vocab.length} termes · ${m.exercices.length} exercices →</div>
+      <div style="margin-top:10px;font-size:11px;color:${m.color};font-weight:700">${m.vocab.length} termes · ${getMetierExercises(key).length} exercices →</div>
     </div>`).join('');
 }
 
 function openMetier(key) {
-  const m = PARCOURS_METIERS[key];
+  const all = getAllMetiers();
+  const m = all[key];
   if (!m) return;
   S.settings.metierActif = key;
   saveParc();
   const detail = document.getElementById('metierDetail');
   detail.classList.remove('hidden');
 
-  const allExs = Object.values(MODULES_DATA).flatMap(mod => mod.exercises.map(e => ({...e, modIcon: mod.icon})));
-  const exCards = m.exercices.map(eid => {
+  const allExs = getAllExercicesCatalog();
+  const metierExIds = getMetierExercises(key);
+  const exCards = metierExIds.map(eid => {
     const ex = allExs.find(e => e.id === eid);
     if (!ex) return '';
     const done = S.prog.exercises[eid];
@@ -5843,7 +6101,7 @@ function openMetier(key) {
 }
 
 function printMetierVocab(key) {
-  const m = PARCOURS_METIERS[key];
+  const m = getAllMetiers()[key];
   const w = window.open('','_blank','width=700,height=800');
   w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Vocabulaire — ' + m.name + '</title>' +
     '<style>body{font-family:Arial,sans-serif;padding:24px;max-width:650px;margin:0 auto}h1{color:' + m.color + '}' +
