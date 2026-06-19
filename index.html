@@ -287,6 +287,10 @@ tbody tr:hover td{background:var(--surface2)}
 
 /* ── MODAL ────────────────────────────────────── */
 .modal-bg{position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s}
+
+.dyslexic-mode, .dyslexic-mode * { font-family: 'OpenDyslexic', Arial, sans-serif !important; letter-spacing: 0.5px !important; line-height: 1.8 !important; }
+
+@keyframes xpPop{0%{transform:translateY(10px) scale(.8);opacity:0}50%{transform:translateY(-4px) scale(1.05)}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal{background:var(--surface);border-radius:var(--r-lg);padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
 .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
@@ -473,6 +477,10 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <div class="nav-link" data-page="progression"><span class="nav-icon">📊</span> Progression & Badges <span class="nav-badge" id="nbBadge">0</span></div>
         <div class="nav-link" data-page="planning"><span class="nav-icon">📅</span> Planning
         </div>
+        <div class="nav-link" data-page="metiers"><span class="nav-icon">🏭</span> Parcours métiers
+        </div>
+        <div class="nav-link" data-page="faq"><span class="nav-icon">❓</span> FAQ
+        </div>
         <div class="nav-link" data-page="glossaire"><span class="nav-icon">📖</span> Glossaire</div>
         </div>
       </div>
@@ -489,6 +497,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
+        <div id="gamifBar" class="card" style="margin-bottom:16px;padding:14px 18px"></div>
         <div class="hero">
           <h1 id="heroName">Bonjour 👋</h1>
           <p>Continuez votre apprentissage du Pack Office. Chaque exercice vous rapproche de votre objectif !</p>
@@ -549,6 +558,16 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="a11y-btn" id="btnFontLg" onclick="toggleFont('lg')">A+</button>
           <button class="a11y-btn" id="btnFontXl" onclick="toggleFont('xl')">A++</button>
           <button class="a11y-btn" id="btnFontN" onclick="setFont('n')">A normal</button>
+          <button class="a11y-btn" id="btnDyslexic" onclick="toggleDyslexicFont()" title="Police adaptée pour la dyslexie">🔤 Police dyslexie</button>
+          <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2)">
+            🔊 Vitesse :
+            <select id="audioSpeedSel" onchange="setAudioSpeed(this.value)" style="border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:12px">
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+            </select>
+          </span>
           <button class="a11y-btn" id="btnContrast" onclick="toggleContrast()">⬛ Fort contraste</button>
         </div>
         <div class="g2">
@@ -728,6 +747,23 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
         <div class="ph"><div class="ph-title">📅 Mon planning de formation</div><div class="ph-sub">Exercices assignés par votre formatrice</div></div>
         <div id="planningContent"></div>
       </div>
+      <!-- PARCOURS MÉTIERS -->
+      <div class="page" id="page-metiers">
+        <div class="ph"><div class="ph-title">🏭 Parcours métiers</div><div class="ph-sub">Vocabulaire et compétences Pack Office adaptés à votre secteur d'activité</div></div>
+        <div class="alert al-info mb3"><span>💡</span><div>Choisissez votre secteur professionnel pour voir le vocabulaire bureautique et les exercices les plus utiles pour votre métier.</div></div>
+        <div id="metiersGrid" class="g3"></div>
+        <div id="metierDetail" class="hidden mt3"></div>
+      </div>
+      <!-- FAQ -->
+      <div class="page" id="page-faq">
+        <div class="ph"><div class="ph-title">❓ Questions fréquentes</div><div class="ph-sub">Trouvez rapidement une réponse à votre question</div></div>
+        <input class="fi mb3" id="faqSearch" placeholder="🔍 Rechercher une question…" oninput="renderFAQ()">
+        <div id="faqList"></div>
+        <div class="card mt3" style="text-align:center;background:var(--accent-light)">
+          <div style="font-size:14px;margin-bottom:8px">Vous n'avez pas trouvé votre réponse ?</div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('messages')">💬 Contacter ma formatrice</button>
+        </div>
+      </div>
       <!-- GLOSSAIRE -->
       <div class="page" id="page-glossaire">
         <div class="ph"><div class="ph-title">📖 Glossaire Pack Office</div><div class="ph-sub">Les termes bureautiques en 8 langues</div></div>
@@ -767,6 +803,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <button class="tab-btn" onclick="fTab('groupes',this)">👥 Groupes</button>
           <button class="tab-btn" onclick="fTab('planning_form',this)">📅 Planning</button>
           <button class="tab-btn" onclick="fTab('session_form',this)">🖥️ Session</button>
+          <button class="tab-btn" onclick="fTab('impression',this)">🖨️ Impression</button>
           <button class="tab-btn" onclick="fTab('quiz',this)">🧪 Quiz</button>
         </div>
         <div id="formAlertZone"></div>
@@ -793,6 +830,16 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
 </div>
         </div>
         <div id="ft-stats" class="hidden">
+          <div class="card mb3">
+            <div class="card-title">📡 Suivi avancé des stagiaires</div>
+            <div class="flex gap2 mb3 fwrap">
+              <button class="btn btn-sm ${'' /* default active */}" id="sortBtnProg" onclick="setSuiviSort('progression')" style="background:var(--primary);color:#fff;border:none">Trier : Progression</button>
+              <button class="btn btn-sm btn-outline" id="sortBtnXp" onclick="setSuiviSort('xp')">Trier : XP</button>
+              <button class="btn btn-sm btn-outline" id="sortBtnAlert" onclick="setSuiviSort('alert')">⚠️ Alertes d'abord</button>
+              <button class="btn btn-sm btn-outline" id="sortBtnNom" onclick="setSuiviSort('nom')">Trier : Nom</button>
+            </div>
+            <div id="suiviAvanceList"></div>
+          </div>
           <div class="card mb3">
             <div class="flex jb" style="align-items:center">
               <div>
@@ -1016,6 +1063,40 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div id="customQuizList" class="mt3"></div>
           </div>
         </div>
+        <div id="ft-impression" class="hidden">
+          <div class="card">
+            <div class="card-title">🖨️ Impression pédagogique</div>
+            <div class="alert al-info mb3"><span>ℹ️</span><div>Générez des fiches d'exercices, corrigés et attestations prêts à imprimer, avec le nom du stagiaire et le logo de votre centre.</div></div>
+            <div class="f2 mb3">
+              <div class="fg"><label class="fl">Type de document</label>
+                <select class="fs" id="impType">
+                  <option value="fiche">📋 Fiche d'exercice (vierge)</option>
+                  <option value="corrige">✅ Corrigé (avec réponses)</option>
+                  <option value="attestation">🏅 Attestation de réussite</option>
+                  <option value="revision">📚 Fiche de révision (vocabulaire)</option>
+                </select>
+              </div>
+              <div class="fg"><label class="fl">Module</label>
+                <select class="fs" id="impModule" onchange="updateImpExerciceList()">
+                  <option value="word">Word</option><option value="excel">Excel</option>
+                  <option value="ppt">PowerPoint</option><option value="pub">Publisher</option>
+                </select>
+              </div>
+            </div>
+            <div class="f2 mb3">
+              <div class="fg" id="impExerciceWrap"><label class="fl">Exercice</label>
+                <select class="fs" id="impExercice"></select>
+              </div>
+              <div class="fg"><label class="fl">Nom du stagiaire (facultatif)</label>
+                <input class="fi" id="impNomStagiaire" placeholder="Prénom Nom — laisser vide pour une fiche générique">
+              </div>
+            </div>
+            <div class="fg"><label class="fl">Nom du centre (apparaît sur le document)</label>
+              <input class="fi" id="impCentre" placeholder="RÉCIFE / GRETA" value="RÉCIFE / GRETA">
+            </div>
+            <button class="btn btn-primary" onclick="genererImpression()">🖨️ Générer et imprimer</button>
+          </div>
+        </div>
         <div id="ft-session_form" class="hidden">
           <div class="card">
             <div class="card-title">🖥️ Mode Session de formation</div>
@@ -1145,7 +1226,8 @@ const S = {
   prog: safeGet('mpb_prog', {
     word:0, excel:0, ppt:0, pub:0,
     exercises:{}, badges:[], activity:[], weekly:0, weekStart: Date.now(),
-    casProgress:{}
+    casProgress:{},
+    xp: 0, streak: 0, lastActiveDate: '', dailyCount: 0, dailyDate: '', dailyGoalDone: false
   }),
   settings: safeGet('mpb_settings', {
     formation:'savoirs', niveauNum:'inter',
@@ -1501,6 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   checkVersion(); // Vérifier version + migrer si nécessaire
+  checkConfirmationLink(); // LOT G: Lien de confirmation d'inscription
   // B2: Session restore — sessionStorage (tab) or localStorage (persistent)
   const sess = sessionStorage.getItem('mpb_sess') || localStorage.getItem('mpb_sess_persist');
   if (sess) {
@@ -1719,6 +1802,8 @@ function _doRegisterWork(btn, _reEnable) {
     const u = newUser;
     SB.req('POST', 'mpb_users', { email_hash: btoa(u.email).replace(/=/g,''), prenom: u.prenom, nom: u.nom||'', role: u.role, groupe: u.groupe||'', created_at: new Date().toISOString() }, 'resolution=merge-duplicates').catch(()=>{});
   }
+  // LOT G: Envoyer un email de confirmation d'inscription (si EmailJS configuré)
+  sendConfirmationEmail(newUser);
   err.classList.add('hidden');
 
   // ── FIX BUG 2: Re-activer le bouton + afficher confirmation VISIBLE ──
@@ -1903,6 +1988,8 @@ function showPage(id) {
   if (id === 'envoi') renderEnvoi();
   if (id === 'progression') renderProgression();
   if (id === 'glossaire') renderGlossaire();
+  if (id === 'metiers') renderMetiersGrid();
+  if (id === 'faq') renderFAQ();
   if (id === 'planning') renderPlanning();
   if (id === 'formateur') renderFormateur();
   if (id === 'positionnement') startQuizPositionnement();
@@ -1919,6 +2006,7 @@ function toggleSidebar() {
 function renderDashboard() {
 
   try {
+  refreshGamifBar(); // LOT A: Gamification bar refresh
   const p = S.prog, cfg = S.settings;
   const u = S.currentUser;
   const global = Math.round((p.word + p.excel + p.ppt + p.pub) / 4);
@@ -2079,6 +2167,24 @@ function setLvl(lvl, el) {
 function applySavedSettings() {
   const cfg = S.settings;
   if (cfg.fontSize) { document.body.classList.remove('font-normal','font-lg','font-xl'); document.body.classList.add('font-'+cfg.fontSize); }
+  // LOT E: Restore dyslexic mode + audio speed
+  if (cfg.dyslexicMode) {
+    document.body.classList.add('dyslexic-mode');
+    if (!document.querySelector('link[data-dyslexic]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css';
+      link.setAttribute('data-dyslexic', '1');
+      document.head.appendChild(link);
+    }
+    const btn = document.getElementById('btnDyslexic');
+    if (btn) { btn.style.background = 'var(--primary)'; btn.style.color = '#fff'; }
+  }
+  if (cfg.audioSpeed) {
+    _audioSpeed = cfg.audioSpeed;
+    const sel = document.getElementById('audioSpeedSel');
+    if (sel) sel.value = String(cfg.audioSpeed);
+  }
   // C9: Show computing level info if already tested
   const niEl = document.getElementById('niveauInfoDisplay');
   const niTxt = document.getElementById('niveauInfoText');
@@ -2530,9 +2636,11 @@ function validateStep(exId, modKey, stepIdx, total) {
   saveState(); // B4: save immediately
   // B4: Direct localStorage backup in case of session issues
   try { localStorage.setItem('mpb_prog_backup', JSON.stringify(S.prog)); } catch(e){}
+  S.prog.xp = (S.prog.xp || 0) + XP_REWARDS.step; // LOT A: XP par étape
+  refreshGamifBar();
 
   if (done.length >= total) completeExercise(exId, modKey);
-  else toast('✅ Étape ' + (stepIdx + 1) + ' validée !');
+  else toast('✅ Étape ' + (stepIdx + 1) + ' validée ! +' + XP_REWARDS.step + ' XP');
 }
 
 function answerExQuiz(el, chosen, correct, exId, modKey) {
@@ -2560,6 +2668,8 @@ function answerExQuiz(el, chosen, correct, exId, modKey) {
 function completeExercise(exId, modKey) {
   if (S.prog.exercises[exId] && S.prog.exercises[exId] !== true) return; // Already done
   S.prog.exercises[exId] = new Date().toLocaleDateString('fr-FR');
+  S.prog.xp = (S.prog.xp || 0) + XP_REWARDS.exercise; // LOT A
+  updateStreak(); trackDailyGoal(); refreshGamifBar();
   delete S.prog.exercises[exId + '_steps']; // Clean up partial progress
 
   // FIX #4: Guard against invalid modKey
@@ -3308,7 +3418,7 @@ function fTabMsg() {
 function fTab(tab, btn) {
   document.querySelectorAll('#formTabs .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['stagiaires','travaux','stats','contenus','messages','groupes','quiz','planning_form','session_form'].forEach(t => {
+  ['stagiaires','travaux','stats','contenus','messages','groupes','quiz','planning_form','session_form','impression'].forEach(t => {
     document.getElementById('ft-' + t)?.classList.toggle('hidden', t !== tab);
   });
   // B15: Re-render data on tab switch to avoid stale content
@@ -3319,6 +3429,8 @@ function fTab(tab, btn) {
   if (tab === 'contenus') renderCustomExList();
   if (tab === 'groupes') renderGroupes();
   if (tab === 'planning_form') renderPlanningFormateur();
+  if (tab === 'stats') renderSuiviAvance();
+  if (tab === 'impression') updateImpExerciceList();
   if (tab === 'session_form') { /* ready */ }
   if (tab === 'quiz') renderCustomQuizList();
 }
@@ -5305,6 +5417,537 @@ function checkVersion() {
   }
 }
 
+
+
+
+
+
+// ── ACCESSIBILITÉ+ : POLICE DYSLEXIE & VITESSE AUDIO ─────────
+function toggleDyslexicFont() {
+  const isOn = document.body.classList.toggle('dyslexic-mode');
+  if (isOn && !document.querySelector('link[data-dyslexic]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css';
+    link.setAttribute('data-dyslexic', '1');
+    document.head.appendChild(link);
+  }
+  S.settings.dyslexicMode = isOn;
+  saveParc();
+  const btn = document.getElementById('btnDyslexic');
+  if (btn) { btn.style.background = isOn ? 'var(--primary)' : ''; btn.style.color = isOn ? '#fff' : ''; }
+  toast(isOn ? '✅ Police adaptée dyslexie activée' : 'Police dyslexie désactivée');
+}
+
+let _audioSpeed = 1;
+function setAudioSpeed(val) {
+  _audioSpeed = parseFloat(val) || 1;
+  S.settings.audioSpeed = _audioSpeed;
+  saveParc();
+  toast('🔊 Vitesse audio : ' + _audioSpeed + '×');
+}
+
+// ── IMPRESSION PÉDAGOGIQUE ───────────────────────────────────
+function updateImpExerciceList() {
+  const mod = document.getElementById('impModule')?.value || 'word';
+  const sel = document.getElementById('impExercice');
+  if (!sel || !MODULES_DATA[mod]) return;
+  sel.innerHTML = MODULES_DATA[mod].exercises.map(e =>
+    `<option value="${e.id}">${esc(e.name)} (${e.lvl})</option>`
+  ).join('');
+}
+
+function printDoc(title, bodyHtml, centre) {
+  const w = window.open('', '_blank', 'width=850,height=900');
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${title}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:30px;max-width:760px;margin:0 auto;color:#1a1a2e;line-height:1.6}
+    .doc-header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1a5ec8;padding-bottom:14px;margin-bottom:24px}
+    .doc-centre{font-weight:900;font-size:16px;color:#1a5ec8}
+    .doc-date{font-size:12px;color:#888}
+    h1{color:#1a5ec8;font-size:22px;margin-bottom:4px}
+    .doc-meta{font-size:13px;color:#666;margin-bottom:20px}
+    .step{padding:10px 0;border-bottom:1px solid #eee}
+    .step-num{display:inline-block;width:26px;height:26px;background:#1a5ec8;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-weight:700;font-size:13px;margin-right:8px}
+    .answer{background:#d1fae5;border-left:3px solid #0d9e6e;padding:8px 12px;margin-top:6px;font-size:13px}
+    .vocab-item{background:#f8fafc;border-radius:6px;padding:10px 14px;margin:6px 0}
+    .signature-line{margin-top:60px;display:flex;justify-content:space-between}
+    .signature-box{width:200px;border-top:1px solid #333;text-align:center;padding-top:6px;font-size:12px;color:#666}
+    @media print{button{display:none}}
+  </style></head><body>
+  <div class="doc-header"><span class="doc-centre">${esc(centre || 'RÉCIFE / GRETA')}</span><span class="doc-date">${new Date().toLocaleDateString('fr-FR')}</span></div>
+  ${bodyHtml}
+  <button onclick="window.print()" style="margin-top:24px;padding:10px 24px;background:#1a5ec8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700">🖨️ Imprimer</button>
+  </body></html>`);
+  w.document.close();
+}
+
+function genererImpression() {
+  const type = document.getElementById('impType')?.value;
+  const mod = document.getElementById('impModule')?.value;
+  const exId = document.getElementById('impExercice')?.value;
+  const nomStag = document.getElementById('impNomStagiaire')?.value?.trim();
+  const centre = document.getElementById('impCentre')?.value?.trim() || 'RÉCIFE / GRETA';
+
+  const ex = MODULES_DATA[mod]?.exercises.find(e => e.id === exId);
+  if (!ex) { toast('⚠️ Exercice introuvable.'); return; }
+
+  if (type === 'fiche') {
+    const html = `
+      <h1>📋 Fiche d'exercice</h1>
+      <div class="doc-meta">Module : ${MODULES_DATA[mod].name} · Niveau : ${ex.lvl} · Durée : ${ex.time||'—'}${nomStag?' · Stagiaire : '+esc(nomStag):''}</div>
+      <h2 style="font-size:17px">${esc(ex.name)}</h2>
+      ${(ex.steps||[]).map((s,i) => `<div class="step"><span class="step-num">${i+1}</span>${esc(s)}<div style="border-bottom:1px dotted #ccc;height:24px;margin-top:8px"></div></div>`).join('')}
+      <div class="signature-line"><div class="signature-box">Date</div><div class="signature-box">Signature stagiaire</div></div>`;
+    printDoc('Fiche — ' + ex.name, html, centre);
+
+  } else if (type === 'corrige') {
+    const html = `
+      <h1>✅ Corrigé</h1>
+      <div class="doc-meta">Module : ${MODULES_DATA[mod].name} · Niveau : ${ex.lvl}</div>
+      <h2 style="font-size:17px">${esc(ex.name)}</h2>
+      ${(ex.steps||[]).map((s,i) => `<div class="step"><span class="step-num">${i+1}</span>${esc(s)}</div>`).join('')}
+      ${ex.type==='quiz' && QUIZ_DATA[ex.qIdx] ? `<div class="answer"><b>Réponse :</b> ${esc(QUIZ_DATA[ex.qIdx].opts[QUIZ_DATA[ex.qIdx].rep])}${QUIZ_DATA[ex.qIdx].expl?'<br><i>'+esc(QUIZ_DATA[ex.qIdx].expl)+'</i>':''}</div>` : ''}
+      <p style="margin-top:20px;font-size:12px;color:#888">Document réservé au formateur — non destiné aux stagiaires.</p>`;
+    printDoc('Corrigé — ' + ex.name, html, centre);
+
+  } else if (type === 'attestation') {
+    if (!nomStag) { toast('⚠️ Indiquez le nom du stagiaire pour générer une attestation.'); return; }
+    const html = `
+      <div style="text-align:center;padding:30px 0">
+        <div style="font-size:48px;margin-bottom:10px">🏅</div>
+        <h1 style="font-size:26px">Attestation de réussite</h1>
+        <p style="font-size:16px;margin:20px 0">Ceci certifie que</p>
+        <p style="font-size:24px;font-weight:900;color:#1a5ec8;margin:10px 0">${esc(nomStag)}</p>
+        <p style="font-size:16px;margin:20px 0">a terminé avec succès l'exercice :</p>
+        <p style="font-size:19px;font-weight:700;margin:10px 0">« ${esc(ex.name)} »</p>
+        <p style="font-size:14px;color:#666">Module ${MODULES_DATA[mod].name} · Niveau ${ex.lvl}</p>
+        <p style="font-size:13px;color:#888;margin-top:30px">Délivrée le ${new Date().toLocaleDateString('fr-FR')} par ${esc(centre)}</p>
+      </div>
+      <div class="signature-line"><div class="signature-box">Date</div><div class="signature-box">Signature formateur</div></div>`;
+    printDoc('Attestation — ' + nomStag, html, centre);
+
+  } else if (type === 'revision') {
+    const metierKey = S.settings?.metierActif;
+    const m = metierKey ? PARCOURS_METIERS[metierKey] : null;
+    const vocabSource = m ? m.vocab : GLOSSAIRE.slice(0,15).map(g => ({terme:g.fr, def:g.en}));
+    const html = `
+      <h1>📚 Fiche de révision — Vocabulaire</h1>
+      <div class="doc-meta">${m ? m.name : 'Vocabulaire général Pack Office'}${nomStag?' · '+esc(nomStag):''}</div>
+      ${vocabSource.map(v => `<div class="vocab-item"><b>${esc(v.terme)}</b> — ${esc(v.def)}</div>`).join('')}`;
+    printDoc('Révision vocabulaire', html, centre);
+  }
+}
+
+// ── SUIVI FORMATEUR AVANCÉ (alertes décrochage, classement) ─
+let _suiviSortMode = 'progression';
+
+function setSuiviSort(mode) {
+  _suiviSortMode = mode;
+  ['Prog','Xp','Alert','Nom'].forEach(s => {
+    const b = document.getElementById('sortBtn' + s);
+    if (b) { b.style.background=''; b.style.color=''; b.style.border=''; b.classList.add('btn-outline'); }
+  });
+  const map = {progression:'sortBtnProg', xp:'sortBtnXp', alert:'sortBtnAlert', nom:'sortBtnNom'};
+  const activeBtn = document.getElementById(map[mode]);
+  if (activeBtn) { activeBtn.style.background='var(--primary)'; activeBtn.style.color='#fff'; activeBtn.style.border='none'; activeBtn.classList.remove('btn-outline'); }
+  renderSuiviAvance();
+}
+
+function getStagiaireStats(stag) {
+  // Tente de lire la progression réelle depuis localStorage (si même appareil) sinon estime depuis demo
+  let prog = { word:0, excel:0, ppt:0, pub:0, xp:0, lastActiveDate:'' };
+  if (stag.email) {
+    try {
+      const key = 'mpb_prog_' + btoa(stag.email).replace(/=/g,'');
+      const stored = safeGet(key, null);
+      if (stored) prog = { ...prog, ...stored };
+    } catch(e) {}
+  } else if (stag.detail) {
+    prog = { ...prog, ...stag.detail };
+  }
+  const avgProg = Math.round(((prog.word||0) + (prog.excel||0) + (prog.ppt||0) + (prog.pub||0)) / 4);
+  const daysSinceActive = prog.lastActiveDate
+    ? Math.floor((Date.now() - new Date(prog.lastActiveDate).getTime()) / 86400000)
+    : 999;
+  return { avgProg, xp: prog.xp || 0, streak: prog.streak || 0, daysSinceActive, alert: daysSinceActive >= 7 };
+}
+
+function renderSuiviAvance() {
+  const el = document.getElementById('suiviAvanceList');
+  if (!el) return;
+  const hiddenIds = safeGet('mpb_hidden_stags', []);
+  const realUsers = S.users.filter(u => u.role === 'stagiaire');
+  const allStagiaires = [...realUsers, ...DEMO_STAGIAIRES].filter(s => !hiddenIds.includes(s.id));
+
+  let withStats = allStagiaires.map(s => ({ ...s, stats: getStagiaireStats(s) }));
+
+  if (_suiviSortMode === 'progression') withStats.sort((a,b) => b.stats.avgProg - a.stats.avgProg);
+  else if (_suiviSortMode === 'xp') withStats.sort((a,b) => b.stats.xp - a.stats.xp);
+  else if (_suiviSortMode === 'alert') withStats.sort((a,b) => (b.stats.alert?1:0) - (a.stats.alert?1:0) || b.stats.daysSinceActive - a.stats.daysSinceActive);
+  else if (_suiviSortMode === 'nom') withStats.sort((a,b) => (a.prenom||'').localeCompare(b.prenom||''));
+
+  const alertCount = withStats.filter(s => s.stats.alert).length;
+
+  el.innerHTML = `
+    <div class="g3 mb3">
+      <div class="card" style="text-align:center;padding:14px"><div style="font-size:24px;font-weight:900;color:var(--primary)">${withStats.length}</div><div style="font-size:11px;color:var(--text3)">Stagiaires</div></div>
+      <div class="card" style="text-align:center;padding:14px"><div style="font-size:24px;font-weight:900;color:${alertCount>0?'var(--danger)':'var(--accent)'}">${alertCount}</div><div style="font-size:11px;color:var(--text3)">⚠️ Alertes décrochage</div></div>
+      <div class="card" style="text-align:center;padding:14px"><div style="font-size:24px;font-weight:900;color:var(--accent)">${Math.round(withStats.reduce((a,s)=>a+s.stats.avgProg,0)/(withStats.length||1))}%</div><div style="font-size:11px;color:var(--text3)">Progression moy.</div></div>
+    </div>
+    <div style="display:grid;gap:6px">
+    ${withStats.map((s, rank) => `
+      <div class="ex-item" style="${s.stats.alert ? 'border-left:3px solid var(--danger);background:#fef2f2' : ''}">
+        <div style="min-width:24px;font-weight:900;color:var(--text3);font-size:13px">#${rank+1}</div>
+        <div class="ex-body">
+          <div class="ex-name">${esc(s.prenom)} ${esc(s.nom||'')} ${s.stats.alert ? '<span style="color:var(--danger);font-size:11px">⚠️ Inactif ' + s.stats.daysSinceActive + 'j</span>' : ''}</div>
+          <div style="display:flex;gap:10px;font-size:11px;color:var(--text3);margin-top:2px">
+            <span>📊 ${s.stats.avgProg}%</span>
+            <span>✨ ${s.stats.xp} XP</span>
+            <span>🔥 ${s.stats.streak}j</span>
+            <span>${esc(s.groupe||'—')}</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openFiche(${s.id})">👁</button>
+      </div>`).join('')}
+    </div>`;
+}
+
+
+
+// ── CONFIRMATION D'INSCRIPTION PAR EMAIL ─────────────────────
+function sendConfirmationEmail(user) {
+  if (!EMAILJS.enabled) return; // Pas configuré, on ignore silencieusement
+  const params = new URLSearchParams({
+    welcome: '1',
+    prenom: user.prenom,
+    role: user.role,
+    email: user.email
+  });
+  const confirmLink = window.location.origin + window.location.pathname + '?' + params.toString();
+  const roleLabel = user.role === 'formateur' ? 'formateur/formatrice' : 'stagiaire';
+  EMAILJS.send(
+    user.email, user.prenom,
+    'Confirmez votre inscription — Ma Plateforme Bureautique',
+    `Bonjour ${user.prenom},\n\nVotre compte ${roleLabel} a bien été créé sur Ma Plateforme Bureautique.\n\nCliquez sur le lien ci-dessous pour confirmer votre inscription :\n${confirmLink}\n\nVous pourrez ensuite vous connecter avec votre e-mail et le mot de passe choisi.\n\nBienvenue !\n\nRÉCIFE / GRETA`
+  ).then(ok => {
+    if (ok) console.log('✅ Email de confirmation envoyé à', user.email);
+  }).catch(() => {});
+}
+
+// Vérifier si l'utilisateur arrive depuis un lien de confirmation
+function checkConfirmationLink() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('welcome') !== '1') return;
+
+  const prenom = params.get('prenom') || '';
+  const role = params.get('role') || 'stagiaire';
+  const email = params.get('email') || '';
+
+  // Nettoyer l'URL pour éviter de re-déclencher au rechargement
+  history.replaceState(null, '', window.location.pathname);
+
+  // Afficher une bannière de bienvenue + pré-remplir le formulaire de connexion
+  setTimeout(() => {
+    const emailField = document.getElementById('lEmail');
+    if (emailField) emailField.value = email;
+
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#0d9e6e,#059669);color:#fff;padding:14px 20px;z-index:1200;text-align:center;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+    banner.innerHTML = `✅ <b>Inscription confirmée, ${esc(prenom)} !</b> Connectez-vous ci-dessous avec votre mot de passe pour accéder à votre espace ${role === 'formateur' ? 'formateur' : 'stagiaire'}.
+      <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,.25);border:none;color:#fff;padding:4px 10px;border-radius:6px;margin-left:12px;cursor:pointer">✕</button>`;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 10000);
+
+    // S'assurer qu'on est sur l'écran de connexion (pas inscription)
+    const loginTab = document.querySelector('.auth-tab');
+    if (loginTab && document.getElementById('apLogin')) {
+      document.getElementById('apLogin').style.display = '';
+      document.getElementById('apRegister').style.display = 'none';
+    }
+    document.getElementById('lMdp')?.focus();
+  }, 300);
+}
+
+// ── FAQ INTÉGRÉE ──────────────────────────────────────────────
+const FAQ_DATA = [
+  {q:'Comment reprendre là où je me suis arrêté ?', a:'Reconnectez-vous avec le même e-mail et mot de passe. Votre progression est sauvegardée automatiquement (localement et dans le cloud) et sera restaurée.'},
+  {q:'Comment fonctionne le test de positionnement ?', a:'Il évalue votre niveau en informatique bureautique (Word, Excel, PowerPoint), pas votre niveau en français. 15 questions, environ 5 minutes. Le résultat détermine les exercices recommandés.'},
+  {q:'Puis-je utiliser la plateforme sans internet ?', a:'Oui, après l\'avoir installée (bouton 📲 Installer dans la barre du haut). Vos données se synchronisent automatiquement dès que la connexion revient.'},
+  {q:'Comment contacter mon formateur ?', a:'Utilisez le bouton 💬 Messages dans le menu. Choisissez le destinataire, l\'objet de votre message, puis envoyez.'},
+  {q:'J\'ai oublié mon mot de passe, que faire ?', a:'Cliquez sur « 🔑 J\'ai oublié mes codes » sous le bouton de connexion. Vous pouvez aussi contacter votre formatrice qui peut réinitialiser votre compte.'},
+  {q:'Comment ouvrir Word, Excel ou PowerPoint ?', a:'Sur votre ordinateur : Démarrer → tapez le nom du logiciel (Word, Excel…) → Entrée. Une bannière dans chaque exercice vous le rappelle.'},
+  {q:'Comment envoyer mon travail à ma formatrice ?', a:'Enregistrez votre fichier avec le nom Prénom_Groupe_Exercice.docx, puis allez sur 📤 Envoyer travaux, sélectionnez le fichier et validez.'},
+  {q:'Que signifient les niveaux A1, A2, B1, B2, C1, C2 ?', a:'Ce sont les niveaux du CECRL (Cadre européen). A1 = débutant, C2 = expert. Sur ce site, il y a deux échelles séparées : une pour le français, une pour l\'informatique.'},
+  {q:'Comment gagner des XP et monter de niveau ?', a:'Chaque étape validée rapporte des XP. Terminer un exercice entier en rapporte plus. Connectez-vous chaque jour pour garder votre série (streak) 🔥 !'},
+  {q:'Comment installer l\'application sur mon téléphone ?', a:'Sur Chrome/Edge : cliquez sur 📲 Installer. Sur iPhone (Safari) : Menu Partage → Sur l\'écran d\'accueil.'},
+  {q:'Mes badges et ma progression sont-ils partagés entre appareils ?', a:'Oui, si vous êtes connecté(e) avec le même e-mail, vos données se synchronisent automatiquement via le cloud.'},
+  {q:'Comment fonctionne le mode guidé A1 ?', a:'Il enrichit les consignes avec des pictogrammes colorés pour les raccourcis clavier (Ctrl+S, Ctrl+C…) et met en valeur les actions à faire. Activez-le dans la barre d\'accessibilité.'},
+  {q:'Comment télécharger une fiche ou un corrigé ?', a:'Cette fonctionnalité est réservée aux formateurs (onglet 🖨️ Impression de l\'espace formateur).'},
+  {q:'Le site fonctionne-t-il sur tablette et smartphone ?', a:'Oui, le site est entièrement adapté aux écrans tactiles, tablettes et smartphones (Android et iPhone).'},
+];
+
+function renderFAQ() {
+  const search = (document.getElementById('faqSearch')?.value || '').toLowerCase();
+  const el = document.getElementById('faqList');
+  if (!el) return;
+  const filtered = FAQ_DATA.filter(f => !search || f.q.toLowerCase().includes(search) || f.a.toLowerCase().includes(search));
+  if (!filtered.length) { el.innerHTML = '<div class="muted tc" style="padding:30px">Aucune question trouvée pour "' + esc(search) + '"</div>'; return; }
+  el.innerHTML = filtered.map((f, i) => `
+    <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="this.querySelector('.faq-a').classList.toggle('hidden');this.querySelector('.faq-arrow').textContent=this.querySelector('.faq-a').classList.contains('hidden')?'▸':'▾'">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px">
+        <span>❓ ${esc(f.q)}</span>
+        <span class="faq-arrow" style="font-size:18px;color:var(--primary)">▸</span>
+      </div>
+      <div class="faq-a hidden" style="margin-top:10px;font-size:13px;color:var(--text2);line-height:1.6">${f.a}</div>
+    </div>`).join('');
+}
+
+// ── PARCOURS MÉTIERS ─────────────────────────────────────────
+const PARCOURS_METIERS = {
+  secretariat: {
+    icon:'📋', name:'Secrétariat / Administratif', color:'#1a5ec8',
+    desc:'Courrier, comptes-rendus, classement, accueil téléphonique',
+    vocab: [
+      {terme:'Publipostage', def:'Fusion d\'un document type avec une liste de destinataires (Word + Excel)'},
+      {terme:'Bordereau de transmission', def:'Document accompagnant l\'envoi de pièces jointes'},
+      {terme:'Compte-rendu', def:'Document résumant une réunion, rédigé après celle-ci'},
+      {terme:'Classement chronologique', def:'Organisation des documents par date'},
+      {terme:'Formule de politesse', def:'Phrase de clôture d\'une lettre (ex: Veuillez agréer...)'},
+      {terme:'Objet (d\'un courrier)', def:'Résumé en une ligne du sujet de la lettre'},
+    ],
+    exercices: ['w2','w3','w7','e2'],
+    casPratique: 'lettre'
+  },
+  vente: {
+    icon:'🛒', name:'Vente / Accueil / Commerce', color:'#0d9e6e',
+    desc:'Devis, factures, suivi clients, présentation produits',
+    vocab: [
+      {terme:'Devis', def:'Document chiffrant un prix avant la vente, non engageant juridiquement'},
+      {terme:'Facture', def:'Document officiel de vente, avec TVA et mentions légales'},
+      {terme:'Fichier client', def:'Base de données Excel des coordonnées et achats clients'},
+      {terme:'Catalogue produit', def:'Présentation PowerPoint ou Publisher des produits/services'},
+      {terme:'Remise / Ristourne', def:'Réduction de prix accordée au client'},
+      {terme:'RECHERCHEV', def:'Formule Excel pour retrouver un prix ou une info dans un tableau'},
+    ],
+    exercices: ['e3','e7','p2','pu2'],
+    casPratique: 'flyer'
+  },
+  logistique: {
+    icon:'📦', name:'Logistique / Transport', color:'#d97706',
+    desc:'Suivi de stock, bons de commande, plannings de livraison',
+    vocab: [
+      {terme:'Bon de commande', def:'Document Excel/Word listant les articles commandés'},
+      {terme:'Stock / Inventaire', def:'Liste Excel des quantités disponibles en entrepôt'},
+      {terme:'Bon de livraison', def:'Document accompagnant une marchandise livrée'},
+      {terme:'Planning de tournée', def:'Tableau Excel organisant les livraisons par horaire/zone'},
+      {terme:'SOMME.SI', def:'Formule Excel pour additionner selon une condition (ex: par produit)'},
+      {terme:'Tri et filtre', def:'Fonctions Excel pour organiser de grandes listes de données'},
+    ],
+    exercices: ['e1','e4','e5','e6'],
+    casPratique: 'planning'
+  },
+  sante: {
+    icon:'🏥', name:'Santé / Social (ADVF)', color:'#7c3aed',
+    desc:'Fiches de suivi, plannings d\'intervention, transmissions',
+    vocab: [
+      {terme:'Fiche de suivi', def:'Document Word/Excel notant les soins ou activités quotidiennes'},
+      {terme:'Transmission', def:'Note écrite d\'information entre intervenants (équipe soignante)'},
+      {terme:'Planning d\'intervention', def:'Tableau Excel des horaires de visites à domicile'},
+      {terme:'Protocole', def:'Document Word décrivant une procédure à suivre'},
+      {terme:'Confidentialité (RGPD)', def:'Protection obligatoire des données personnelles des patients'},
+      {terme:'Mise en forme lisible', def:'Police grande, contrastée, adaptée aux personnes âgées'},
+    ],
+    exercices: ['w1','w4','e1','e2'],
+    casPratique: 'planning'
+  },
+  btp: {
+    icon:'🏗️', name:'BTP / Construction', color:'#dc2626',
+    desc:'Devis travaux, plannings de chantier, sécurité',
+    vocab: [
+      {terme:'Devis travaux', def:'Estimation chiffrée par poste (matériaux, main d\'œuvre)'},
+      {terme:'Planning de chantier', def:'Excel ou diagramme de Gantt des étapes de construction'},
+      {terme:'Métré', def:'Calcul des quantités de matériaux nécessaires'},
+      {terme:'Fiche de sécurité', def:'Document Word listant les consignes EPI et risques'},
+      {terme:'Bon de livraison matériaux', def:'Document accompagnant la réception de matériaux'},
+      {terme:'Mise en page paysage', def:'Orientation horizontale pour les plans et tableaux larges'},
+    ],
+    exercices: ['e4','e8','w6','pu3'],
+    casPratique: 'planning'
+  },
+  bureau: {
+    icon:'🏢', name:'Bureau / Gestion générale', color:'#0891b2',
+    desc:'Présentations, rapports, tableaux de bord',
+    vocab: [
+      {terme:'Tableau de bord', def:'Vue Excel synthétique avec indicateurs clés (KPI)'},
+      {terme:'Rapport d\'activité', def:'Document Word résumant les actions sur une période'},
+      {terme:'Présentation client', def:'Diaporama PowerPoint pour convaincre ou informer'},
+      {terme:'Graphique croisé dynamique', def:'Synthèse Excel interactive de grandes quantités de données'},
+      {terme:'Note de service', def:'Communication interne courte et formelle'},
+      {terme:'Macro', def:'Automatisation d\'une tâche répétitive dans Excel/Word'},
+    ],
+    exercices: ['w10','e9','e10','p5'],
+    casPratique: 'presentation'
+  },
+};
+
+function renderMetiersGrid() {
+  const el = document.getElementById('metiersGrid');
+  if (!el) return;
+  el.innerHTML = Object.entries(PARCOURS_METIERS).map(([key, m]) => `
+    <div class="card" style="cursor:pointer;border-top:4px solid ${m.color}" onclick="openMetier('${key}')">
+      <div style="font-size:36px;margin-bottom:8px">${m.icon}</div>
+      <div style="font-weight:900;font-size:15px;margin-bottom:4px">${m.name}</div>
+      <div style="font-size:12px;color:var(--text2)">${m.desc}</div>
+      <div style="margin-top:10px;font-size:11px;color:${m.color};font-weight:700">${m.vocab.length} termes · ${m.exercices.length} exercices →</div>
+    </div>`).join('');
+}
+
+function openMetier(key) {
+  const m = PARCOURS_METIERS[key];
+  if (!m) return;
+  S.settings.metierActif = key;
+  saveParc();
+  const detail = document.getElementById('metierDetail');
+  detail.classList.remove('hidden');
+
+  const allExs = Object.values(MODULES_DATA).flatMap(mod => mod.exercises.map(e => ({...e, modIcon: mod.icon})));
+  const exCards = m.exercices.map(eid => {
+    const ex = allExs.find(e => e.id === eid);
+    if (!ex) return '';
+    const done = S.prog.exercises[eid];
+    return `<div class="ex-item" onclick="document.getElementById('exModal')?.classList.contains('hidden') && showPage('modules')" style="cursor:pointer">
+      <div class="ex-num">${ex.modIcon}</div>
+      <div class="ex-body"><div class="ex-name">${esc(ex.name)} ${done ? '✅' : ''}</div></div>
+      <span class="lvl l${ex.lvl}">${ex.lvl}</span>
+    </div>`;
+  }).join('');
+
+  detail.innerHTML = `
+    <div class="card" style="border-top:4px solid ${m.color}">
+      <div class="flex jb" style="align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">${m.icon} ${m.name}</div>
+        <button class="btn btn-ghost btn-sm" onclick="printMetierVocab('${key}')">🖨️ Imprimer le vocabulaire</button>
+      </div>
+      <h3 style="font-size:14px;margin-bottom:8px">📖 Vocabulaire essentiel</h3>
+      <div style="display:grid;gap:8px;margin-bottom:20px">
+        ${m.vocab.map(v => `<div style="background:var(--surface2);border-radius:8px;padding:10px 14px">
+          <span style="font-weight:900;color:${m.color}">${esc(v.terme)}</span>
+          <span style="color:var(--text2);font-size:13px"> — ${esc(v.def)}</span>
+        </div>`).join('')}
+      </div>
+      <h3 style="font-size:14px;margin-bottom:8px">🎯 Exercices recommandés</h3>
+      ${exCards}
+    </div>`;
+  detail.scrollIntoView({behavior:'smooth'});
+}
+
+function printMetierVocab(key) {
+  const m = PARCOURS_METIERS[key];
+  const w = window.open('','_blank','width=700,height=800');
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Vocabulaire — ' + m.name + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;padding:24px;max-width:650px;margin:0 auto}h1{color:' + m.color + '}' +
+    '.t{background:#f8fafc;border-radius:8px;padding:10px 14px;margin:8px 0}.t b{color:' + m.color + '}' +
+    '@media print{button{display:none}}</style></head><body>' +
+    '<h1>' + m.icon + ' ' + m.name + '</h1><p style="color:#888">Vocabulaire bureautique essentiel</p>' +
+    m.vocab.map(v => '<div class="t"><b>' + v.terme + '</b> — ' + v.def + '</div>').join('') +
+    '<button onclick="window.print()" style="margin-top:16px;padding:8px 20px;background:' + m.color + ';color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimer</button>' +
+    '</body></html>');
+  w.document.close();
+}
+
+// ── GAMIFICATION : XP, STREAK, OBJECTIF QUOTIDIEN ───────────
+const XP_REWARDS = { step: 5, exercise: 30, quiz_correct: 8, cas_step: 6, badge: 50 };
+const DAILY_GOAL = 3; // exercices par jour
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function addXP(amount, reason) {
+  S.prog.xp = (S.prog.xp || 0) + amount;
+  updateStreak();
+  saveState();
+  showXPToast(amount, reason);
+  refreshGamifBar();
+}
+
+function updateStreak() {
+  const today = todayStr();
+  if (S.prog.lastActiveDate === today) return; // déjà compté aujourd'hui
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (S.prog.lastActiveDate === yesterday) {
+    S.prog.streak = (S.prog.streak || 0) + 1;
+  } else if (S.prog.lastActiveDate !== today) {
+    S.prog.streak = 1;
+  }
+  S.prog.lastActiveDate = today;
+}
+
+function trackDailyGoal() {
+  const today = todayStr();
+  if (S.prog.dailyDate !== today) {
+    S.prog.dailyDate = today;
+    S.prog.dailyCount = 0;
+    S.prog.dailyGoalDone = false;
+  }
+  S.prog.dailyCount = (S.prog.dailyCount || 0) + 1;
+  if (S.prog.dailyCount >= DAILY_GOAL && !S.prog.dailyGoalDone) {
+    S.prog.dailyGoalDone = true;
+    addXP(20, 'Objectif quotidien atteint !');
+    toast('🎯 Objectif quotidien atteint ! +20 XP', 4000);
+  }
+}
+
+function showXPToast(amount, reason) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:70px;right:20px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1a2e;padding:8px 16px;border-radius:20px;font-weight:900;font-size:13px;z-index:1100;box-shadow:0 4px 16px rgba(245,158,11,.4);animation:xpPop .6s ease-out';
+  el.textContent = '✨ +' + amount + ' XP';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1800);
+}
+
+function getLevelFromXP(xp) {
+  // Niveaux gamifiés (différents des niveaux CECRL)
+  const levels = [
+    {min:0, name:'Débutant', icon:'🌱'}, {min:100, name:'Apprenti', icon:'🌿'},
+    {min:300, name:'Compétent', icon:'🌳'}, {min:600, name:'Avancé', icon:'⭐'},
+    {min:1000, name:'Expert', icon:'🏆'}, {min:2000, name:'Maître', icon:'👑'}
+  ];
+  let cur = levels[0], next = levels[1];
+  for (let i = 0; i < levels.length; i++) {
+    if (xp >= levels[i].min) { cur = levels[i]; next = levels[i+1] || null; }
+  }
+  return { cur, next, pct: next ? Math.min(100, Math.round((xp - cur.min) / (next.min - cur.min) * 100)) : 100 };
+}
+
+function refreshGamifBar() {
+  const xp = S.prog.xp || 0;
+  const streak = S.prog.streak || 0;
+  const { cur, next, pct } = getLevelFromXP(xp);
+  const el = document.getElementById('gamifBar');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:22px">${cur.icon}</span>
+        <div>
+          <div style="font-size:12px;font-weight:900;color:var(--primary)">${cur.name}</div>
+          <div style="font-size:10px;color:var(--text3)">${xp} XP${next ? ' · ' + (next.min - xp) + ' avant ' + next.name : ' · Niveau max !'}</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:100px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;background:${streak>0?'#fff3cd':'var(--surface2)'};padding:4px 10px;border-radius:14px">
+        <span style="font-size:16px">🔥</span>
+        <span style="font-size:13px;font-weight:900;color:${streak>0?'#92400e':'var(--text3)'}">${streak} jour${streak>1?'s':''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;background:${S.prog.dailyGoalDone?'#d1fae5':'var(--surface2)'};padding:4px 10px;border-radius:14px">
+        <span style="font-size:14px">${S.prog.dailyGoalDone?'✅':'🎯'}</span>
+        <span style="font-size:12px;font-weight:700;color:${S.prog.dailyGoalDone?'#065f46':'var(--text3)'}">${Math.min(S.prog.dailyCount||0, DAILY_GOAL)}/${DAILY_GOAL} aujourd'hui</span>
+      </div>
+    </div>`;
+}
+
 // ── GLOSSAIRE MULTILINGUE ───────────────────────────
 const GLOSSAIRE = [
   // Matériel & interface
@@ -5420,7 +6063,7 @@ function ttsSpeak(text) {
   // B11: Truncate very long texts to avoid Chrome speechSynthesis silent failure
   const safeText = text.length > 500 ? text.substring(0, 500) + '… (texte tronqué)' : text;
   const u = new SpeechSynthesisUtterance(safeText);
-  u.lang = 'fr-FR'; u.rate = 0.88; u.pitch = 1;
+  u.lang = 'fr-FR'; u.rate = 0.88 * (_audioSpeed || 1); u.pitch = 1;
   // Try to pick a French voice
   const voices = speechSynthesis.getVoices();
   const frVoice = voices.find(v => v.lang.startsWith('fr'));
