@@ -350,6 +350,9 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
   .hero{padding:22px 18px}.hero h1{font-size:20px}
   .g2,.g3{grid-template-columns:1fr}.f2{grid-template-columns:1fr}
   .sg{grid-template-columns:repeat(2,1fr)}.auth-card{padding:26px 18px}
+  #mfVocabList>div{grid-template-columns:1fr!important}
+  .tabs{padding-bottom:4px}
+  .modal,.modal-content{max-width:96vw!important;width:96vw!important}
 }
 @media print{.sidebar,.navbar,.toast,.btn{display:none!important}.modal-bg{display:none!important}.main-content{padding:0}.card{box-shadow:none;border:1px solid #ccc}#authScreen{display:none!important}#mainApp{display:block!important}}
 </style>
@@ -715,7 +718,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             </select></div>
             <div class="fg"><label class="fl">Exercice</label><select class="fs" id="envoiEx"><option value="">-- Choisir --</option></select></div>
             <div class="fg"><label class="fl">Message (facultatif)</label><textarea class="fta" placeholder="Difficultés rencontrées…"></textarea></div>
-            <button class="btn btn-primary btn-full btn-lg" onclick="envoyerTravail()">📤 Envoyer mon travail</button>
+            <button id="btnEnvoyerTravail" class="btn btn-primary btn-full btn-lg" onclick="envoyerTravail()">📤 Envoyer mon travail</button>
           </div>
           <div class="card">
             <div class="card-title">📜 Historique des envois</div>
@@ -1030,7 +1033,49 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div id="customExList">id="customExList"></div>
           </div>
         </div>
-        <div id="ft-quiz" class="hidden">
+        <div <div id="ft-quiz" class="hidden">
+          <div class="card">
+            <div class="flex jb" style="align-items:center;margin-bottom:14px">
+              <div class="card-title" style="margin-bottom:0">🎯 Catégories de test d'entrée</div>
+              <button class="btn btn-primary btn-sm" onclick="showSimulationForm()">➕ Nouvelle catégorie</button>
+            </div>
+            <div class="alert al-info mb3"><span>ℹ️</span><div>Créez des tests d'entrée liés à une formation (Savoirs Essentiels, #Avenir, ou les deux). Les stagiaires ne verront que les tests correspondant à la formation qu'ils ont choisie dans « Mon Parcours ».</div></div>
+
+            <div id="simulationEditForm" class="hidden card" style="border:2px solid var(--primary)">
+              <div class="card-title" id="simFormTitle">➕ Nouvelle catégorie de test</div>
+              <div class="f2">
+                <div class="fg"><label class="fl">Nom du test</label><input class="fi" id="simNom" placeholder="Ex: Entrée Cuisine collective"></div>
+                <div class="fg"><label class="fl">Durée</label><input class="fi" id="simDuree" placeholder="Ex: 40 min"></div>
+              </div>
+              <div class="f2">
+                <div class="fg"><label class="fl">Formation concernée</label>
+                  <select class="fs" id="simDispositif">
+                    <option value="savoirs">Savoirs Essentiels</option>
+                    <option value="avenir">#Avenir</option>
+                    <option value="les_deux" selected>Les deux formations</option>
+                  </select>
+                </div>
+                <div class="fg"><label class="fl">Niveau</label>
+                  <select class="fs" id="simNiveau"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option></select>
+                </div>
+              </div>
+
+              <div style="font-weight:700;margin:14px 0 6px;font-size:14px">📄 Questions — saisie manuelle ou import de document</div>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('simDocImport').click()">📄 Importer un document (.docx/.txt)</button>
+              <input type="file" id="simDocImport" style="display:none" accept=".txt,.docx" onchange="importSimulationDoc(this)">
+              <div id="simQuestionsList" style="display:grid;gap:8px;margin-top:10px"></div>
+              <button class="btn btn-ghost btn-sm mt2" onclick="addSimQuestionRow()">+ Ajouter une question manuellement</button>
+
+              <div class="flex gap2 mt3">
+                <button class="btn btn-primary" onclick="saveSimulation()">💾 Enregistrer le test</button>
+                <button class="btn btn-ghost" onclick="cancelSimulationForm()">Annuler</button>
+              </div>
+              <input type="hidden" id="simKey" value="">
+            </div>
+
+            <div id="simulationsFormateurList" class="mt3"></div>
+          </div>
+          </div>
           <div class="card">
             <div class="card-title">🧪 Modifier le test de positionnement</div>
             <div class="alert al-info mb3"><span>ℹ️</span><div>Les questions ajoutées ici complètent ou remplacent les questions par défaut du test de positionnement de 15 questions.</div></div>
@@ -1629,6 +1674,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   checkVersion(); // Vérifier version + migrer si nécessaire
   checkConfirmationLink(); // LOT G: Lien de confirmation d'inscription
+  applyCustomSimulationsToRuntime(); // LOT 5: Charger les catégories de test personnalisées
   // B2: Session restore — sessionStorage (tab) or localStorage (persistent)
   const sess = sessionStorage.getItem('mpb_sess') || localStorage.getItem('mpb_sess_persist');
   if (sess) {
@@ -1737,33 +1783,63 @@ function loginAfterRegister(pre, nom, email, role) {
 }
 
 function loginAs(role) {
-  // [12] If role is null (Se connecter button), detect from stored users
-  if (!role) {
-    const email2 = document.getElementById('lEmail')?.value?.trim();
-    const mdp2 = document.getElementById('lMdp')?.value;
-    if (email2 && mdp2) {
-      const found = S.users.find(u => u.email === email2 && u.mdp === mdp2);
-      role = found ? (found.role || 'stagiaire') : null;
-      if (!role) {
-        showErr(document.getElementById('lErr'), '⚠️ Identifiants non reconnus. Choisissez ci-dessous : Stagiaire ou Formateur(trice).');
-        return;
-      }
-    } else {
-      // Demo mode — default to stagiaire
-      role = 'stagiaire';
-    }
-  }
+  Promise.resolve(_loginAsWork(role)).catch(e => {
+    console.error('Login error:', e);
+    const errEl = document.getElementById('lErr');
+    if (errEl) { errEl.textContent = '⚠️ Erreur de connexion. Réessayez.'; errEl.classList.remove('hidden'); }
+  });
+}
+
+async function _loginAsWork(role) {
   const emailEl = document.getElementById('lEmail');
   const mdpEl = document.getElementById('lMdp');
   const email = emailEl ? emailEl.value.trim() : '';
   const mdp = mdpEl ? mdpEl.value : '';
+
   let matchedUser = null;
   if (email && mdp) {
+    // 1) Recherche LOCALE d'abord (rapide, fonctionne hors-ligne)
     matchedUser = S.users.find(u => u.email === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
-    if (!matchedUser && S.users.length > 0) {
+
+    // 2) LOT 1: Si pas trouvé localement, chercher sur Supabase (nouvel appareil / hors localStorage)
+    if (!matchedUser && SB.enabled && navigator.onLine) {
+      const loginBtn = document.getElementById('btnLogin');
+      const prevText = loginBtn ? loginBtn.innerHTML : '';
+      if (loginBtn) loginBtn.innerHTML = '⏳ Connexion…';
+      try {
+        const pwdHash = await hashPwd(mdp, email);
+        const remote = await SB.findUserRemote(email, pwdHash);
+        if (remote) {
+          matchedUser = { prenom: remote.prenom, nom: remote.nom, email: remote.email, role: remote.role, groupe: remote.groupe, mdp };
+          // Sauvegarder localement pour les prochaines connexions (mode hors-ligne)
+          S.users.push(matchedUser);
+          safeSet('mpb_users', S.users);
+        }
+      } finally {
+        if (loginBtn) loginBtn.innerHTML = prevText;
+      }
+    }
+
+    if (!matchedUser) {
       const errEl = document.getElementById('lErr');
-      if (errEl) { errEl.textContent = '⚠️ Identifiants incorrects.'; errEl.classList.remove('hidden'); }
+      if (errEl) {
+        errEl.textContent = !navigator.onLine
+          ? '⚠️ Identifiants incorrects ou compte créé sur un autre appareil (connexion internet requise la première fois).'
+          : '⚠️ Identifiants incorrects.';
+        errEl.classList.remove('hidden');
+      }
       return;
+    }
+  }
+
+  // [12] Détecter le rôle depuis le compte trouvé, ou exiger un choix explicite
+  if (!role) {
+    if (matchedUser) {
+      role = matchedUser.role || 'stagiaire';
+    } else if (email && mdp) {
+      return; // déjà géré ci-dessus (identifiants incorrects)
+    } else {
+      role = 'stagiaire'; // Mode démo
     }
   }
   S.role = role;
@@ -1806,10 +1882,10 @@ function doRegister(btn) {
   if (btn && btn.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Création…'; }
   const _reEnable = () => { if (btn) { btn.disabled = false; btn.textContent = '✅ Créer mon compte'; } };
-  try { _doRegisterWork(btn, _reEnable); } catch(e) { if(typeof _reEnable==='function') _reEnable(); console.error('Register error:',e); toast('⚠️ Erreur inscription. Réessayez.'); }
+  Promise.resolve(_doRegisterWork(btn, _reEnable)).catch(e => { if(typeof _reEnable==='function') _reEnable(); console.error('Register error:',e); toast('⚠️ Erreur inscription. Réessayez.'); });
 }
 
-function _doRegisterWork(btn, _reEnable) {
+async function _doRegisterWork(btn, _reEnable) {
   const pre = val('rPre'), nom = val('rNom'), email = val('rEmail'), mdp = val('rMdp'),
     emailConf = val('rEmailConf'), mdpConf = val('rMdpConf');
   const err = document.getElementById('rErr');
@@ -1842,10 +1918,12 @@ function _doRegisterWork(btn, _reEnable) {
   S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
-  // Sync to Supabase
+  // LOT 1: Sync to Supabase AVEC le hash du mot de passe pour permettre la connexion cross-device
   if (SB.enabled) {
-    const u = newUser;
-    SB.req('POST', 'mpb_users', { email_hash: btoa(u.email).replace(/=/g,''), prenom: u.prenom, nom: u.nom||'', role: u.role, groupe: u.groupe||'', created_at: new Date().toISOString() }, 'resolution=merge-duplicates').catch(()=>{});
+    try {
+      const pwdHash = await hashPwd(mdp, newUser.email);
+      await SB.syncUserAccount(newUser, pwdHash);
+    } catch(e) { console.warn('Sync compte échouée:', e); }
   }
   // LOT G: Envoyer un email de confirmation d'inscription (si EmailJS configuré)
   sendConfirmationEmail(newUser);
@@ -3030,6 +3108,17 @@ function openMetierExos(key) {
 function renderTests() {
 
   try {
+  const userFormation = S.settings?.formation || 'les_deux';
+  const customSims = getCustomSimulations().filter(s => s.dispositif === 'les_deux' || s.dispositif === userFormation);
+  const dispLabel = { savoirs:'Savoirs Essentiels', avenir:'#Avenir', les_deux:'Tous parcours' };
+  const customSimsHtml = customSims.length ? customSims.map((s, i) => `
+    <div class="ex-item" data-sim="${esc(s.nom + ' \u00b7 ' + s.duree)}">
+      <div class="ex-num">${String.fromCharCode(68+i)}</div>
+      <div class="ex-body"><div class="ex-name">${esc(s.nom)}</div>
+        <div class="ex-meta"><span class="lvl l${s.niveau}">${s.niveau}</span><span class="tag t-orange">${esc(s.duree)}</span><span class="tag" style="background:var(--accent-light);color:var(--accent)">${dispLabel[s.dispositif]}</span></div>
+      </div>
+    </div>`).join('') : '<div class="muted" style="font-size:12px;margin-top:8px">Aucun test personnalisé pour votre formation.</div>';
+
   setEl('testsGrid', `
     <div class="card">
       <div class="card-title">⏱️ Tests par niveau</div>
@@ -3046,6 +3135,7 @@ function renderTests() {
       <div class="ex-item" data-sim="Pack Office complète · 45 min"><div class="ex-num">A</div><div class="ex-body"><div class="ex-name">Simulation Pack Office complète</div><div class="ex-meta"><span class="lvl lB1">B1</span><span class="tag t-orange">45 min</span></div></div></div>
       <div class="ex-item" data-sim="Secrétariat - Entrée en CAP · 60 min"><div class="ex-num">B</div><div class="ex-body"><div class="ex-name">Simulation Secrétariat — Entrée en CAP</div><div class="ex-meta"><span class="lvl lB2">B2</span><span class="tag t-orange">60 min</span></div></div></div>
       <div class="ex-item" data-sim="Titre Pro ADVF · 40 min"><div class="ex-num">C</div><div class="ex-body"><div class="ex-name">Simulation Titre Pro ADVF</div><div class="ex-meta"><span class="lvl lB1">B1</span><span class="tag t-orange">40 min</span></div></div></div>
+      ${customSimsHtml}
     </div>`);
 
   document.querySelectorAll('#testsGrid .ex-item[data-sim]').forEach(item => {
@@ -3153,6 +3243,7 @@ function showTestResult(total) {
 }
 
 // ── ENVOI ──────────────────────────────────────
+let _envoiCloudRefreshing = false;
 function renderEnvoi() {
 
   try {
@@ -3165,12 +3256,12 @@ function renderEnvoi() {
   });
   setEl('envoiHist', userTravaux.map(t => `
     <tr>
-      <td style="font-size:13px">${t.fichier}</td>
+      <td style="font-size:13px">${t.fichier} ${t.fileUrl ? `<a href="${t.fileUrl}" target="_blank" title="Voir mon fichier envoyé">📎</a>` : ''}</td>
       <td><span class="tag ${t.module==='Word'?'t-blue':t.module==='Excel'?'t-green':t.module==='PowerPoint'?'t-orange':'t-purple'}">${t.module}</span></td>
       <td class="muted">${t.date}</td>
       <td>${t.statut === 'corrige' || t.statut === 'valide'
-        ? `<span class="tag t-green">✓ Corrigé${t.note ? ' — ' + t.note : ''}</span>${t.comment ? '<br><span style="font-size:11px;color:var(--text2)">💬 ' + esc(t.comment) + '</span>' : ''}`
-        : '<span class="tag t-orange>⏳ En attente</span>'}</td>
+        ? `<span class="tag t-green">✓ Corrigé${t.note ? ' — ' + t.note : ''}</span>${t.comment ? '<br><span style="font-size:11px;color:var(--text2)">💬 ' + esc(t.comment) + '</span>' : ''}${t.correctedFileUrl ? `<br><a href="${t.correctedFileUrl}" target="_blank" style="font-size:11px;font-weight:700;color:var(--primary)">⬇️ Télécharger la correction annotée</a>` : ''}`
+        : '<span class="tag t-orange">⏳ En attente</span>'}</td>
       <td>${t.note || '—'}</td>
     </tr>`).join(''));
 
@@ -3179,7 +3270,27 @@ function renderEnvoi() {
   if (corrEl) corrEl.innerHTML = ''; // B14: always clear first
   if (corrEl && withComments.length) {
     corrEl.innerHTML = '<div class="card-title" style="margin-bottom:10px">💬 Commentaires de correction</div>' +
-      withComments.map(t => `<div class="alert al-ok mb2"><span>💬</span><div><b>${t.fichier}</b> — Note : ${t.note}<br><em>"${t.comment}"</em></div></div>`).join('');
+      withComments.map(t => `<div class="alert al-ok mb2"><span>💬</span><div><b>${t.fichier}</b> — Note : ${t.note}<br><em>"${t.comment}"</em>${t.correctedFileUrl ? `<br><a href="${t.correctedFileUrl}" target="_blank" style="font-weight:700">⬇️ Télécharger la correction annotée</a>` : ''}</div></div>`).join('');
+  }
+
+  // LOT 2: Rafraîchir depuis le cloud (pour voir une correction faite depuis un autre appareil par le formateur)
+  if (!_envoiCloudRefreshing && SB.enabled && navigator.onLine && S.currentUser?.email) {
+    _envoiCloudRefreshing = true;
+    SB.getTravauxForUser(S.currentUser.email).then(remote => {
+      if (!Array.isArray(remote) || !remote.length) return;
+      let changed = false;
+      remote.forEach(r => {
+        const existing = S.travaux.find(t => t.cloudId === r.id);
+        if (!existing) {
+          S.travaux.push({ id: 'cloud_' + r.id, cloudId: r.id, stag: r.stag_name, fichier: r.fichier, module: r.module, date: new Date(r.created_at).toLocaleDateString('fr-FR'), statut: r.statut, note: r.note || '', comment: r.comment || '', fileUrl: r.file_url, correctedFileUrl: r.corrected_file_url, userEmail: S.currentUser.email });
+          changed = true;
+        } else if (existing.statut !== r.statut || existing.comment !== r.comment || existing.correctedFileUrl !== r.corrected_file_url) {
+          Object.assign(existing, { statut: r.statut, note: r.note, comment: r.comment, correctedFileUrl: r.corrected_file_url });
+          changed = true;
+        }
+      });
+      if (changed) { safeSet('mpb_travaux', S.travaux); renderEnvoi(); }
+    }).catch(()=>{}).finally(() => { _envoiCloudRefreshing = false; });
   }
   } catch(e) { console.error('renderEnvoi error:', e); }
 }
@@ -3188,6 +3299,7 @@ function handleFile(f) {
   const allowed = ['docx', 'xlsx', 'pptx', 'pub', 'doc', 'xls', 'ppt'];
   const ext = f.name.split('.').pop().toLowerCase();
   if (!allowed.includes(ext)) { toast('⚠️ Format non accepté. Utilisez Word, Excel, PowerPoint ou Publisher.'); return; }
+  window._pendingTravailFile = f; // LOT 2: garder le vrai fichier pour upload réel
   const kb = Math.round(f.size / 1024);
   const info = document.getElementById('fileInfo');
   if (info) {
@@ -3212,6 +3324,10 @@ function validateFileName(fname) {
 }
 
 function envoyerTravail() {
+  Promise.resolve(_envoyerTravailWork()).catch(e => { console.error('Envoi travail error:', e); toast('⚠️ Erreur lors de l\'envoi. Réessayez.'); });
+}
+
+async function _envoyerTravailWork() {
   const info = document.getElementById('fileInfo');
   if (!info || info.classList.contains('hidden')) { toast('\u26a0\ufe0f Veuillez d\'abord s\u00e9lectionner un fichier.'); return; }
   const nomFichierCheck = info.querySelector('b')?.textContent || '';
@@ -3222,18 +3338,32 @@ function envoyerTravail() {
   const nomFichier = info.querySelector('b')?.textContent || 'fichier.docx';
   const d = new Date();
   const stagName = (S.currentUser?.prenom + ' ' + (S.currentUser?.nom||'')).trim(); // FIX #13
-  S.travaux.push({ id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '', userEmail: S.currentUser?.email || '' });
+  const sendBtn = document.getElementById('btnEnvoyerTravail');
+  const prevTxt = sendBtn ? sendBtn.innerHTML : '';
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.innerHTML = '⏳ Envoi en cours…'; }
+  let fileUrl = null;
+  if (window._pendingTravailFile && SB.enabled && navigator.onLine) {
+    fileUrl = await SB.uploadFile(window._pendingTravailFile, 'travaux');
+  }
+  const newTravail = { id: Date.now(), stag: stagName, fichier: nomFichier, module, date: d.toLocaleDateString('fr-FR'), statut: 'attente', note: '', comment: '', userEmail: S.currentUser?.email || '', fileUrl };
+  S.travaux.push(newTravail);
   // B12: Keep max 100 travaux entries
   if (S.travaux.length > 100) S.travaux = S.travaux.slice(-100);
   safeSet('mpb_travaux', S.travaux);
+  if (SB.enabled) {
+    const cloudRow = await SB.syncTravail(newTravail);
+    if (cloudRow?.id) { newTravail.cloudId = cloudRow.id; safeSet('mpb_travaux', S.travaux); }
+  }
   if (!S.prog.badges.includes('envoi')) unlockBadge('envoi');
   S.prog.activity.push(d.toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' — 📤 Envoyé : ' + nomFichier);
   if (S.prog.activity.length > 50) S.prog.activity = S.prog.activity.slice(-50); // FIX #1
   saveState();
   renderEnvoi();
   confetti();
-  toast('📤 Travail enregistré. Remettez le fichier physiquement à votre formatrice.', 4000);
+  toast(fileUrl ? '📤 Travail envoyé à votre formatrice avec succès !' : '📤 Travail enregistré (sera synchronisé dès le retour de connexion).', 4000);
   info.classList.add('hidden');
+  window._pendingTravailFile = null;
+  if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = prevTxt; }
 }
 
 // ── PROGRESSION ────────────────────────────────
@@ -3419,16 +3549,35 @@ function renderFormateur() {
 
 function populateFormateurSelect() {
   const sel = document.getElementById('stagMsgTo');
-  if (!sel || sel.options.length > 1) return;
-  const formateurs = S.users.filter(u => u.role === 'formateur');
-  const equipeOpt = `<option value="equipe">Toute l’équipe pédagogique</option>`;
-  if (formateurs.length > 0) {
-    sel.innerHTML = formateurs.map(f =>
-      `<option value="${esc(f.prenom + ' ' + (f.nom||''))}">${esc(f.prenom)} ${esc(f.nom||'')}</option>`
-    ).join('') + equipeOpt;
-  } else {
-    sel.innerHTML = `<option value="formatrice">Ma formatrice</option>${equipeOpt}`;
+  if (!sel || sel.dataset.populated) return;
+  const equipeOpt = `<option value="equipe">Toute l\u2019\u00e9quipe p\u00e9dagogique</option>`;
+
+  const renderList = (formateurs) => {
+    if (formateurs.length > 0) {
+      sel.innerHTML = formateurs.map(f =>
+        `<option value="${esc(f.prenom + ' ' + (f.nom||''))}">${esc(f.prenom)} ${esc(f.nom||'')}</option>`
+      ).join('') + equipeOpt;
+    } else {
+      sel.innerHTML = `<option value="formatrice">Ma formatrice</option>${equipeOpt}`;
+    }
+  };
+
+  // 1) Affichage immédiat avec les formateurs connus localement
+  const localFormateurs = S.users.filter(u => u.role === 'formateur');
+  renderList(localFormateurs);
+
+  // 2) LOT 6: Compléter avec TOUS les formateurs inscrits (autres appareils) via Supabase
+  if (SB.enabled && navigator.onLine) {
+    SB.getAllUsersRemote().then(remoteUsers => {
+      const remoteFormateurs = remoteUsers.filter(u => u.role === 'formateur');
+      const merged = [...localFormateurs];
+      remoteFormateurs.forEach(rf => {
+        if (!merged.some(m => m.email === rf.email)) merged.push(rf);
+      });
+      if (merged.length > localFormateurs.length) renderList(merged);
+    }).catch(() => {});
   }
+  sel.dataset.populated = '1';
 }
 
 function stagSendMsg() {
@@ -3478,7 +3627,7 @@ function fTab(tab, btn) {
   if (tab === 'impression') updateImpExerciceList();
   if (tab === 'metiers_form') renderMetiersFormateur();
   if (tab === 'session_form') { /* ready */ }
-  if (tab === 'quiz') renderCustomQuizList();
+  if (tab === 'quiz') { renderCustomQuizList(); renderSimulationsFormateur(); }
 }
 
 function renderStagTable() {
@@ -3537,41 +3686,70 @@ function renderStagTable() {
 }
 
 // FIX #3: FORM_TRAVAUX merges demo data + real submissions from localStorage
+let _travauxCloudRefreshing = false;
 function getFormTravaux() {
-  // [3] Return real travaux from S.travaux + demo fallback
+  // LOT 2: Lecture synchrone immédiate (local) + déclenche un refresh cloud en arrière-plan
   const realTravaux = S.travaux || [];
-  const demo = [
+  const demo = realTravaux.length === 0 ? [
     { id:1, stag:'Jean Dupont', fichier:'Dupont_G3_Tableau.xlsx', module:'Excel', date:'18/04' },
     { id:2, stag:'Amara Diallo', fichier:'Diallo_G2_Lettre.docx', module:'Word', date:'17/04' },
     { id:3, stag:'Fatou Koné', fichier:'Kone_G1_DocA1.docx', module:'Word', date:'15/04' },
-    { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' }];
-  const fromLS = safeGet('mpb_travaux', [])
-    .filter(t => t.statut === 'attente')
-    .map(t => ({ id: t.id, stag: t.stag, fichier: t.fichier, module: t.module, date: t.date }));
-  // Merge: real submissions first, then demo
-  const all = [...fromLS, ...demo];
-  // B10: Deduplicate by id (not fichier — two students can submit same filename)
-  // [3] Merge real S.travaux first (they take priority over demo)
-  const realT = S.travaux && S.travaux.length > 0 ? S.travaux : [];
-  const combined = realT.length > 0 ? [...realT, ...all.filter(d => !realT.some(r => r.id === d.id))] : all;
+    { id:4, stag:'Léa Renard', fichier:'Renard_G3_PPT.pptx', module:'PowerPoint', date:'14/04' }] : [];
+  const combined = [...realTravaux, ...demo];
   const seen = new Set();
-  return combined.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+  const result = combined.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+
+  if (!_travauxCloudRefreshing && SB.enabled && navigator.onLine) {
+    _travauxCloudRefreshing = true;
+    refreshTravauxFromCloud();
+  }
+  return result;
 }
 
+async function refreshTravauxFromCloud() {
+  try {
+    const remote = await SB.getAllTravauxRemote();
+    if (!Array.isArray(remote) || !remote.length) return;
+    let changed = false;
+    remote.forEach(r => {
+      const existing = S.travaux.find(t => t.cloudId === r.id);
+      if (!existing) {
+        S.travaux.push({
+          id: 'cloud_' + r.id, cloudId: r.id, stag: r.stag_name, fichier: r.fichier,
+          module: r.module, date: new Date(r.created_at).toLocaleDateString('fr-FR'),
+          statut: r.statut, note: r.note || '', comment: r.comment || '',
+          fileUrl: r.file_url, correctedFileUrl: r.corrected_file_url, userEmail: ''
+        });
+        changed = true;
+      } else if (existing.statut !== r.statut || existing.comment !== r.comment || existing.correctedFileUrl !== r.corrected_file_url) {
+        Object.assign(existing, { statut: r.statut, note: r.note, comment: r.comment, correctedFileUrl: r.corrected_file_url });
+        changed = true;
+      }
+    });
+    if (changed) {
+      safeSet('mpb_travaux', S.travaux);
+      if (document.getElementById('travBody')) renderTravTable();
+      if (document.getElementById('envoiHist')) renderEnvoi();
+    }
+  } catch(e) { console.warn('refreshTravauxFromCloud error:', e); }
+  finally { _travauxCloudRefreshing = false; }
+}
+
+let _currentTravauxList = [];
 function renderTravTable() {
 
   try {
   const searchTrav = document.getElementById('travSearch')?.value?.toLowerCase() || '';
-  const FORM_TRAVAUX = getFormTravaux().filter(t => !searchTrav || t.stag.toLowerCase().includes(searchTrav) || t.fichier.toLowerCase().includes(searchTrav));
-  setEl('travBody', FORM_TRAVAUX.map(t => `
+  _currentTravauxList = getFormTravaux().filter(t => !searchTrav || t.stag.toLowerCase().includes(searchTrav) || t.fichier.toLowerCase().includes(searchTrav));
+  setEl('travBody', _currentTravauxList.map(t => `
     <tr id="trow_${t.id}">
       <td style="font-weight:700">${t.stag}</td>
-      <td style="font-size:13px">${t.fichier}</td>
+      <td style="font-size:13px">${t.fichier} ${t.fileUrl ? `<a href="${t.fileUrl}" target="_blank" title="Télécharger" style="margin-left:4px">📎</a>` : ''}</td>
       <td><span class="tag ${t.module==='Word'?'t-blue':t.module==='Excel'?'t-green':'t-orange'}">${t.module}</span></td>
       <td class="muted">${t.date}</td>
       <td class="flex gap2">
-        <button class="btn btn-primary btn-sm" onclick="ouvrirCorrection(${t.id})">Corriger</button>
-        <button class="btn btn-success btn-sm" onclick="validerTrav(${t.id})">✅ Valider</button>
+        <button class="btn btn-primary btn-sm" onclick="ouvrirCorrection(${typeof t.id === 'string' ? `'${t.id}'` : t.id})">Corriger</button>
+        <button class="btn btn-success btn-sm" onclick="validerTrav(${typeof t.id === 'string' ? `'${t.id}'` : t.id})">✅ Valider</button>
       </td>
     </tr>`).join(''));
   } catch(e) { console.error('renderTravTable error:', e); }
@@ -3592,46 +3770,90 @@ function ouvrirCorrectionForStag(stagId) {
 }
 
 function ouvrirCorrection(id) {
-  const t = FORM_TRAVAUX.find(t => t.id === id);
+  const t = _currentTravauxList.find(t => String(t.id) === String(id));
   if (!t) return;
+  const idArg = typeof id === 'string' ? `'${id}'` : id;
   setEl('ficheModalTitle', '✏️ Correction : ' + t.fichier.substring(0,40));
   setEl('ficheModalBody', `
-    <div class="alert al-info mb3"><span>📎</span><div><b>${t.stag}</b> — ${t.fichier} — ${t.module} — ${t.date}</div></div>
+    <div class="alert al-info mb3"><span>📎</span><div><b>${t.stag}</b> — ${t.fichier} — ${t.module} — ${t.date}
+      ${t.fileUrl
+        ? `<br><a href="${t.fileUrl}" target="_blank" style="color:var(--primary);font-weight:700">⬇️ Télécharger le fichier du stagiaire</a>`
+        : `<br><span style="color:var(--text3);font-size:12px">⚠️ Fichier non joint (envoyé hors-ligne ou avant mise à jour)</span>`}
+    </div></div>
     <div class="fg"><label class="fl">Note</label>
       <select class="fs" id="corrNote">${Array.from({length:21},(_,i)=>`<option value="${(20-i)+'/20'}">${(20-i)}/20</option>`).join('')}</select>
     </div>
     <div class="fg"><label class="fl">Commentaire pour le stagiaire</label><textarea class="fta" id="corrComment" rows="4" placeholder="Retour pédagogique détaillé…"></textarea></div>
+    <div class="fg"><label class="fl">📎 Joindre une correction annotée (facultatif)</label>
+      <input type="file" id="corrFileInput" class="fi" accept=".docx,.xlsx,.pptx,.pdf,.doc,.xls,.ppt">
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">Le stagiaire pourra télécharger ce fichier annoté en plus de votre commentaire.</div>
+    </div>
     <div class="flex gap2 mt4">
-      <button class="btn btn-primary" onclick="saveCorrAndClose(${id})">💾 Enregistrer la correction</button>
+      <button class="btn btn-primary" id="btnSaveCorr" onclick="saveCorrAndClose(${idArg})">💾 Enregistrer la correction</button>
       <button class="btn btn-ghost" onclick="closeFicheModal()">Annuler</button>
     </div>`);
   document.getElementById('ficheModal').classList.remove('hidden');
 }
 
 function saveCorrAndClose(id) {
+  Promise.resolve(_saveCorrWork(id)).catch(e => { console.error('saveCorrAndClose error:', e); toast('⚠️ Erreur lors de l\'enregistrement.'); });
+}
+
+async function _saveCorrWork(id) {
   const note = document.getElementById('corrNote')?.value || '';
   const comment = document.getElementById('corrComment')?.value || '';
-  // B2+B3: Save correction into S.travaux so stagiaire can see it
-  const idx = S.travaux.findIndex(t => t.id === id || String(t.id) === String(id));
+  const correctedFile = document.getElementById('corrFileInput')?.files?.[0];
+
+  const btn = document.getElementById('btnSaveCorr');
+  const prevTxt = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Enregistrement…'; }
+
+  // LOT 2: Upload du fichier annoté (correction) vers Supabase Storage
+  let correctedFileUrl = null;
+  if (correctedFile && SB.enabled && navigator.onLine) {
+    correctedFileUrl = await SB.uploadFile(correctedFile, 'corrections');
+  }
+
+  const idx = S.travaux.findIndex(t => String(t.id) === String(id));
   if (idx >= 0) {
     S.travaux[idx].note = note;
     S.travaux[idx].comment = comment;
     S.travaux[idx].statut = 'corrige';
+    if (correctedFileUrl) S.travaux[idx].correctedFileUrl = correctedFileUrl;
     safeSet('mpb_travaux', S.travaux);
+
+    // LOT 2: Synchroniser la correction dans Supabase pour que le stagiaire la voie depuis n'importe quel appareil
+    if (SB.enabled) {
+      if (S.travaux[idx].cloudId) {
+        await SB.updateTravailRemote(S.travaux[idx].cloudId, {
+          statut: 'corrige', note, comment,
+          ...(correctedFileUrl ? { corrected_file_url: correctedFileUrl } : {})
+        });
+      } else {
+        const cloudRow = await SB.syncTravail(S.travaux[idx]);
+        if (cloudRow?.id) { S.travaux[idx].cloudId = cloudRow.id; safeSet('mpb_travaux', S.travaux); }
+      }
+    }
   }
-  // Also update FORM_TRAVAUX display — remove from pending list
+
   const row = document.getElementById('trow_' + id);
-  if (row) {
-    row.cells[row.cells.length-1].innerHTML = '<span class="tag t-green">✓ Corrigé — ' + note + '</span>';
-  }
-  toast('✅ Correction enregistrée — Note : ' + note + (comment ? ' · Commentaire envoyé au stagiaire' : ''));
+  if (row) row.remove();
+
+  toast('✅ Correction enregistrée' + (correctedFileUrl ? ' avec fichier annoté' : '') + ' — Note : ' + note);
   closeFicheModal();
+  if (btn) { btn.disabled = false; btn.innerHTML = prevTxt; }
 }
 
 function validerTrav(id) {
   // A9: Save validation to S.travaux
   const idx9 = S.travaux.findIndex(t => t.id === id || String(t.id) === String(id));
-  if (idx9 >= 0) { S.travaux[idx9].statut = 'valide'; safeSet('mpb_travaux', S.travaux); }
+  if (idx9 >= 0) {
+    S.travaux[idx9].statut = 'valide';
+    safeSet('mpb_travaux', S.travaux);
+    if (SB.enabled && S.travaux[idx9].cloudId) {
+      SB.updateTravailRemote(S.travaux[idx9].cloudId, { statut: 'valide' }).catch(()=>{});
+    }
+  }
   document.getElementById('trow_' + id)?.remove();
   const badge = document.getElementById('trBadge');
   if (badge) {
@@ -3763,6 +3985,165 @@ function renderGrpProg() {
     '<div class="flex gap2 mt3 fwrap"><button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 Export PDF</button><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button></div>');
   setEl('evolGraph', `<div class="alert al-info"><span>📊</span><div>Progression 30 jours : <b>+9% global</b>. Semaine du 14/04 : +8% G1, +12% G2, +6% G3. <b>Meilleure progression :</b> Karim O. (+22%).</div></div>`);
   } catch(e) { console.error('renderGrpProg error:', e); }
+}
+
+
+// ── CATÉGORIES DE TEST D'ENTRÉE (formateur) ──────────────────
+let _simQuestionRows = [];
+
+function getCustomSimulations() { return safeGet('mpb_custom_simulations', []); }
+
+function applyCustomSimulationsToRuntime() {
+  getCustomSimulations().forEach(sim => {
+    const label = sim.nom + ' · ' + sim.duree;
+    QUIZ_SIMULATIONS[label] = sim.questions;
+  });
+}
+
+function showSimulationForm(editKey) {
+  const form = document.getElementById('simulationEditForm');
+  const titleEl = document.getElementById('simFormTitle');
+  form.classList.remove('hidden');
+
+  if (editKey) {
+    const sim = getCustomSimulations().find(s => s.key === editKey);
+    if (!sim) return;
+    document.getElementById('simNom').value = sim.nom;
+    document.getElementById('simDuree').value = sim.duree;
+    document.getElementById('simDispositif').value = sim.dispositif;
+    document.getElementById('simNiveau').value = sim.niveau;
+    document.getElementById('simKey').value = editKey;
+    _simQuestionRows = sim.questions.map(q => ({...q}));
+    titleEl.textContent = '✏️ Modifier : ' + sim.nom;
+  } else {
+    ['simNom','simDuree'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('simKey').value = '';
+    _simQuestionRows = [];
+    titleEl.textContent = "➕ Nouvelle catégorie de test";
+  }
+  renderSimQuestions();
+  form.scrollIntoView({behavior:'smooth'});
+}
+
+function cancelSimulationForm() {
+  document.getElementById('simulationEditForm')?.classList.add('hidden');
+}
+
+function addSimQuestionRow() {
+  _simQuestionRows.push({ q:'', opts:['','','',''], rep:0, lvl:'B1', expl:'' });
+  renderSimQuestions();
+}
+
+function removeSimQuestionRow(i) {
+  _simQuestionRows.splice(i, 1);
+  renderSimQuestions();
+}
+
+function renderSimQuestions() {
+  const el = document.getElementById('simQuestionsList');
+  if (!el) return;
+  if (_simQuestionRows.length === 0) {
+    el.innerHTML = '<div class="muted" style="font-size:12px">Aucune question. Importez un document ou ajoutez-en une manuellement.</div>';
+    return;
+  }
+  el.innerHTML = _simQuestionRows.map((q, i) => `
+    <div style="background:var(--surface2);border-radius:8px;padding:10px">
+      <div class="flex jb" style="align-items:center;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:var(--text3)">Question ${i+1}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeSimQuestionRow(${i})" style="color:var(--danger)">✕</button>
+      </div>
+      <input class="fi" style="margin-bottom:6px;font-size:13px" placeholder="Intitulé de la question" value="${esc(q.q)}" oninput="_simQuestionRows[${i}].q=this.value">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        ${[0,1,2,3].map(j => `<input class="fi" style="font-size:12px" placeholder="Réponse ${String.fromCharCode(65+j)}" value="${esc(q.opts[j]||'')}" oninput="_simQuestionRows[${i}].opts[${j}]=this.value">`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:12px">Bonne réponse :</label>
+        <select class="fs" style="width:auto;font-size:12px" onchange="_simQuestionRows[${i}].rep=parseInt(this.value)">
+          ${[0,1,2,3].map(j => `<option value="${j}" ${q.rep===j?'selected':''}>${String.fromCharCode(65+j)}</option>`).join('')}
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+function importSimulationDoc(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const process = (text) => {
+    const lines = text.split(/\n|\r/).map(l => l.trim()).filter(l => l.length > 8);
+    const qLines = lines.filter(l => l.includes('?') || /^\d+[.)]/.test(l));
+    if (qLines.length === 0) { toast('⚠️ Aucune question détectée dans ce document.'); return; }
+    qLines.forEach(line => {
+      _simQuestionRows.push({ q: line.replace(/^\d+[.)\s]+/, '').trim(), opts:['','','',''], rep:0, lvl:'B1', expl:'' });
+    });
+    renderSimQuestions();
+    toast('✅ ' + qLines.length + ' question(s) importée(s). Complétez les propositions de réponses.', 4000);
+  };
+  const reader = new FileReader();
+  if (file.name.endsWith('.docx')) {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', () => {
+      reader.onload = e => mammoth.extractRawText({arrayBuffer:e.target.result}).then(r => process(r.value));
+      reader.readAsArrayBuffer(file);
+    });
+  } else {
+    reader.onload = e => process(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  }
+  input.value = '';
+}
+
+function saveSimulation() {
+  const nom = document.getElementById('simNom')?.value?.trim();
+  const duree = document.getElementById('simDuree')?.value?.trim() || '30 min';
+  const dispositif = document.getElementById('simDispositif')?.value || 'les_deux';
+  const niveau = document.getElementById('simNiveau')?.value || 'B1';
+  const editKey = document.getElementById('simKey')?.value;
+
+  if (!nom) { toast('⚠️ Donnez un nom au test.'); return; }
+  const validQuestions = _simQuestionRows.filter(q => q.q.trim() && q.opts.filter(o=>o.trim()).length >= 2);
+  if (validQuestions.length === 0) { toast('⚠️ Ajoutez au moins une question complète (intitulé + 2 réponses min).'); return; }
+
+  const custom = getCustomSimulations();
+  const key = editKey || ('sim_' + Date.now());
+  const newSim = { key, nom, duree, dispositif, niveau, questions: validQuestions };
+  const idx = custom.findIndex(s => s.key === key);
+  if (idx >= 0) custom[idx] = newSim; else custom.push(newSim);
+  safeSet('mpb_custom_simulations', custom);
+  applyCustomSimulationsToRuntime();
+
+  cancelSimulationForm();
+  renderSimulationsFormateur();
+  toast(editKey ? '✅ Test modifié !' : '✅ Catégorie « ' + nom + ' » créée !');
+}
+
+function deleteSimulation(key) {
+  if (!window.confirm('Supprimer ce test d\'entrée ?')) return;
+  const custom = getCustomSimulations().filter(s => s.key !== key);
+  safeSet('mpb_custom_simulations', custom);
+  renderSimulationsFormateur();
+  toast('🗑️ Test supprimé.');
+}
+
+function renderSimulationsFormateur() {
+  const el = document.getElementById('simulationsFormateurList');
+  if (!el) return;
+  const custom = getCustomSimulations();
+  const dispLabel = { savoirs:'Savoirs Essentiels', avenir:'#Avenir', les_deux:'Les deux formations' };
+  if (custom.length === 0) {
+    el.innerHTML = '<div class="muted" style="padding:12px">Aucune catégorie personnalisée. Créez-en une avec le bouton ci-dessus.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase">Vos catégories (' + custom.length + ')</div>' +
+    custom.map(s => `<div class="ex-item">
+      <div class="ex-num"><span class="lvl l${s.niveau}" style="font-size:10px">${s.niveau}</span></div>
+      <div class="ex-body">
+        <div class="ex-name">${esc(s.nom)}</div>
+        <div class="muted" style="font-size:11px">${dispLabel[s.dispositif]||s.dispositif} · ${s.duree} · ${s.questions.length} question(s)</div>
+      </div>
+      <div class="flex gap2">
+        <button class="btn btn-outline btn-sm" onclick="showSimulationForm('${s.key}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteSimulation('${s.key}')" style="color:var(--danger)">🗑️</button>
+      </div>
+    </div>`).join('');
 }
 
 // ─── GESTION DU QUIZ DE POSITIONNEMENT ──────────────────────────
@@ -4773,6 +5154,22 @@ function toggleGuidedMode() {
   }
 }
 
+
+// ── HASH MOT DE PASSE (cross-device auth) ───────────────────
+async function hashPwd(pwd, email) {
+  try {
+    const enc = new TextEncoder().encode(pwd + '|' + (email || '').toLowerCase());
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    // Fallback navigateurs très anciens sans crypto.subtle (rare)
+    let h = 0;
+    const str = pwd + '|' + email;
+    for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+    return 'fb' + Math.abs(h).toString(16);
+  }
+}
+
 // ── SUPABASE SYNC OPTIONNEL ──────────────────────────────────
 // Sync cloud optionnel — fonctionne sans Supabase (localStorage fallback)
 const SB = {
@@ -4836,6 +5233,96 @@ const SB = {
     return null;
   },
 
+  async syncUserAccount(user, pwdHash) {
+    if (!this.enabled || !user.email) return;
+    try {
+      const emailHash = btoa(user.email).replace(/=/g, '');
+      const payload = {
+        email_hash: emailHash, email: user.email,
+        prenom: user.prenom, nom: user.nom || '',
+        role: user.role, groupe: user.groupe || '',
+        pwd_hash: pwdHash, updated_at: new Date().toISOString()
+      };
+      await this.req('POST', 'mpb_users', payload, 'resolution=merge-duplicates');
+    } catch (e) { console.warn('syncUserAccount error:', e); }
+  },
+
+  async findUserRemote(email, pwdHash) {
+    if (!this.enabled || !email) return null;
+    try {
+      const emailHash = btoa(email).replace(/=/g, '');
+      const rows = await this.req('GET', `mpb_users?email_hash=eq.${encodeURIComponent(emailHash)}&select=*&limit=1`);
+      if (Array.isArray(rows) && rows.length > 0) {
+        const row = rows[0];
+        if (!row.pwd_hash || row.pwd_hash === pwdHash) {
+          return { prenom: row.prenom, nom: row.nom || '', email: row.email || email, role: row.role || 'stagiaire', groupe: row.groupe || '', mdp_verified: true };
+        }
+      }
+    } catch (e) { console.warn('findUserRemote error:', e); }
+    return null;
+  },
+
+  async getAllUsersRemote() {
+    if (!this.enabled) return [];
+    try {
+      const rows = await this.req('GET', 'mpb_users?select=email,prenom,nom,role,groupe&order=updated_at.desc&limit=500');
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  },
+  async uploadFile(file, folder) {
+    if (!this.enabled || !file) return null;
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${folder}/${Date.now()}_${safeName}`;
+      const res = await fetch(`${this.url}/storage/v1/object/mpb-files/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': this.key, 'Authorization': 'Bearer ' + this.key, 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      });
+      if (!res.ok) { console.warn('Upload échoué', res.status, await res.text().catch(()=>'')); return null; }
+      return `${this.url}/storage/v1/object/public/mpb-files/${path}`;
+    } catch (e) { console.warn('uploadFile error:', e); return null; }
+  },
+
+  async syncTravail(t) {
+    if (!this.enabled) return null;
+    try {
+      const payload = {
+        stag_email_hash: t.userEmail ? btoa(t.userEmail).replace(/=/g,'') : '',
+        stag_name: t.stag, fichier: t.fichier, module: t.module,
+        file_url: t.fileUrl || null, statut: t.statut || 'attente',
+        note: t.note || '', comment: t.comment || '',
+        corrected_file_url: t.correctedFileUrl || null,
+        updated_at: new Date().toISOString()
+      };
+      const result = await this.req('POST', 'mpb_travaux', payload);
+      return Array.isArray(result) ? result[0] : result;
+    } catch (e) { console.warn('syncTravail error:', e); return null; }
+  },
+
+  async updateTravailRemote(cloudId, fields) {
+    if (!this.enabled || !cloudId) return;
+    try {
+      await this.req('PATCH', `mpb_travaux?id=eq.${cloudId}`, { ...fields, updated_at: new Date().toISOString() });
+    } catch (e) { console.warn('updateTravailRemote error:', e); }
+  },
+
+  async getAllTravauxRemote() {
+    if (!this.enabled) return [];
+    try {
+      const rows = await this.req('GET', 'mpb_travaux?select=*&order=created_at.desc&limit=300');
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  },
+
+  async getTravauxForUser(email) {
+    if (!this.enabled || !email) return [];
+    try {
+      const emailHash = btoa(email).replace(/=/g,'');
+      const rows = await this.req('GET', `mpb_travaux?stag_email_hash=eq.${encodeURIComponent(emailHash)}&select=*&order=created_at.desc`);
+      return Array.isArray(rows) ? rows : [];
+    } catch (e) { return []; }
+  },
   async syncUsers(users) {
     if (!this.enabled) return;
     // Store only hashed emails + roles for privacy
