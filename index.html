@@ -372,39 +372,38 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       <button class="auth-tab" onclick="authTab('login',this)">Connexion</button>
     </div>
     <div class="auth-panel" id="apLogin" style="display:none">
-      <div class="fg"><label class="fl">Adresse e-mail</label><input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('lMdp').focus()"></div>
+      <div class="fg"><label class="fl">Adresse e-mail</label>
+        <input id="lEmail" class="fi" type="email" placeholder="votre@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter')document.getElementById('lMdp').focus()">
+      </div>
       <div class="fg"><label class="fl">Mot de passe</label>
-        <div class="f-icon-wrap"><input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe" onkeydown="if(event.key==='Enter')loginAs(S._loginRole||null)"><button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button></div>
+        <div class="f-icon-wrap">
+          <input id="lMdp" class="fi" type="password" placeholder="Votre mot de passe"
+                 onkeydown="if(event.key==='Enter')loginAs('stagiaire')">
+          <button class="f-icon-btn" onclick="togglePwd(this)" type="button">👁</button>
+        </div>
       </div>
       <div id="lErr" class="f-err hidden"></div>
 
-      <!-- ÉTAPE 1 : Choisir son rôle -->
-      <div style="margin-top:14px;margin-bottom:4px">
-        <div style="font-size:12px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px">1. Je suis :</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <button class="btn btn-outline btn-full role-btn" id="roleBtn_stagiaire" style="padding:12px;border-width:2px" onclick="selectLoginRole('stagiaire',this)">🎓 Stagiaire</button>
-          <button class="btn btn-outline btn-full role-btn" id="roleBtn_formateur" style="padding:12px;border-width:2px" onclick="selectLoginRole('formateur',this)">👨‍🏫 Formateur</button>
-        </div>
-      </div>
-
-      <!-- ÉTAPE 2 : Se connecter (activé après choix du rôle) -->
-      <div style="margin-top:6px;margin-bottom:4px">
-        <div style="font-size:12px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:8px">2. Je me connecte :</div>
-        <button type="button" class="btn btn-primary w100" id="btnLogin" onclick="loginAs(S._loginRole||null)" style="font-size:15px;padding:12px;opacity:.45;cursor:not-allowed" disabled>
-          🔓 Se connecter
+      <!-- Connexion directe en un clic — clair et sans ambiguïté -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+        <button type="button" class="btn btn-primary" id="btnLoginStagiaire"
+                onclick="loginAs('stagiaire')" style="padding:13px;font-size:15px">
+          🎓 Stagiaire
+        </button>
+        <button type="button" class="btn btn-outline" id="btnLoginFormateur"
+                onclick="loginAs('formateur')" style="padding:13px;font-size:15px;border-width:2px">
+          👨‍🏫 Formateur
         </button>
       </div>
+      <p class="muted tc" style="margin-top:8px;font-size:12px">
+        Entrez vos codes puis cliquez sur votre rôle • Sans code = mode démo
+      </p>
 
       <div style="margin-top:10px;text-align:center">
-        <button type="button" class="btn btn-ghost btn-sm" style="font-size:12px" onclick="showForgotHelp()">🔑 J'ai oublié mes codes →</button>
-      </div>
-
-      <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
-        <p class="muted tc" style="margin-bottom:0;font-size:12px">💡 <b>Démo sans compte</b> : cliquez directement sur Stagiaire ou Formateur<br><small style="color:var(--danger)">Données non sauvegardées en mode démo</small></p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-          <button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="loginAs('stagiaire')">🎓 Démo Stagiaire</button>
-          <button class="btn btn-ghost btn-sm" style="font-size:12px" onclick="loginAs('formateur')">👨‍🏫 Démo Formateur</button>
-        </div>
+        <button type="button" class="btn btn-ghost btn-sm" style="font-size:12px" onclick="showForgotHelp()">
+          🔑 J'ai oublié mes codes →
+        </button>
       </div>
     </div>
     <div class="auth-panel" id="apRegister">
@@ -1847,7 +1846,7 @@ async function _loginAsWork(role) {
   const demoUser = matchedUser
     ? { prenom: matchedUser.prenom, nom: matchedUser.nom || '',
         initials: (matchedUser.prenom[0] + (matchedUser.nom ? matchedUser.nom[0] : '')).toUpperCase(),
-        email: matchedUser.email, role: matchedUser.role }
+        email: matchedUser.email, role: role }
     : role === 'formateur'
       ? { prenom: 'Formateur', nom: '', initials: 'FO' }
       : { prenom: 'Jean', nom: 'Dupont', initials: 'JD' };
