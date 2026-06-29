@@ -407,6 +407,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
       </div>
     </div>
     <div class="auth-panel" id="apRegister">
+      <div class="alert al-info mb3" style="font-size:12px"><span>💡</span><div>Déjà inscrit sur un autre appareil ? Recréez votre compte avec le même e-mail — vos données seront restaurées automatiquement.</div></div>
       <div class="f2">
         <div class="fg"><label class="fl">Prénom <span style="color:var(--danger)">*</span></label><input id="rPre" class="fi" type="text" placeholder="Prénom"></div>
         <div class="fg"><label class="fl">Nom <span style="color:var(--danger)">*</span></label><input id="rNom" class="fi" type="text" placeholder="Nom"></div>
@@ -1792,7 +1793,7 @@ function loginAs(role) {
 async function _loginAsWork(role) {
   const emailEl = document.getElementById('lEmail');
   const mdpEl = document.getElementById('lMdp');
-  const email = emailEl ? emailEl.value.trim() : '';
+  const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
   const mdp = mdpEl ? mdpEl.value : '';
 
   let matchedUser = null;
@@ -1822,9 +1823,9 @@ async function _loginAsWork(role) {
     if (!matchedUser) {
       const errEl = document.getElementById('lErr');
       if (errEl) {
-        errEl.textContent = !navigator.onLine
-          ? '⚠️ Identifiants incorrects ou compte créé sur un autre appareil (connexion internet requise la première fois).'
-          : '⚠️ Identifiants incorrects.';
+        errEl.innerHTML = !navigator.onLine
+          ? '⚠️ Identifiants incorrects ou compte créé sur un autre appareil. Connectez-vous à Internet puis réessayez.'
+          : '⚠️ Identifiants incorrects. <br><span style="font-size:11px">Nouveau sur cet appareil ? <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px" onclick="authTab(\'inscription\',document.querySelectorAll(\'.auth-tab\')[0])">Recréer le compte →</button></span>';
         errEl.classList.remove('hidden');
       }
       return;
@@ -1907,13 +1908,13 @@ async function _doRegisterWork(btn, _reEnable) {
     _reEnable(); return;
   }
   if (S.users.find(u => u.email === email.trim())) {
-    showErr(err, '⚠️ Cet e-mail est déjà utilisé. Connectez-vous ou utilisez un autre e-mail.');
+    showErr(err, '⚠️ Cet e-mail est déjà enregistré sur cet appareil. Allez sur Connexion et entrez votre mot de passe.');
     _reEnable(); return;
   }
 
   // ── Sauvegarde (FIX BUG 3: stocker le mdp en clair pour que le login fonctionne) ──
   const role = document.querySelector('input[name="rRole"]:checked')?.value || 'stagiaire';
-  const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim(), mdp, role, createdAt: Date.now() };
+  const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim().toLowerCase(), mdp, role, createdAt: Date.now() };
   S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
