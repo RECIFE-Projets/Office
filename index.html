@@ -1799,7 +1799,7 @@ async function _loginAsWork(role) {
   let matchedUser = null;
   if (email && mdp) {
     // 1) Recherche LOCALE d'abord (rapide, fonctionne hors-ligne)
-    matchedUser = S.users.find(u => u.email === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
+    matchedUser = S.users.find(u => (u.email || '').toLowerCase() === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
 
     // 2) LOT 1: Si pas trouvé localement, chercher sur Supabase (nouvel appareil / hors localStorage)
     if (!matchedUser && SB.enabled && navigator.onLine) {
@@ -1907,9 +1907,31 @@ async function _doRegisterWork(btn, _reEnable) {
     showErr(err, '⚠️ Les mots de passe ne correspondent pas.');
     _reEnable(); return;
   }
-  if (S.users.find(u => u.email === email.trim())) {
-    showErr(err, '⚠️ Cet e-mail est déjà enregistré sur cet appareil. Allez sur Connexion et entrez votre mot de passe.');
-    _reEnable(); return;
+  const existingIdx = S.users.findIndex(u => u.email === email.trim().toLowerCase());
+  if (existingIdx >= 0) {
+    // L'email existe déjà → mise à jour du mot de passe (réinitialisation)
+    S.users[existingIdx].mdp = mdp;
+    S.users[existingIdx].role = role; // mettre à jour le rôle aussi
+    S.users[existingIdx].prenom = pre.trim();
+    S.users[existingIdx].nom = nom.trim();
+    safeSet('mpb_users', S.users);
+    // Sync Supabase avec le nouveau hash
+    if (SB.enabled) {
+      try {
+        const pwdHash2 = await hashPwd(mdp, email.trim().toLowerCase());
+        await SB.syncUserAccount(S.users[existingIdx], pwdHash2);
+      } catch(e) {}
+    }
+    // Fermer le formulaire et connecter directement
+    const existUser = S.users[existingIdx];
+    panel.innerHTML = `<div style="text-align:center;padding:20px">
+      <div style="font-size:40px;margin-bottom:10px">🔑</div>
+      <div style="font-size:16px;font-weight:900;color:var(--accent);margin-bottom:8px">Mot de passe mis à jour !</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Votre compte a été réinitialisé avec le nouveau mot de passe.</div>
+      <button class="btn btn-primary" style="width:100%" onclick="loginAfterRegister('${esc(existUser.prenom)}','${esc(existUser.nom||'')}','${esc(existUser.email)}','${existUser.role}')">▶ Accéder à la plateforme</button>
+    </div>`;
+    _reEnable();
+    return;
   }
 
   // ── Sauvegarde (FIX BUG 3: stocker le mdp en clair pour que le login fonctionne) ──
