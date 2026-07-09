@@ -1935,7 +1935,7 @@ async function _doRegisterWork(btn, _reEnable) {
   }
 
   // ── Sauvegarde (FIX BUG 3: stocker le mdp en clair pour que le login fonctionne) ──
-  const role = document.querySelector('input[name="rRole"]:checked')?.value || 'stagiaire';
+  const role = document.querySelector('.role-card.selected')?.dataset?.role || 'stagiaire';
   const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim().toLowerCase(), mdp, role, createdAt: Date.now() };
   S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
