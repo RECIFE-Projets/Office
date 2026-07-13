@@ -857,6 +857,15 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
           <div class="card mb3">
             <div class="flex jb" style="align-items:center;flex-wrap:wrap;gap:10px">
               <div>
+                <div class="card-title" style="margin-bottom:2px">💾 Sauvegarde des données</div>
+                <div style="font-size:12px;color:var(--text2)">Téléchargez une copie complète (stagiaires, travaux, contenus). Recommandé une fois par mois.</div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="exporterSauvegarde()">⬇️ Exporter une sauvegarde</button>
+            </div>
+          </div>
+          <div class="card mb3">
+            <div class="flex jb" style="align-items:center;flex-wrap:wrap;gap:10px">
+              <div>
                 <div class="card-title" style="margin-bottom:2px">📧 Rappels par email</div>
                 <div style="font-size:12px;color:var(--text2)">EmailJS — rappels automatiques aux stagiaires inactifs</div>
               </div>
@@ -1755,7 +1764,18 @@ async function _loginAsWork(role) {
 
   let matchedUser = null;
   if (email && mdp) {
-    matchedUser = S.users.find(u => (u.email || '').toLowerCase() === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
+    const enteredHash = await hashPwd(mdp, email);
+    matchedUser = S.users.find(u => (u.email || '').toLowerCase() === email && u.mdpHash === enteredHash);
+    // Migration silencieuse des anciens comptes stockés en clair/base64
+    if (!matchedUser) {
+      const legacy = S.users.find(u => (u.email || '').toLowerCase() === email && (u.mdp === btoa(mdp) || u.mdp === mdp));
+      if (legacy) {
+        legacy.mdpHash = enteredHash;
+        delete legacy.mdp;
+        safeSet('mpb_users', S.users);
+        matchedUser = legacy;
+      }
+    }
 
     if (!matchedUser && SB.enabled && navigator.onLine) {
       const loginBtn = document.getElementById('btnLogin');
@@ -1859,7 +1879,8 @@ async function _doRegisterWork(btn, _reEnable) {
   const role = document.querySelector('.role-card.selected')?.dataset?.role || 'stagiaire';
   const existingIdx = S.users.findIndex(u => u.email === email.trim().toLowerCase());
   if (existingIdx >= 0) {
-    S.users[existingIdx].mdp = mdp;
+    S.users[existingIdx].mdpHash = await hashPwd(mdp, email.trim().toLowerCase());
+    delete S.users[existingIdx].mdp;
     S.users[existingIdx].role = role;
     S.users[existingIdx].prenom = pre.trim();
     S.users[existingIdx].nom = nom.trim();
@@ -1882,7 +1903,8 @@ async function _doRegisterWork(btn, _reEnable) {
     return;
   }
 
-  const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim().toLowerCase(), mdp, role, createdAt: Date.now() };
+  const mdpHash = await hashPwd(mdp, email.trim().toLowerCase());
+  const newUser = { prenom: pre.trim(), nom: nom.trim(), email: email.trim().toLowerCase(), mdpHash, role, createdAt: Date.now() };
   S.users.push(newUser);
   if (S.users.length > 200) S.users = S.users.slice(-200);
   safeSet('mpb_users', S.users);
@@ -3326,7 +3348,7 @@ function renderStagTable() {
   }
 
   const realUsers = getKnownStagiaires().map((u, i) => ({
-    id: 900 + i, prenom: u.prenom, nom: u.nom,
+    id: 900 + i, prenom: u.prenom, nom: u.nom, email: u.email || '',
     init: (u.prenom[0] + (u.nom ? u.nom[0] : '')).toUpperCase(),
     formation: 'Inscrit', ftag: 't-green',
     niveau: u.niveauFr || S.settings.niveauFr || 'A1', lclass: 'l' + (u.niveauFr || 'A1'),
@@ -3357,7 +3379,7 @@ function renderStagTable() {
       <td class="flex gap2">
         <button class="btn btn-ghost btn-sm" onclick="openFiche(${s.id})">Voir fiche</button>
         <button class="btn btn-ghost btn-sm" onclick="archiverStag(${s.id},'${esc(s.prenom+' '+s.nom)}')" title="Archiver" style="color:var(--warn)">📁</button>
-        <button class="btn btn-ghost btn-sm" onclick="supprimerStag(${s.id},'${esc(s.prenom+' '+s.nom)}')" title="Supprimer" style="color:var(--danger)">🗑️</button>
+        <button class="btn btn-ghost btn-sm" onclick="supprimerStag(${s.id},'${esc(s.prenom+' '+s.nom)}','${esc(s.email||'')}')" title="Supprimer définitivement (RGPD)" style="color:var(--danger)">🗑️</button>
         <button class="btn btn-outline btn-sm" onclick="imprimerFiche(${s.id})">🖨️</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" class="muted tc" style="padding:20px">Aucun stagiaire trouvé.</td></tr>');
@@ -3376,15 +3398,21 @@ function archiverStag(id, nom) {
   toast('📁 ' + nom + ' archivé(e).', 4000);
 }
 
-function supprimerStag(id, nom) {
-  if (!window.confirm('⚠️ Supprimer définitivement ' + nom + ' ? Cette action est irréversible.')) return;
+function supprimerStag(id, nom, email) {
+  if (!window.confirm('⚠️ Supprimer DÉFINITIVEMENT ' + nom + ' ?\n\nConformément au RGPD, cette action supprime :\n- Le compte local\n- Les données sur le cloud (Supabase)\n\nCette action est irréversible.')) return;
   S.users = S.users.filter((u, i) => (900 + i) !== id);
   safeSet('mpb_users', S.users);
   const hiddenIds = safeGet('mpb_hidden_stags', []);
   hiddenIds.push(id);
   safeSet('mpb_hidden_stags', hiddenIds);
+  if (email && typeof SB !== 'undefined' && SB.enabled) {
+    SB.deleteUserRemote(email).then(ok => {
+      toast(ok ? '🗑️ Stagiaire supprimé (local + cloud).' : '🗑️ Supprimé localement — la purge cloud a échoué, réessayez avec connexion internet.', 5000);
+    }).catch(() => toast('🗑️ Supprimé localement — vérifiez la connexion pour la purge cloud.', 5000));
+  } else {
+    toast('🗑️ Stagiaire supprimé(e).');
+  }
   renderFormateur();
-  toast('🗑️ Stagiaire supprimé(e).');
 }
 
 function openFiche(id) {
@@ -3844,6 +3872,14 @@ const SB = {
     try { return await this._req('/rest/v1/mpb_users?select=prenom,nom,email,role,groupe', { method:'GET' }); }
     catch(e) { return []; }
   },
+  async deleteUserRemote(email) {
+    try {
+      await this._req(`/rest/v1/mpb_users?email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
+      await this._req(`/rest/v1/mpb_progress?email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
+      await this._req(`/rest/v1/mpb_travaux?user_email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
+      return true;
+    } catch(e) { console.warn('deleteUserRemote failed:', e); return false; }
+  },
   async saveProgress(email, prog) {
     try { return await this._req('/rest/v1/mpb_progress', { method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=representation'}, body: JSON.stringify({ email, data: prog, updated_at: new Date().toISOString() }) }); }
     catch(e) { return null; }
@@ -3883,6 +3919,37 @@ function syncNow() {
   toast('🔄 Synchronisation en cours…');
 }
 function configurerSupabase() { toast('☁️ Supabase est déjà configuré pour cette plateforme.'); }
+
+// ══════════════════════════════════════════════════════════════
+// SAUVEGARDE — export complet des données (RGPD + continuité)
+// ══════════════════════════════════════════════════════════════
+function exporterSauvegarde() {
+  const backup = {
+    exportDate: new Date().toISOString(),
+    version: 'MPB-backup-v1',
+    users: S.users,
+    travaux: S.travaux,
+    msgs: S.msgs,
+    groupes: safeGet('mpb_groups', []),
+    hiddenStags: safeGet('mpb_hidden_stags', []),
+    archivedStags: safeGet('mpb_archived_stags', []),
+    customExercices: safeGet('mpb_custom_exs', []),
+    customQuiz: safeGet('mpb_custom_quiz', []),
+    customMetiers: safeGet('mpb_custom_metiers', []),
+    customSimulations: safeGet('mpb_custom_sims', []),
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `MPB_sauvegarde_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('💾 Sauvegarde téléchargée — conservez ce fichier en lieu sûr.', 4000);
+}
 
 async function hashPwd(pwd, salt) {
   const enc = new TextEncoder();
