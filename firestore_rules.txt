@@ -1,0 +1,69 @@
+// ═══════════════════════════════════════════════════════════════
+// MPB — Règles de sécurité Firestore
+// ═══════════════════════════════════════════════════════════════
+// À copier dans : Firebase Console → Firestore Database → Règles
+// (onglet "Rules") → coller ce contenu → Publier
+// ═══════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Comptes utilisateurs (stagiaires/formateurs)
+    match /mpb_users/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if true;
+      allow update: if false; // la mise à jour se fait via suppression + recréation
+    }
+
+    // Progression des stagiaires
+    match /mpb_progress/{docId} {
+      allow read, write: if true;
+    }
+
+    // Travaux soumis et corrections
+    match /mpb_travaux/{docId} {
+      allow read, write: if true;
+    }
+
+    // Tout le reste : bloqué par défaut
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOTE : ces règles restent ouvertes (if true) car le site utilise
+// une authentification "maison" (pas Firebase Auth). Elles limitent
+// surtout l'accès aux 3 collections prévues et bloquent tout le
+// reste. Pour une sécurité renforcée à terme, migrer vers Firebase
+// Authentication serait l'étape suivante (nécessite une refonte du
+// système de connexion).
+// ═══════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════
+// MPB — Règles de sécurité Storage (fichiers travaux/corrections)
+// ═══════════════════════════════════════════════════════════════
+// À copier dans : Firebase Console → Storage → Règles → coller ce
+// contenu (dans un ONGLET SÉPARÉ des règles Firestore ci-dessus)
+// ═══════════════════════════════════════════════════════════════
+
+/*
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /travaux/{fileName} {
+      allow read, write: if true;
+    }
+    match /corrections/{fileName} {
+      allow read, write: if true;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+*/

@@ -13,6 +13,10 @@
 
   <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Ma Plateforme Bureautique</title>
+<!-- Firebase (synchronisation cloud, Firestore uniquement — gratuit sans carte) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase_config.js"></script>
 <style>
 /* =====================================================
    MA PLATEFORME BUREAUTIQUE v2.1 — BUGFIX COMPLET
@@ -436,7 +440,7 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
     <button class="mob-btn" onclick="toggleSidebar()" aria-label="Ouvrir le menu">☰</button>
     <div class="nb-brand" onclick="goHome()"><div class="nb-logo">B</div><span>Ma Plateforme Bureautique</span></div>
     <div class="nb-spacer"></div>
-    <span id="sbSyncBadge" style="font-size:11px;color:var(--text3);margin-right:6px" title="Dernière sync Supabase"></span>
+    <span id="sbSyncBadge" style="font-size:11px;color:var(--text3);margin-right:6px" title="Dernière sync Firebase"></span>
     <button id="pwaInstallBtn" style="display:none;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;margin-right:8px" onclick="installPWA()">📲 Installer</button>
     <div style="position:relative;flex:1;max-width:260px;margin:0 8px">
       <input id="globalSearch" class="fi" style="padding:6px 32px 6px 10px;font-size:12px;height:32px" 
@@ -845,12 +849,12 @@ code{background:rgba(0,0,0,.05);padding:2px 7px;border-radius:4px;font-size:13px
             <div class="flex jb" style="align-items:center">
               <div>
                 <div class="card-title" style="margin-bottom:2px">☁️ Synchronisation cloud</div>
-                <div style="font-size:12px;color:var(--text2)">Synchronisez les données entre formateurs via Supabase</div>
+                <div style="font-size:12px;color:var(--text2)">Synchronisez les données entre formateurs via Firebase</div>
               </div>
               <div class="flex gap2" style="align-items:center">
                 <span id="sbStatusBadge"></span>
                 <button class="btn btn-sm btn-primary" onclick="syncNow()" title="Synchroniser maintenant">🔄 Sync</button>
-                <button id="sbConfigBtn" class="btn btn-outline btn-sm" onclick="configurerSupabase()">☁️ Supabase ✅</button>
+                <button id="sbConfigBtn" class="btn btn-outline btn-sm" onclick="configurerSupabase()">☁️ Firebase</button>
               </div>
             </div>
           </div>
@@ -2010,7 +2014,7 @@ function initApp(role, user) {
           renderDashboard();
           const badge = document.getElementById('sbSyncBadge');
           if (badge) { badge.textContent = '☁️ Sync'; badge.style.color = 'var(--accent)'; }
-          console.log('✅ Progression restaurée depuis Supabase:', cc, 'exercices');
+          console.log('✅ Progression restaurée depuis Firebase:', cc, 'exercices');
         }
       }).catch(() => {});
     }
@@ -2726,7 +2730,6 @@ function completeExercise(exId, modKey) {
   renderDashboard();
   setTimeout(updateSBStatus, 500);
   EMAILJS.init();
-  if (SB.url && SB.key) { SB.enabled = true; safeSet('mpb_sb_url', SB.url); safeSet('mpb_sb_key', SB.key); safeSet('mpb_sb_enabled', true); }
   updateBadgeCounter();
 }
 
@@ -3307,7 +3310,7 @@ function fTab(tab, el) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// CORRECTIF — Stagiaires connus sur tous les appareils (via Supabase)
+// CORRECTIF — Stagiaires connus sur tous les appareils (via Firebase)
 // ══════════════════════════════════════════════════════════════
 let _stagCloudRefreshing = false;
 
@@ -3399,7 +3402,7 @@ function archiverStag(id, nom) {
 }
 
 function supprimerStag(id, nom, email) {
-  if (!window.confirm('⚠️ Supprimer DÉFINITIVEMENT ' + nom + ' ?\n\nConformément au RGPD, cette action supprime :\n- Le compte local\n- Les données sur le cloud (Supabase)\n\nCette action est irréversible.')) return;
+  if (!window.confirm('⚠️ Supprimer DÉFINITIVEMENT ' + nom + ' ?\n\nConformément au RGPD, cette action supprime :\n- Le compte local\n- Les données sur le cloud (Firebase)\n\nCette action est irréversible.')) return;
   S.users = S.users.filter((u, i) => (900 + i) !== id);
   safeSet('mpb_users', S.users);
   const hiddenIds = safeGet('mpb_hidden_stags', []);
@@ -3844,81 +3847,140 @@ function refreshGamifBar() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// SUPABASE (synchronisation cloud) — configuration existante
+// FIREBASE (synchronisation cloud) — remplace Supabase
+// Configuration dans firebase_config.js (fichier séparé, à remplir
+// avec vos propres clés obtenues sur console.firebase.google.com)
 // ══════════════════════════════════════════════════════════════
+let _fbApp = null, _fbDb = null, _fbReady = false;
+function initFirebase() {
+  if (_fbReady) return true;
+  if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return false;
+  if (typeof firebase === 'undefined') return false;
+  try {
+    _fbApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    _fbDb = firebase.firestore();
+    _fbReady = true;
+    return true;
+  } catch(e) { console.warn('Firebase init failed:', e); return false; }
+}
+
 const SB = {
-  url: safeGet('mpb_sb_url', 'https://pwfmgerinueolcurtqkf.supabase.co'),
-  key: safeGet('mpb_sb_key', ''),
-  enabled: safeGet('mpb_sb_enabled', false),
-  async _req(path, opts) {
-    if (!this.url || !this.key) throw new Error('Supabase non configuré');
-    const res = await fetch(this.url + path, {
-      ...opts,
-      headers: { 'apikey': this.key, 'Authorization': 'Bearer ' + this.key, 'Content-Type': 'application/json', 'Prefer': 'return=representation', ...(opts?.headers||{}) }
-    });
-    if (!res.ok) throw new Error('Supabase error ' + res.status);
-    const txt = await res.text();
-    return txt ? JSON.parse(txt) : null;
-  },
+  get enabled() { return initFirebase(); },
+  set enabled(v) { /* calculé automatiquement depuis firebase_config.js */ },
+
   async syncUserAccount(user, pwdHash) {
-    try { return await this._req('/rest/v1/mpb_users', { method:'POST', body: JSON.stringify({ prenom:user.prenom, nom:user.nom, email:user.email, role:user.role, pwd_hash:pwdHash, groupe:user.groupe||null }) }); }
-    catch(e) { console.warn('syncUserAccount failed:', e); return null; }
-  },
-  async findUserRemote(email, pwdHash) {
-    try { const r = await this._req(`/rest/v1/mpb_users?email=eq.${encodeURIComponent(email)}&pwd_hash=eq.${encodeURIComponent(pwdHash)}&select=*`, { method:'GET' }); return (r && r[0]) || null; }
-    catch(e) { return null; }
-  },
-  async getAllUsersRemote() {
-    try { return await this._req('/rest/v1/mpb_users?select=prenom,nom,email,role,groupe', { method:'GET' }); }
-    catch(e) { return []; }
-  },
-  async deleteUserRemote(email) {
+    if (!initFirebase()) return null;
     try {
-      await this._req(`/rest/v1/mpb_users?email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
-      await this._req(`/rest/v1/mpb_progress?email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
-      await this._req(`/rest/v1/mpb_travaux?user_email=eq.${encodeURIComponent(email)}`, { method:'DELETE' });
+      const ref = await _fbDb.collection('mpb_users').add({
+        prenom: user.prenom, nom: user.nom, email: user.email,
+        role: user.role, pwd_hash: pwdHash, groupe: user.groupe || null,
+        created_at: Date.now()
+      });
+      return { id: ref.id };
+    } catch(e) { console.warn('syncUserAccount failed:', e); return null; }
+  },
+
+  async findUserRemote(email, pwdHash) {
+    if (!initFirebase()) return null;
+    try {
+      const snap = await _fbDb.collection('mpb_users')
+        .where('email', '==', email).where('pwd_hash', '==', pwdHash).limit(1).get();
+      return snap.empty ? null : snap.docs[0].data();
+    } catch(e) { return null; }
+  },
+
+  async getAllUsersRemote() {
+    if (!initFirebase()) return [];
+    try {
+      const snap = await _fbDb.collection('mpb_users').get();
+      return snap.docs.map(d => d.data());
+    } catch(e) { return []; }
+  },
+
+  async deleteUserRemote(email) {
+    if (!initFirebase()) return false;
+    try {
+      const purge = async (coll, field) => {
+        const snap = await _fbDb.collection(coll).where(field, '==', email).get();
+        const batch = _fbDb.batch();
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      };
+      await purge('mpb_users', 'email');
+      await purge('mpb_progress', 'email');
+      await purge('mpb_travaux', 'user_email');
       return true;
     } catch(e) { console.warn('deleteUserRemote failed:', e); return false; }
   },
+
   async saveProgress(email, prog) {
-    try { return await this._req('/rest/v1/mpb_progress', { method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=representation'}, body: JSON.stringify({ email, data: prog, updated_at: new Date().toISOString() }) }); }
-    catch(e) { return null; }
-  },
-  async loadProgress(email) {
-    try { const r = await this._req(`/rest/v1/mpb_progress?email=eq.${encodeURIComponent(email)}&select=data`, { method:'GET' }); return (r && r[0] && r[0].data) || null; }
-    catch(e) { return null; }
-  },
-  async syncTravail(t) {
-    try { return await this._req('/rest/v1/mpb_travaux', { method:'POST', body: JSON.stringify({ stag_name:t.stag, fichier:t.fichier, module:t.module, statut:t.statut, note:t.note, comment:t.comment, file_url:t.fileUrl||null, user_email:t.userEmail||null }) }); }
-    catch(e) { return null; }
-  },
-  async updateTravailRemote(cloudId, fields) {
-    try { return await this._req(`/rest/v1/mpb_travaux?id=eq.${cloudId}`, { method:'PATCH', body: JSON.stringify(fields) }); }
-    catch(e) { return null; }
-  },
-  async getTravauxForUser(email) {
-    try { return await this._req(`/rest/v1/mpb_travaux?user_email=eq.${encodeURIComponent(email)}&select=*`, { method:'GET' }); }
-    catch(e) { return []; }
-  },
-  async uploadFile(file, bucket) {
+    if (!initFirebase()) return null;
     try {
-      const path = bucket + '/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-      const res = await fetch(this.url + '/storage/v1/object/' + path, { method:'POST', headers:{ 'apikey':this.key, 'Authorization':'Bearer '+this.key, 'Content-Type': file.type||'application/octet-stream' }, body: file });
-      if (!res.ok) return null;
-      return this.url + '/storage/v1/object/public/' + path;
+      const id = btoa(unescape(encodeURIComponent(email))).replace(/[^a-zA-Z0-9]/g, '');
+      await _fbDb.collection('mpb_progress').doc(id).set({ email, data: prog, updated_at: Date.now() });
+      return true;
     } catch(e) { return null; }
+  },
+
+  async loadProgress(email) {
+    if (!initFirebase()) return null;
+    try {
+      const id = btoa(unescape(encodeURIComponent(email))).replace(/[^a-zA-Z0-9]/g, '');
+      const doc = await _fbDb.collection('mpb_progress').doc(id).get();
+      return doc.exists ? doc.data().data : null;
+    } catch(e) { return null; }
+  },
+
+  async syncTravail(t) {
+    if (!initFirebase()) return null;
+    try {
+      const ref = await _fbDb.collection('mpb_travaux').add({
+        stag_name: t.stag, fichier: t.fichier, module: t.module, statut: t.statut,
+        note: t.note, comment: t.comment, file_url: t.fileUrl || null,
+        user_email: t.userEmail || null, created_at: Date.now()
+      });
+      return { id: ref.id };
+    } catch(e) { return null; }
+  },
+
+  async updateTravailRemote(cloudId, fields) {
+    if (!initFirebase()) return null;
+    try { await _fbDb.collection('mpb_travaux').doc(cloudId).update(fields); return true; }
+    catch(e) { return null; }
+  },
+
+  async getTravauxForUser(email) {
+    if (!initFirebase()) return [];
+    try {
+      const snap = await _fbDb.collection('mpb_travaux').where('user_email', '==', email).get();
+      return snap.docs.map(d => {
+        const data = d.data();
+        return { id: d.id, ...data, created_at: new Date(data.created_at).toISOString() };
+      });
+    } catch(e) { return []; }
+  },
+
+  async uploadFile(file, bucket) {
+    // Pas de Firebase Storage (nécessiterait le forfait payant Blaze).
+    // Les fichiers restent stockés uniquement en local sur l'appareil
+    // qui les envoie — seules les métadonnées (nom, statut, note...)
+    // sont synchronisées entre appareils via Firestore.
+    return null;
   }
 };
+
 function updateSBStatus() {
   const badge = document.getElementById('sbStatusBadge');
-  if (badge) badge.innerHTML = SB.enabled ? '<span class="tag t-green">☁️ Actif</span>' : '<span class="tag t-gray">☁️ Inactif</span>';
+  if (badge) badge.innerHTML = SB.enabled ? '<span class="tag t-green">☁️ Firebase actif</span>' : '<span class="tag t-gray">☁️ Non configuré</span>';
 }
 function syncNow() {
-  if (!SB.enabled) { toast('⚠️ Supabase non configuré.'); return; }
+  if (!SB.enabled) { toast('⚠️ Firebase non configuré — voir firebase_config.js'); return; }
   refreshStagiairesFromCloud();
   toast('🔄 Synchronisation en cours…');
 }
-function configurerSupabase() { toast('☁️ Supabase est déjà configuré pour cette plateforme.'); }
+function configurerSupabase() {
+  toast(SB.enabled ? '☁️ Firebase est actif.' : '⚠️ Complétez firebase_config.js avec vos clés Firebase (voir FIREBASE_SETUP.md)', 5000);
+}
 
 // ══════════════════════════════════════════════════════════════
 // SAUVEGARDE — export complet des données (RGPD + continuité)
